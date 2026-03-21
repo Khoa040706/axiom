@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic OS - Đăng Nhập</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Import font chữ tương tự thiết kế */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            /* Các biến màu sắc Đỏ Đậm Hiện Đại */
+            --primary-red: #D32F2F;
+            /* Đỏ chính */
+            --dark-red: #9A0007;
+            /* Đỏ tối cho gradient */
+            --light-red: #FF6659;
+            /* Đỏ sáng cho gradient */
+            --bg-color: #FDF3F4;
+            /* Nền web hơi ám đỏ nhạt để tone-sur-tone */
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border-color: #E0E0E0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Khung chứa toàn bộ form - chia 2 nửa */
+        .login-container {
+            display: flex;
+            width: 1000px;
+            max-width: 95%;
+            height: 550px;
+            background: #FFFFFF;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(154, 0, 7, 0.15);
+            /* Bóng đổ cũng ám đỏ */
+            overflow: hidden;
+        }
+
+        /* ================= CỘT TRÁI (FORM) ================= */
+        .left-panel {
+            flex: 1;
+            padding: 50px 60px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Các icon góc trên bên phải của cột trái */
+        .top-controls {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            font-size: 18px;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .left-panel h2 {
+            color: var(--primary-red);
+            font-size: 24px;
+            margin: 0 0 5px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .left-panel .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-red);
+        }
+
+        /* Icon con mắt trong ô mật khẩu */
+        .eye-icon {
+            position: absolute;
+            right: 16px;
+            top: 38px;
+            color: #AAA;
+            cursor: pointer;
+        }
+
+        .forgot-pwd {
+            display: block;
+            text-decoration: none;
+            color: var(--primary-red);
+            font-size: 13px;
+            margin-top: -5px;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--light-red), var(--dark-red));
+            color: #FFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.2s;
+        }
+
+        .btn-login:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(211, 47, 47, 0.3);
+        }
+
+        .register-text {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 30px;
+        }
+
+        .register-text a {
+            color: var(--primary-red);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* ================= CỘT PHẢI (GRADIENT) ================= */
+        .right-panel {
+            flex: 1.1;
+            background: linear-gradient(135deg, var(--light-red), var(--dark-red));
+            color: #FFF;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            text-align: center;
+            padding: 40px;
+            overflow: hidden;
+        }
+
+        /* Tạo các hiệu ứng hình tròn mờ (blob) trên nền gradient */
+        .blob-1,
+        .blob-2 {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            top: -100px;
+            right: -50px;
+        }
+
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            bottom: -150px;
+            left: -100px;
+        }
+
+        /* Icon chữ A ở giữa */
+        .logo-box {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 45px;
+            font-weight: bold;
+            font-family: serif;
+            margin-bottom: 25px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 2;
+        }
+
+        .right-panel h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            z-index: 2;
+        }
+
+        .right-panel p {
+            font-size: 15px;
+            opacity: 0.9;
+            z-index: 2;
+        }
+
+        /* Responsive cho điện thoại / màn hình nhỏ */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .left-panel,
+            .right-panel {
+                padding: 40px 30px;
+            }
+
+            .right-panel {
+                display: none;
+                /* Ẩn phần hình ảnh bên phải trên mobile để tiết kiệm diện tích */
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+
+        <div class="left-panel">
+            <div class="top-controls">
+                <i class="fa-solid fa-earth-americas"></i>
+                <i class="fa-solid fa-moon"></i>
+            </div>
+
+            <h2>ACADEMIC OS</h2>
+            <p class="subtitle">Chào mừng bạn trở lại, học giả.</p>
+
+            <form>
+                <div class="form-group">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" placeholder="e.g. 52400017">
+                </div>
+
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" placeholder="••••••••">
+                    <i class="fa-solid fa-eye eye-icon"></i>
+                </div>
+
+                <a href="#" class="forgot-pwd">Quên mật khẩu?</a>
+
+                <button type="submit" class="btn-login">Đăng nhập</button>
+            </form>
+
+            <p class="register-text">
+                Chưa có tài khoản? <a href="#">Đăng ký</a>
+            </p>
+        </div>
+
+        <div class="right-panel">
+            <div class="blob-1"></div>
+            <div class="blob-2"></div>
+
+            <div class="logo-box">A</div>
+
+            <h1>Tối đa hóa Tiềm năng</h1>
+            <p>Học chăm chỉ, làm thông minh, giữ tập trung.</p>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
