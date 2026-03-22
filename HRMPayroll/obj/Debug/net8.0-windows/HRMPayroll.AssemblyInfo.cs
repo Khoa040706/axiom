@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HRMPayroll")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ed4980334fb9c550a4df9500e2da5a84665bc3b2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c311a46638daa84c7d69817d3e19f3f64f3485ab")]
 [assembly: System.Reflection.AssemblyProductAttribute("HRMPayroll")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HRMPayroll")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

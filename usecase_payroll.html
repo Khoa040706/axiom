@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Case – Payroll (Quản lý Tiền lương)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0 }
+        body { font-family: Arial, sans-serif; background: #fff; display: flex; justify-content: center; padding: 20px 8px }
+        .wrap { overflow: auto; width: 100% }
+        svg { display: block; margin: 0 auto }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <svg width="1100" height="900" viewBox="0 0 1100 900" xmlns="http://www.w3.org/2000/svg" style="background:#fff">
+
+            <defs>
+                <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                    <path d="M0,0 L0,7 L9,3.5z" fill="#222" />
+                </marker>
+                <marker id="o" markerWidth="10" markerHeight="8" refX="9" refY="3" orient="auto">
+                    <path d="M0,0 L9,3 L0,6" fill="none" stroke="#555" stroke-width="1.2" />
+                </marker>
+            </defs>
+
+            <!-- TITLE -->
+            <text x="550" y="28" text-anchor="middle" font-size="16" font-weight="bold" font-family="Arial">USE CASE DIAGRAM – QUẢN LÝ TIỀN LƯƠNG (PAYROLL)</text>
+
+            <!-- SYSTEM BOUNDARY -->
+            <rect x="200" y="50" width="700" height="790" fill="none" stroke="#000" stroke-width="2" rx="4" />
+            <text x="550" y="72" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial">Phân hệ Payroll</text>
+
+            <!-- ── UC-01: Thiết lập công thức lương ── -->
+            <ellipse cx="500" cy="140" rx="175" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="144" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Thiết lập công thức lương</text>
+
+            <!-- UC-01a: Cấu hình BHXH/BHYT/BHTN -->
+            <ellipse cx="340" cy="230" rx="140" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="340" y="234" text-anchor="middle" font-family="Arial" font-size="10">Cấu hình BHXH / BHYT / BHTN</text>
+            <line x1="430" y1="172" x2="380" y2="210" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="390" y="196" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-01b: Cấu hình thuế TNCN lũy tiến -->
+            <ellipse cx="700" cy="230" rx="145" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="700" y="234" text-anchor="middle" font-family="Arial" font-size="10">Cấu hình thuế TNCN lũy tiến</text>
+            <line x1="575" y1="172" x2="630" y2="210" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="618" y="196" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- ── UC-02: Tính lương tự động ── -->
+            <ellipse cx="500" cy="350" rx="170" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="354" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Tính lương tự động (Gross→Net)</text>
+
+            <!-- «include» UC-01 → UC-02 -->
+            <line x1="500" y1="172" x2="500" y2="318" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="510" y="255" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-02a: Tổng hợp dữ liệu chấm công -->
+            <ellipse cx="780" cy="350" rx="140" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="780" y="354" text-anchor="middle" font-family="Arial" font-size="10">Tổng hợp dữ liệu chấm công</text>
+            <line x1="670" y1="350" x2="640" y2="350" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="656" y="344" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-02b: Khấu trừ BH + Thuế -->
+            <ellipse cx="340" cy="440" rx="130" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="340" y="444" text-anchor="middle" font-family="Arial" font-size="10">Khấu trừ BH + Thuế TNCN</text>
+            <line x1="430" y1="382" x2="380" y2="420" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="390" y="406" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-02c: Tính tiền OT -->
+            <ellipse cx="680" cy="440" rx="110" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="680" y="444" text-anchor="middle" font-family="Arial" font-size="10">Tính tiền làm thêm (OT)</text>
+            <line x1="575" y1="382" x2="630" y2="420" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="618" y="406" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- ── UC-03: Xuất phiếu lương (Payslip) ── -->
+            <ellipse cx="500" cy="560" rx="175" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="564" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Xuất phiếu lương (Payslip)</text>
+
+            <!-- «include» UC-02 → UC-03 -->
+            <line x1="500" y1="382" x2="500" y2="528" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="510" y="468" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-03a: Xuất PDF -->
+            <ellipse cx="340" cy="640" rx="110" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="340" y="644" text-anchor="middle" font-family="Arial" font-size="10">Xuất PDF phiếu lương</text>
+            <line x1="430" y1="592" x2="380" y2="620" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="390" y="610" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- ── UC-04: Xem phiếu lương (NV) ── -->
+            <ellipse cx="500" cy="740" rx="160" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="744" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Xem phiếu lương cá nhân</text>
+
+            <!-- ═══════ ACTORS ═══════ -->
+
+            <!-- Admin (trái trên) -->
+            <circle cx="55" cy="180" r="18" fill="#fff" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="198" x2="55" y2="248" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="215" x2="28" y2="235" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="215" x2="82" y2="235" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="248" x2="30" y2="278" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="248" x2="80" y2="278" stroke="#000" stroke-width="1.6" />
+            <text x="55" y="296" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Admin</text>
+
+            <!-- Kế toán (phải) -->
+            <circle cx="1045" cy="380" r="18" fill="#fff" stroke="#000" stroke-width="1.8" />
+            <line x1="1045" y1="398" x2="1045" y2="448" stroke="#000" stroke-width="1.8" />
+            <line x1="1045" y1="415" x2="1018" y2="435" stroke="#000" stroke-width="1.6" />
+            <line x1="1045" y1="415" x2="1072" y2="435" stroke="#000" stroke-width="1.6" />
+            <line x1="1045" y1="448" x2="1020" y2="478" stroke="#000" stroke-width="1.6" />
+            <line x1="1045" y1="448" x2="1070" y2="478" stroke="#000" stroke-width="1.6" />
+            <text x="1045" y="496" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold">Kế toán</text>
+            <text x="1045" y="510" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold">tiền lương</text>
+
+            <!-- Nhân viên (trái dưới) -->
+            <circle cx="55" cy="700" r="18" fill="#fff" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="718" x2="55" y2="768" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="735" x2="28" y2="755" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="735" x2="82" y2="755" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="768" x2="30" y2="798" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="768" x2="80" y2="798" stroke="#000" stroke-width="1.6" />
+            <text x="55" y="816" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Nhân viên</text>
+
+            <!-- ═══════ ASSOCIATIONS ═══════ -->
+
+            <!-- Admin → UC-01 -->
+            <line x1="74" y1="184" x2="325" y2="140" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+
+            <!-- Kế toán → UC-01, UC-02, UC-03 -->
+            <line x1="1026" y1="374" x2="675" y2="144" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+            <line x1="1026" y1="384" x2="670" y2="354" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+            <line x1="1026" y1="394" x2="675" y2="560" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+
+            <!-- Nhân viên → UC-04 -->
+            <line x1="74" y1="704" x2="340" y2="744" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+
+            <!-- ═══════ LEGEND ═══════ -->
+            <rect x="200" y="850" width="700" height="40" fill="none" stroke="#999" stroke-width="1" rx="3" />
+            <line x1="220" y1="870" x2="260" y2="870" stroke="#000" stroke-width="1.5" marker-end="url(#a)" />
+            <text x="267" y="874" font-family="Arial" font-size="10">Association</text>
+            <line x1="360" y1="870" x2="400" y2="870" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="407" y="874" font-family="Arial" font-size="10">«include» / «extend»</text>
+            <ellipse cx="610" cy="870" rx="35" ry="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="610" y="874" text-anchor="middle" font-family="Arial" font-size="10">UC</text>
+            <circle cx="700" cy="865" r="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+            <line x1="700" y1="871" x2="700" y2="878" stroke="#000" stroke-width="1.5" />
+            <text x="712" y="874" font-family="Arial" font-size="10">Actor</text>
+
+        </svg>
+    </div>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Case – Time & Attendance (Quản lý Thời gian & Nghỉ phép)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0 }
+        body { font-family: Arial, sans-serif; background: #fff; display: flex; justify-content: center; padding: 20px 8px }
+        .wrap { overflow: auto; width: 100% }
+        svg { display: block; margin: 0 auto }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <svg width="1100" height="1050" viewBox="0 0 1100 1050" xmlns="http://www.w3.org/2000/svg" style="background:#fff">
+
+            <defs>
+                <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                    <path d="M0,0 L0,7 L9,3.5z" fill="#222" />
+                </marker>
+                <marker id="o" markerWidth="10" markerHeight="8" refX="9" refY="3" orient="auto">
+                    <path d="M0,0 L9,3 L0,6" fill="none" stroke="#555" stroke-width="1.2" />
+                </marker>
+            </defs>
+
+            <!-- TITLE -->
+            <text x="550" y="28" text-anchor="middle" font-size="16" font-weight="bold" font-family="Arial">USE CASE DIAGRAM – QUẢN LÝ THỜI GIAN &amp; NGHỈ PHÉP (TIME &amp; ATTENDANCE)</text>
+
+            <!-- SYSTEM BOUNDARY -->
+            <rect x="200" y="50" width="700" height="940" fill="none" stroke="#000" stroke-width="2" rx="4" />
+            <text x="550" y="72" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial">Phân hệ Time &amp; Attendance</text>
+
+            <!-- ── UC-01: Chấm công ── -->
+            <ellipse cx="500" cy="140" rx="170" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="144" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Quản lý chấm công</text>
+
+            <!-- UC-01a: Check-in / Check-out -->
+            <ellipse cx="340" cy="230" rx="130" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="340" y="234" text-anchor="middle" font-family="Arial" font-size="10.5">Check-in / Check-out</text>
+            <line x1="440" y1="172" x2="380" y2="210" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="395" y="196" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-01b: Tổng hợp ngày công / OT / đi muộn -->
+            <ellipse cx="700" cy="230" rx="150" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="700" y="234" text-anchor="middle" font-family="Arial" font-size="10">Tổng hợp ngày công · OT · đi muộn</text>
+            <line x1="590" y1="172" x2="630" y2="210" stroke="#000" stroke-width="1.2" stroke-dasharray="6,3" marker-end="url(#o)" />
+            <rect x="592" y="186" width="52" height="14" fill="#fff" stroke="none" />
+            <text x="618" y="197" text-anchor="middle" font-family="Arial" font-size="9" font-style="italic">«extend»</text>
+
+            <!-- UC-01c: Giải trình công -->
+            <ellipse cx="500" cy="310" rx="120" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="500" y="314" text-anchor="middle" font-family="Arial" font-size="10.5">Giải trình công</text>
+            <line x1="500" y1="172" x2="500" y2="286" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="510" y="245" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- ── UC-02: Đăng ký nghỉ phép ── -->
+            <ellipse cx="500" cy="420" rx="170" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="424" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Đăng ký nghỉ phép</text>
+
+            <!-- UC-02a: Chọn loại nghỉ -->
+            <ellipse cx="340" cy="500" rx="130" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="340" y="504" text-anchor="middle" font-family="Arial" font-size="10">Chọn loại nghỉ (năm/ốm/riêng)</text>
+            <line x1="440" y1="452" x2="380" y2="480" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="393" y="470" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-02b: Kiểm tra quỹ phép -->
+            <ellipse cx="700" cy="500" rx="125" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="700" y="504" text-anchor="middle" font-family="Arial" font-size="10">Kiểm tra quỹ phép còn lại</text>
+            <line x1="585" y1="452" x2="630" y2="480" stroke="#000" stroke-width="1.2" stroke-dasharray="6,3" marker-end="url(#o)" />
+            <rect x="592" y="458" width="52" height="14" fill="#fff" stroke="none" />
+            <text x="618" y="469" text-anchor="middle" font-family="Arial" font-size="9" font-style="italic">«extend»</text>
+
+            <!-- ── UC-03: Duyệt yêu cầu nghỉ phép ── -->
+            <ellipse cx="500" cy="600" rx="180" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="604" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Duyệt yêu cầu nghỉ phép</text>
+
+            <!-- UC-03a: Tự động trừ quỹ phép -->
+            <ellipse cx="750" cy="660" rx="130" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="750" y="664" text-anchor="middle" font-family="Arial" font-size="10">Tự động trừ quỹ phép năm</text>
+            <line x1="680" y1="630" x2="690" y2="640" stroke="#000" stroke-width="1.2" stroke-dasharray="6,3" marker-end="url(#o)" />
+            <rect x="660" y="628" width="52" height="14" fill="#fff" stroke="none" />
+            <text x="686" y="639" text-anchor="middle" font-family="Arial" font-size="9" font-style="italic">«extend»</text>
+
+            <!-- «include» UC-02 → UC-03 -->
+            <line x1="500" y1="452" x2="500" y2="568" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="510" y="520" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- ── UC-04: Quản lý công tác phí ── -->
+            <ellipse cx="500" cy="770" rx="170" ry="32" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="500" y="774" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Quản lý công tác phí</text>
+
+            <!-- UC-04a: Duyệt lệnh công tác -->
+            <ellipse cx="340" cy="852" rx="125" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="340" y="856" text-anchor="middle" font-family="Arial" font-size="10">Duyệt lệnh công tác</text>
+            <line x1="440" y1="802" x2="380" y2="832" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="393" y="822" font-family="Arial" font-size="9" fill="#555">«include»</text>
+
+            <!-- UC-04b: Tính phụ cấp công tác -->
+            <ellipse cx="680" cy="852" rx="130" ry="24" fill="#fff" stroke="#000" stroke-width="1" stroke-dasharray="5,3" />
+            <text x="680" y="856" text-anchor="middle" font-family="Arial" font-size="10">Tính phụ cấp công tác</text>
+            <line x1="570" y1="802" x2="620" y2="832" stroke="#000" stroke-width="1.2" stroke-dasharray="6,3" marker-end="url(#o)" />
+            <rect x="578" y="810" width="52" height="14" fill="#fff" stroke="none" />
+            <text x="604" y="821" text-anchor="middle" font-family="Arial" font-size="9" font-style="italic">«extend»</text>
+
+            <!-- ═══════ ACTORS ═══════ -->
+
+            <!-- HR Manager (trái trên) -->
+            <circle cx="55" cy="300" r="18" fill="#fff" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="318" x2="55" y2="368" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="335" x2="28" y2="355" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="335" x2="82" y2="355" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="368" x2="30" y2="398" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="368" x2="80" y2="398" stroke="#000" stroke-width="1.6" />
+            <text x="55" y="416" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold">HR Manager</text>
+
+            <!-- Nhân viên (trái dưới) -->
+            <circle cx="55" cy="660" r="18" fill="#fff" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="678" x2="55" y2="728" stroke="#000" stroke-width="1.8" />
+            <line x1="55" y1="695" x2="28" y2="715" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="695" x2="82" y2="715" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="728" x2="30" y2="758" stroke="#000" stroke-width="1.6" />
+            <line x1="55" y1="728" x2="80" y2="758" stroke="#000" stroke-width="1.6" />
+            <text x="55" y="776" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">Nhân viên</text>
+
+            <!-- Trưởng phòng (phải) -->
+            <circle cx="1045" cy="580" r="18" fill="#fff" stroke="#000" stroke-width="1.8" />
+            <line x1="1045" y1="598" x2="1045" y2="648" stroke="#000" stroke-width="1.8" />
+            <line x1="1045" y1="615" x2="1018" y2="635" stroke="#000" stroke-width="1.6" />
+            <line x1="1045" y1="615" x2="1072" y2="635" stroke="#000" stroke-width="1.6" />
+            <line x1="1045" y1="648" x2="1020" y2="678" stroke="#000" stroke-width="1.6" />
+            <line x1="1045" y1="648" x2="1070" y2="678" stroke="#000" stroke-width="1.6" />
+            <text x="1045" y="696" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold">Trưởng phòng</text>
+
+            <!-- ═══════ ASSOCIATIONS ═══════ -->
+
+            <!-- HR Manager → UC-01, UC-03, UC-04 -->
+            <line x1="74" y1="300" x2="330" y2="144" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+            <line x1="74" y1="320" x2="320" y2="600" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+            <line x1="74" y1="330" x2="330" y2="770" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+
+            <!-- Nhân viên → UC-01, UC-02, UC-04 -->
+            <line x1="74" y1="654" x2="330" y2="148" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+            <line x1="74" y1="658" x2="330" y2="424" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+            <line x1="74" y1="668" x2="330" y2="774" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+
+            <!-- Trưởng phòng → UC-03, UC-01 -->
+            <line x1="1026" y1="580" x2="680" y2="600" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+            <line x1="1026" y1="574" x2="670" y2="144" stroke="#000" stroke-width="1.2" marker-end="url(#a)" />
+
+            <!-- ═══════ LEGEND ═══════ -->
+            <rect x="200" y="1000" width="700" height="40" fill="none" stroke="#999" stroke-width="1" rx="3" />
+            <line x1="220" y1="1020" x2="260" y2="1020" stroke="#000" stroke-width="1.5" marker-end="url(#a)" />
+            <text x="267" y="1024" font-family="Arial" font-size="10">Association</text>
+            <line x1="360" y1="1020" x2="400" y2="1020" stroke="#555" stroke-width="1.1" stroke-dasharray="5,3" marker-end="url(#o)" />
+            <text x="407" y="1024" font-family="Arial" font-size="10">«include» / «extend»</text>
+            <ellipse cx="610" cy="1020" rx="35" ry="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+            <text x="610" y="1024" text-anchor="middle" font-family="Arial" font-size="10">UC</text>
+            <circle cx="700" cy="1015" r="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+            <line x1="700" y1="1021" x2="700" y2="1028" stroke="#000" stroke-width="1.5" />
+            <text x="712" y="1024" font-family="Arial" font-size="10">Actor</text>
+
+        </svg>
+    </div>
+</body>
+</html>
