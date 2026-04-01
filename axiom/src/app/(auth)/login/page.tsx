@@ -218,10 +218,11 @@ export default function LoginPage() {
         @keyframes floatUp2 { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-8px) rotate(0deg)} }
         @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:.3} }
         @keyframes barGrow  { from{transform:scaleY(0)} to{transform:scaleY(1)} }
-        @keyframes tilt1    { 0%,100%{transform:translateY(0px) rotate(-5deg)} 50%{transform:translateY(-12px) rotate(-3deg)} }
+        @keyframes tilt1    { 0%,100%{transform:translateY(0px) rotate(-12deg)} 50%{transform:translateY(-12px) rotate(-8deg)} }
         @keyframes tilt2    { 0%,100%{transform:translateY(0px) rotate(5deg)}  50%{transform:translateY(-10px) rotate(7deg)} }
         @keyframes tilt3    { 0%,100%{transform:translateY(0px) rotate(4deg)}  50%{transform:translateY(-8px)  rotate(2deg)} }
         @keyframes tilt4    { 0%,100%{transform:translateY(0px) rotate(-6deg)} 50%{transform:translateY(-14px) rotate(-4deg)} }
+        @keyframes gradMove { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
         /* ── Round Checkbox ── */
         .ax-round-chk {
@@ -365,23 +366,27 @@ export default function LoginPage() {
 
           {/* TOP-LEFT: Quản lý lương */}
           <div style={{
-            position: "absolute", top: "10%", left: 0,
+            position: "absolute", top: "17%", left: -40,
             background: miniCardBg, border: `1.5px solid ${dark ? "#2a1010" : "#F0F0F0"}`,
-            borderRadius: 14, padding: "12px 14px", width: 148,
+            borderRadius: 14, padding: "12px 14px", width: 158,
             boxShadow: dark ? "0 8px 28px rgba(0,0,0,.5)" : "0 8px 28px rgba(0,0,0,.1)",
             animation: "tilt1 7s ease-in-out infinite",
             transition: "background .4s, border-color .4s",
             opacity: mounted ? 1 : 0,
           }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 7, background: "rgba(211,47,47,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <TrendingUp size={13} style={{ color: "#D32F2F" }} />
+            {/* Logo + labels cùng hàng */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(211,47,47,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <TrendingUp size={18} style={{ color: "#D32F2F" }} />
               </div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#D32F2F", background: "rgba(211,47,47,0.1)", padding: "2px 6px", borderRadius: 99 }}>
-                {t.chart1v}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#D32F2F", background: "rgba(211,47,47,0.1)", padding: "2px 7px", borderRadius: 99, alignSelf: "flex-start" }}>
+                  {t.chart1v}
+                </span>
+                <div style={{ fontSize: 11, fontWeight: 700, color: text1, transition: "color .4s" }}>{t.chart1}</div>
+              </div>
             </div>
-            <div style={{ fontSize: 10, color: text2, marginBottom: 7 }}>{t.chart1}</div>
+            {/* Bar chart */}
             <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 26 }}>
               {BARS.slice(0, 7).map((h, i) => (
                 <div key={i} style={{
@@ -395,7 +400,7 @@ export default function LoginPage() {
 
           {/* TOP-RIGHT: 5 Phòng ban */}
           <div style={{
-            position: "absolute", top: "10%", right: 0,
+            position: "absolute", top: "16%", right: 0,
             background: miniCardBg, border: `1.5px solid ${dark ? "#2a1010" : "#F0F0F0"}`,
             borderRadius: 14, padding: "12px 14px", width: 158,
             boxShadow: dark ? "0 8px 28px rgba(0,0,0,.5)" : "0 8px 28px rgba(0,0,0,.1)",
@@ -403,27 +408,31 @@ export default function LoginPage() {
             transition: "background .4s, border-color .4s",
             opacity: mounted ? 1 : 0,
           }}>
-            <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
+            {/* Stacked overlapping avatars */}
+            <div style={{ display: "flex", marginBottom: 10 }}>
               {(lang === "vi" ? ["IT", "HR", "KD", "KT", "HC"] : ["IT", "HR", "BD", "AC", "GA"]).map((d, i) => (
                 <span key={i} style={{
-                  width: 26, height: 26, borderRadius: "50%",
-                  background: ["#FF6659", "#D32F2F", "#9A0007", "#c44040", "rgba(211,47,47,.5)"][i],
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: ["#FF6659", "#D32F2F", "#9A0007", "#c44040", "rgba(211,47,47,.6)"][i],
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   fontSize: 8, fontWeight: 700, color: "#fff",
+                  marginLeft: i === 0 ? 0 : -9,
+                  border: `2px solid ${miniCardBg}`,
+                  position: "relative", zIndex: 5 - i,
+                  transition: "border-color .4s",
                 }}>{d}</span>
               ))}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: text1 }}>{lang === "vi" ? "5 Phòng ban" : "5 Departments"}</div>
-            <div style={{ fontSize: 10, color: text2, marginTop: 2 }}>{t.chart2}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, fontSize: 9.5, color: "#D32F2F", fontWeight: 600 }}>
-              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#D32F2F", animation: "blink 2s infinite" }} />
+            <div style={{ fontSize: 13, fontWeight: 800, color: text1, transition: "color .4s" }}>{lang === "vi" ? "5 Phòng ban" : "5 Departments"}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, fontSize: 9.5, color: "#16A34A", fontWeight: 600 }}>
+              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#16A34A", animation: "blink 2s infinite" }} />
               {t.chart2s}
             </div>
           </div>
 
           {/* BOTTOM-LEFT: Chấm công */}
           <div style={{
-            position: "absolute", bottom: "24%", left: -55,
+            position: "absolute", bottom: "23%", left: -55,
             background: miniCardBg, border: `1.5px solid ${dark ? "#2a1010" : "#F0F0F0"}`,
             borderRadius: 14, padding: "12px 14px", width: 148,
             boxShadow: dark ? "0 8px 28px rgba(0,0,0,.5)" : "0 8px 28px rgba(0,0,0,.1)",
@@ -445,7 +454,7 @@ export default function LoginPage() {
 
           {/* BOTTOM-RIGHT: Xuất phiếu lương */}
           <div style={{
-            position: "absolute", bottom: "10%", right: 0,
+            position: "absolute", bottom: "24%", right: 0,
             background: miniCardBg, border: `1.5px solid ${dark ? "#2a1010" : "#F0F0F0"}`,
             borderRadius: 14, padding: "12px 14px", width: 158,
             boxShadow: dark ? "0 8px 28px rgba(0,0,0,.5)" : "0 8px 28px rgba(0,0,0,.1)",
@@ -453,13 +462,14 @@ export default function LoginPage() {
             transition: "background .4s, border-color .4s",
             opacity: mounted ? 1 : 0,
           }}>
-            <div style={{ width: 26, height: 26, borderRadius: 7, background: "rgba(211,47,47,0.12)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-              <Shield size={13} style={{ color: "#D32F2F" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 26, height: 26, borderRadius: 7, background: "rgba(211,47,47,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Shield size={13} style={{ color: "#D32F2F" }} />
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: text1 }}>{lang === "vi" ? "Phiếu lương" : "Payslip"}</div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: text1 }}>{lang === "vi" ? "Phiếu lương" : "Payslip"}</div>
-            <div style={{ fontSize: 10, color: text2, marginTop: 2 }}>{lang === "vi" ? "Xuất PDF • Excel" : "Export PDF • Excel"}</div>
-            <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
-              {["PDF", "XLS"].map((f, i) => (
+            <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
+              {["PDF", "XLSX"].map((f, i) => (
                 <span key={i} style={{
                   fontSize: 9, fontWeight: 700, color: "#fff",
                   background: i === 0 ? "#D32F2F" : "#9A0007",
@@ -492,10 +502,12 @@ export default function LoginPage() {
               : "0 20px 50px rgba(0,0,0,.08)",
             transition: "background .4s, border-color .4s, box-shadow .4s",
           }}>
-            {/* Red top accent bar */}
+            {/* Red top accent bar — animated */}
             <div style={{
               height: 3,
-              background: "linear-gradient(90deg,#FF6659,#D32F2F,#9A0007)",
+              background: "linear-gradient(90deg,#FF6659,#D32F2F,#9A0007,#FF4444,#FF6659)",
+              backgroundSize: "300% 100%",
+              animation: "gradMove 2s linear infinite",
             }} />
 
             {/* ── Controls: absolute top-right ── */}
@@ -664,7 +676,9 @@ export default function LoginPage() {
                   style={{
                     width: "100%", height: 46,
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    background: "linear-gradient(135deg,#FF6659 0%,#D32F2F 50%,#9A0007 100%)",
+                    background: "linear-gradient(135deg,#FF6659 0%,#D32F2F 35%,#9A0007 65%,#FF6659 100%)",
+                    backgroundSize: "300% 100%",
+                    animation: loading ? "none" : "gradMove 2.5s linear infinite",
                     color: "#fff", border: "none", borderRadius: 10,
                     fontSize: 14, fontWeight: 700, fontFamily: "inherit",
                     cursor: loading ? "not-allowed" : "pointer",
