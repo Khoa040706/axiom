@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: axiom_db
+    environment:
+      POSTGRES_USER: axiom
+      POSTGRES_PASSWORD: axiom_password
+      POSTGRES_DB: axiom_hrm
+    ports:
+      - "5432:5432"
+    volumes:
+      - axiom_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: axiom_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@axiom.dev
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  axiom_pgdata:

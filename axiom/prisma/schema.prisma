@@ -1,0 +1,279 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7: connection URL được cấu hình trong prisma.config.ts (không khai báo url ở đây)
+}
+
+// ── 1. PHÒNG BAN ─────────────────────────────────────────────────
+
+model Department {
+  id          Int        @id @default(autoincrement()) @map("department_id")
+  name        String     @map("department_name") @db.VarChar(100)
+  description String?    @db.VarChar(255)
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  employees   Employee[]
+
+  @@map("departments")
+}
+
+// ── 2. CHỨC VỤ ───────────────────────────────────────────────────
+
+model Position {
+  id          Int        @id @default(autoincrement()) @map("position_id")
+  name        String     @map("position_name") @db.VarChar(100)
+  description String?    @db.VarChar(255)
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  employees   Employee[]
+
+  @@map("positions")
+}
+
+// ── 3. NHÂN VIÊN ─────────────────────────────────────────────────
+
+model Employee {
+  id            Int      @id @default(autoincrement()) @map("employee_id")
+  code          String   @unique @map("employee_code") @db.VarChar(20)
+  fullName      String   @map("full_name") @db.VarChar(100)
+  gender        String?  @db.VarChar(10)
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  idNumber      String?  @map("id_number") @db.VarChar(20)
+  phone         String?  @db.VarChar(20)
+  email         String?  @db.VarChar(100)
+  address       String?  @db.VarChar(255)
+  avatarPath    String?  @map("avatar_path") @db.Text
+  departmentId  Int?     @map("department_id")
+  positionId    Int?     @map("position_id")
+  hireDate      DateTime @default(now()) @map("hire_date") @db.Date
+  status        String   @default("Đang làm") @db.VarChar(20)
+  taxCode       String?  @map("tax_code") @db.VarChar(20)
+  numDependents Int      @default(0) @map("num_dependents")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  department    Department?     @relation(fields: [departmentId], references: [id])
+  position      Position?       @relation(fields: [positionId], references: [id])
+  user          User?
+  contracts     Contract[]
+  careerHistory CareerHistory[]
+  attendance    Attendance[]
+  leaveRequests LeaveRequest[]
+  leaveBalance  LeaveBalance[]
+  businessTrips BusinessTrip[]
+  payrolls      Payroll[]
+  payslips      Payslip[]
+
+  @@map("employees")
+}
+
+// ── 4. HỢP ĐỒNG LAO ĐỘNG ─────────────────────────────────────────
+
+model Contract {
+  id           Int      @id @default(autoincrement()) @map("contract_id")
+  employeeId   Int      @map("employee_id")
+  contractType String   @map("contract_type") @db.VarChar(50)
+  startDate    DateTime @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  baseSalary   Decimal  @default(0) @map("base_salary") @db.Decimal(18, 2)
+  salaryGrade  Decimal  @default(1.0) @map("salary_grade") @db.Decimal(5, 2)
+  allowance    Decimal  @default(0) @db.Decimal(18, 2)
+  status       String   @default("Hiệu lực") @db.VarChar(20)
+  notes        String?  @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  employee     Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("contracts")
+}
+
+// ── 5. LỊCH SỬ CÔNG TÁC (Quá trình công tác) ────────────────────
+// Theo dõi vòng đời nhân viên: bổ nhiệm, luân chuyển, lương, khen thưởng, kỷ luật
+
+model CareerHistory {
+  id              Int      @id @default(autoincrement()) @map("history_id")
+  employeeId      Int      @map("employee_id")
+  eventType       String   @map("event_type") @db.VarChar(50)
+  eventDate       DateTime @default(now()) @map("event_date") @db.Date
+  description     String?  @db.VarChar(500)
+  decisionNumber  String?  @map("decision_number") @db.VarChar(100)  // Số quyết định
+  // ── Chức vụ & Phòng ban ──
+  oldDepartment   String?  @map("old_department") @db.VarChar(100)
+  newDepartment   String?  @map("new_department") @db.VarChar(100)
+  oldPosition     String?  @map("old_position") @db.VarChar(100)
+  newPosition     String?  @map("new_position") @db.VarChar(100)
+  // ── Lương ──
+  oldSalary       Decimal? @map("old_salary") @db.Decimal(18, 2)
+  newSalary       Decimal? @map("new_salary") @db.Decimal(18, 2)
+  // ── Khen thưởng ──
+  rewardType      String?  @map("reward_type") @db.VarChar(100)      // Bằng khen, Giấy khen, Tiền thưởng
+  rewardAmount    Decimal? @map("reward_amount") @db.Decimal(18, 2)  // Số tiền thưởng
+  // ── Kỷ luật ──
+  penaltyType     String?  @map("penalty_type") @db.VarChar(100)     // Khiển trách, Cảnh cáo, Hạ bậc lương
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  employee        Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("career_history")
+}
+
+// ── 6. TÀI KHOẢN & PHÂN QUYỀN (RBAC) ───────────────────────────
+
+model User {
+  id           Int       @id @default(autoincrement()) @map("user_id")
+  username     String    @unique @db.VarChar(50)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  employeeId   Int?      @unique @map("employee_id")
+  role         String    @default("Employee") @db.VarChar(20)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLogin    DateTime? @map("last_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  employee          Employee?      @relation(fields: [employeeId], references: [id])
+  approvedLeaves    LeaveRequest[] @relation("ApprovedLeaves")
+  approvedTrips     BusinessTrip[] @relation("ApprovedTrips")
+
+  @@map("users")
+}
+
+// ── 7. CHẤM CÔNG ─────────────────────────────────────────────────
+
+model Attendance {
+  id           Int      @id @default(autoincrement()) @map("attendance_id")
+  employeeId   Int      @map("employee_id")
+  workDate     DateTime @map("work_date") @db.Date
+  checkIn      DateTime? @map("check_in") @db.Time()
+  checkOut     DateTime? @map("check_out") @db.Time()
+  status       String   @default("Đi làm") @db.VarChar(20)
+  otHours      Decimal  @default(0) @map("ot_hours") @db.Decimal(4, 1)
+  lateMinutes  Int      @default(0) @map("late_minutes")
+  earlyMinutes Int      @default(0) @map("early_minutes")
+  notes        String?  @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  employee     Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, workDate])
+  @@map("attendance")
+}
+
+// ── 8. NGHỈ PHÉP ─────────────────────────────────────────────────
+
+model LeaveRequest {
+  id          Int      @id @default(autoincrement()) @map("request_id")
+  employeeId  Int      @map("employee_id")
+  leaveType   String   @map("leave_type") @db.VarChar(50)
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime @map("end_date") @db.Date
+  totalDays   Decimal  @map("total_days") @db.Decimal(4, 1)
+  reason      String?  @db.VarChar(500)
+  status      String   @default("Chờ duyệt") @db.VarChar(20)
+  approvedBy  Int?     @map("approved_by")
+  approvedDate DateTime? @map("approved_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  approver    User?    @relation("ApprovedLeaves", fields: [approvedBy], references: [id])
+
+  @@map("leave_requests")
+}
+
+model LeaveBalance {
+  id           Int      @id @default(autoincrement()) @map("balance_id")
+  employeeId   Int      @map("employee_id")
+  year         Int
+  leaveType    String   @default("Nghỉ năm") @map("leave_type") @db.VarChar(50)
+  totalDays    Decimal  @default(12) @map("total_days") @db.Decimal(4, 1)
+  usedDays     Decimal  @default(0) @map("used_days") @db.Decimal(4, 1)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  employee     Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, year, leaveType])
+  @@map("leave_balance")
+}
+
+// ── 9. CÔNG TÁC PHÍ ──────────────────────────────────────────────
+
+model BusinessTrip {
+  id          Int      @id @default(autoincrement()) @map("trip_id")
+  employeeId  Int      @map("employee_id")
+  destination String   @db.VarChar(200)
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime @map("end_date") @db.Date
+  purpose     String?  @db.VarChar(500)
+  allowance   Decimal  @default(0) @db.Decimal(18, 2)
+  status      String   @default("Chờ duyệt") @db.VarChar(20)
+  approvedBy  Int?     @map("approved_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  approver    User?    @relation("ApprovedTrips", fields: [approvedBy], references: [id])
+
+  @@map("business_trips")
+}
+
+// ── 10. CẤU HÌNH LƯƠNG ───────────────────────────────────────────
+
+model SalaryConfig {
+  id          Int      @id @default(autoincrement()) @map("config_id")
+  configKey   String   @unique @map("config_key") @db.VarChar(50)
+  configValue Decimal  @map("config_value") @db.Decimal(18, 4)
+  description String?  @db.VarChar(200)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("salary_config")
+}
+
+// ── 11. BẢNG LƯƠNG ───────────────────────────────────────────────
+
+model Payroll {
+  id          Int      @id @default(autoincrement()) @map("payroll_id")
+  employeeId  Int      @map("employee_id")
+  payMonth    Int      @map("pay_month")
+  payYear     Int      @map("pay_year")
+  workDays    Decimal  @default(0) @map("work_days") @db.Decimal(4, 1)
+  otHours     Decimal  @default(0) @map("ot_hours") @db.Decimal(5, 1)
+  baseSalary  Decimal  @default(0) @map("base_salary") @db.Decimal(18, 2)
+  allowance   Decimal  @default(0) @db.Decimal(18, 2)
+  otPay       Decimal  @default(0) @map("ot_pay") @db.Decimal(18, 2)
+  grossSalary Decimal  @default(0) @map("gross_salary") @db.Decimal(18, 2)
+  bhxh        Decimal  @default(0) @db.Decimal(18, 2)
+  bhyt        Decimal  @default(0) @db.Decimal(18, 2)
+  bhtn        Decimal  @default(0) @db.Decimal(18, 2)
+  taxIncome   Decimal  @default(0) @map("tax_income") @db.Decimal(18, 2)
+  taxAmount   Decimal  @default(0) @map("tax_amount") @db.Decimal(18, 2)
+  deductions  Decimal  @default(0) @db.Decimal(18, 2)
+  netSalary   Decimal  @default(0) @map("net_salary") @db.Decimal(18, 2)
+  status      String   @default("Nháp") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  payslips    Payslip[]
+
+  @@unique([employeeId, payMonth, payYear])
+  @@map("payroll")
+}
+
+// ── 12. PHIẾU LƯƠNG ──────────────────────────────────────────────
+
+model Payslip {
+  id         Int      @id @default(autoincrement()) @map("payslip_id")
+  payrollId  Int      @map("payroll_id")
+  employeeId Int      @map("employee_id")
+  issuedDate DateTime @default(now()) @map("issued_date") @db.Date
+  pdfPath    String?  @map("pdf_path") @db.VarChar(255)
+  isViewed   Boolean  @default(false) @map("is_viewed")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  payroll    Payroll  @relation(fields: [payrollId], references: [id])
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("payslips")
+}

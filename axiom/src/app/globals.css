@@ -1,0 +1,245 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* ── DESIGN TOKENS ─────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --red:       #D0211C;
+  --red-dark:  #b01a16;
+
+  /* Light mode */
+  --bg-page:   #fce9e9;
+  --surface:   #ffffff;
+  --border:    #e2e8f0;
+  --text-1:    #1a202c;
+  --text-2:    #64748b;
+  --text-3:    #a0aec0;
+
+  /* Responsive breakpoints */
+  --sidebar-w:        220px;
+  --sidebar-w-tablet: 64px;
+  --header-h:         54px;
+  --bottom-nav-h:     60px;
+}
+
+.dark {
+  --bg-page:   #1a0a0a;
+  --surface:   #1e1414;
+  --border:    #3d2020;
+  --text-1:    #f1e9e9;
+  --text-2:    #a08080;
+  --text-3:    #6b4f4f;
+}
+
+/* ── BASE ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-family: "Inter", ui-sans-serif, system-ui, sans-serif; }
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── RESPONSIVE GRID UTILITIES ─────────────────────────────────── */
+/* 4-col → 2-col on tablet → 1-col on mobile */
+.rg-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1024px) {
+  .rg-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .rg-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+
+/* 3-col → 2-col on tablet → 1-col on mobile */
+.rg-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1024px) {
+  .rg-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .rg-3 { grid-template-columns: 1fr; }
+}
+
+/* 2-col → 1-col on mobile */
+.rg-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .rg-2 { grid-template-columns: 1fr; }
+}
+
+/* Stat flex-row → 2-col grid on mobile */
+.stat-row {
+  display: flex;
+  gap: 14px;
+}
+@media (max-width: 1024px) {
+  .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+
+/* ── PAGE PADDING ──────────────────────────────────────────────── */
+.page-pad {
+  padding: 28px 28px 40px;
+}
+@media (max-width: 1024px) {
+  .page-pad { padding: 20px 18px 40px; }
+}
+@media (max-width: 640px) {
+  /* Extra bottom padding for bottom nav */
+  .page-pad { padding: 16px 12px calc(var(--bottom-nav-h) + 24px); }
+}
+
+/* ── TABLE SCROLL WRAPPER ──────────────────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── BOTTOM NAVIGATION (Mobile only) ──────────────────────────── */
+.bottom-nav {
+  display: none;
+}
+@media (max-width: 640px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-nav-h);
+    z-index: 200;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+  }
+}
+
+/* ── SIDEBAR OVERLAY (Mobile) ──────────────────────────────────── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 150;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.sidebar-backdrop.open {
+  opacity: 1;
+}
+
+/* ── VISIBILITY HELPERS ────────────────────────────────────────── */
+.show-mobile  { display: none; }
+
+@media (max-width: 640px) {
+  .hide-mobile  { display: none !important; }
+  .show-mobile  { display: flex !important; }
+}
+@media (max-width: 1024px) {
+  .hide-tablet  { display: none !important; }
+}
+
+/* ── HEADER RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .header-greeting { font-size: 13px !important; }
+}
+
+/* ── CARD LAYOUT (replaces table on mobile) ─────────────────────── */
+.mobile-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── RESPONSIVE PAGE HEADER ────────────────────────────────────── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 22px;
+}
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .page-header > button,
+  .page-header > div:last-child {
+    width: 100%;
+  }
+  .page-header > div:last-child {
+    display: flex;
+    gap: 8px;
+  }
+  .page-header > div:last-child > button {
+    flex: 1;
+  }
+}
+
+/* ── TABS SCROLLABLE ───────────────────────────────────────────── */
+.tabs-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+@media (max-width: 640px) {
+  .tabs-row {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .tabs-row::-webkit-scrollbar { display: none; }
+  .tabs-row > button { flex-shrink: 0; }
+}
+
+/* ── PROFILE TAB SIDEBAR → PILLS ──────────────────────────────── */
+.profile-tab-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  .profile-tab-sidebar {
+    width: 100%;
+  }
+}
+
+/* ── FILTER ROW ────────────────────────────────────────────────── */
+.filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+@media (max-width: 640px) {
+  .filter-row {
+    flex-direction: column;
+  }
+  .filter-row > div,
+  .filter-row > select {
+    width: 100%;
+  }
+}
+
+/* ── SMOOTH SIDEBAR TRANSITION ─────────────────────────────────── */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes slideOutLeft {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+

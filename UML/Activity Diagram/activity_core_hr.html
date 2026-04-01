@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Diagram – Core HR (Quản lý Hồ sơ Nhân sự)</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;padding:20px}
+    .wrap{overflow:auto;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12);padding:12px}
+    svg{display:block;margin:0 auto}
+  </style>
+</head>
+<body>
+<div class="wrap">
+<svg width="1100" height="1240" viewBox="0 0 1100 1240" xmlns="http://www.w3.org/2000/svg" style="background:#fff">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 L2,4z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- TITLE -->
+  <text x="550" y="26" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#222">Activity Diagram – Phân hệ Quản lý Hồ sơ Nhân sự (Core HR)</text>
+
+  <!-- OUTER BORDER -->
+  <rect x="20" y="38" width="1060" height="1150" fill="none" stroke="#aaa" stroke-width="1.5" rx="4"/>
+
+  <!-- SWIMLANE HEADERS -->
+  <!-- Lane 1: Nhân viên (20→390) -->
+  <rect x="20"  y="38" width="370" height="36" fill="#f0f0f0" stroke="#aaa" stroke-width="1.5"/>
+  <text x="205" y="62" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#333">Nhân viên</text>
+
+  <!-- Lane 2: HR Manager (390→750) -->
+  <rect x="390" y="38" width="360" height="36" fill="#f0f0f0" stroke="#aaa" stroke-width="1.5"/>
+  <text x="570" y="62" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#333">HR Manager</text>
+
+  <!-- Lane 3: Hệ thống (750→1080) -->
+  <rect x="750" y="38" width="330" height="36" fill="#f0f0f0" stroke="#aaa" stroke-width="1.5"/>
+  <text x="915" y="62" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#333">Hệ thống</text>
+
+  <!-- Lane dividers -->
+  <line x1="390" y1="38" x2="390" y2="1116" stroke="#ccc" stroke-width="1" stroke-dasharray="6,4"/>
+  <line x1="750" y1="38" x2="750" y2="1116" stroke="#ccc" stroke-width="1" stroke-dasharray="6,4"/>
+
+  <!-- ===== NHÂN VIÊN LANE ===== -->
+
+  <!-- Initial Node -->
+  <circle cx="205" cy="108" r="11" fill="#333"/>
+  <line x1="205" y1="119" x2="205" y2="148" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Đăng nhập hệ thống -->
+  <rect x="125" y="153" width="160" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="205" y="175" text-anchor="middle" font-family="Arial" font-size="11">Đăng nhập hệ thống</text>
+  <line x1="205" y1="187" x2="205" y2="218" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Fork bar -->
+  <rect x="28" y="222" width="360" height="5" rx="2" fill="#333"/>
+
+  <!-- Branch 1: Xem/Cập nhật thông tin định danh -->
+  <line x1="83"  y1="227" x2="83"  y2="252" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="28"   y="257" width="110" height="46" rx="10" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="83"   y="275" text-anchor="middle" font-family="Arial" font-size="10">Xem / Cập nhật</text>
+  <text x="83"   y="289" text-anchor="middle" font-family="Arial" font-size="10">thông tin định danh</text>
+
+  <!-- Branch 2: Xem chi tiết hợp đồng -->
+  <line x1="213" y1="227" x2="213" y2="252" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="158"  y="257" width="110" height="46" rx="10" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="213"  y="275" text-anchor="middle" font-family="Arial" font-size="10">Xem chi tiết</text>
+  <text x="213"  y="289" text-anchor="middle" font-family="Arial" font-size="10">hợp đồng LĐ</text>
+
+  <!-- Branch 3: Xem quá trình công tác -->
+  <line x1="337" y1="227" x2="337" y2="252" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="287"  y="257" width="100" height="46" rx="10" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="337"  y="275" text-anchor="middle" font-family="Arial" font-size="10">Xem quá trình</text>
+  <text x="337"  y="289" text-anchor="middle" font-family="Arial" font-size="10">công tác</text>
+
+  <!-- Join bar -->
+  <line x1="83"  y1="303" x2="83"  y2="333" stroke="#333" stroke-width="1.5"/>
+  <line x1="213" y1="303" x2="213" y2="333" stroke="#333" stroke-width="1.5"/>
+  <line x1="337" y1="303" x2="337" y2="333" stroke="#333" stroke-width="1.5"/>
+  <rect x="28"   y="333" width="360" height="5" rx="2" fill="#333"/>
+
+
+  <line x1="205" y1="338" x2="205" y2="368" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Gửi yêu cầu cập nhật thông tin (nếu có) -->
+  <rect x="88" y="373" width="234" height="36" rx="18" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="205" y="389" text-anchor="middle" font-family="Arial" font-size="11">Gửi yêu cầu cập nhật</text>
+  <text x="205" y="403" text-anchor="middle" font-family="Arial" font-size="11">thông tin (nếu có)</text>
+
+  <!-- Cross-lane arrow → HR -->
+  <line x1="322" y1="391" x2="450" y2="391" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- ===== HR MANAGER LANE ===== -->
+
+  <!-- Initial Node HR -->
+  <circle cx="570" cy="108" r="11" fill="#333"/>
+  <line x1="570" y1="119" x2="570" y2="148" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Thêm mới hồ sơ nhân viên -->
+  <rect x="458" y="153" width="224" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="570" y="175" text-anchor="middle" font-family="Arial" font-size="11">Thêm mới hồ sơ nhân viên</text>
+
+  <!-- Cross-lane arrow → Hệ thống -->
+  <line x1="682" y1="170" x2="752" y2="170" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <line x1="570" y1="187" x2="570" y2="222" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Tạo hợp đồng lao động -->
+  <rect x="458" y="227" width="224" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="570" y="249" text-anchor="middle" font-family="Arial" font-size="11">Tạo hợp đồng lao động</text>
+
+  <!-- Cross-lane → Hệ thống lưu HĐ -->
+  <line x1="682" y1="244" x2="752" y2="244" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <line x1="570" y1="261" x2="570" y2="295" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Cập nhật lịch sử thăng chức -->
+  <rect x="430" y="300" width="280" height="46" rx="20" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="570" y="318" text-anchor="middle" font-family="Arial" font-size="11">Cập nhật lịch sử thăng chức /</text>
+  <text x="570" y="334" text-anchor="middle" font-family="Arial" font-size="11">điều chuyển / khen thưởng-kỷ luật</text>
+
+  <!-- Cross-lane → Hệ thống ghi lịch sử -->
+  <line x1="710" y1="323" x2="752" y2="323" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Nhận & xử lý yêu cầu từ NV -->
+  <rect x="450" y="373" width="250" height="36" rx="18" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="575" y="389" text-anchor="middle" font-family="Arial" font-size="11">Nhận &amp; xử lý yêu cầu</text>
+  <text x="575" y="403" text-anchor="middle" font-family="Arial" font-size="11">cập nhật từ NV</text>
+
+  <!-- ===== HỆ THỐNG LANE ===== -->
+
+  <!-- Lưu hồ sơ vào CSDL -->
+  <rect x="758" y="153" width="200" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="858" y="175" text-anchor="middle" font-family="Arial" font-size="11">Lưu hồ sơ vào CSDL</text>
+
+  <!-- Confirm feedback → HR -->
+  <path d="M858,187 L858,210 L570,210 L570,222" fill="none" stroke="#333" stroke-width="1.3" stroke-dasharray="5,3" marker-end="url(#a)"/>
+  <text x="714" y="206" text-anchor="middle" font-family="Arial" font-size="9" fill="#666" font-style="italic">[Xác nhận lưu thành công]</text>
+
+  <!-- Lưu HĐ & thiết lập cảnh báo hạn -->
+  <rect x="758" y="227" width="200" height="46" rx="20" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="858" y="246" text-anchor="middle" font-family="Arial" font-size="11">Lưu hợp đồng &amp;</text>
+  <text x="858" y="261" text-anchor="middle" font-family="Arial" font-size="11">thiết lập cảnh báo hạn</text>
+
+  <!-- Confirm → HR -->
+  <path d="M858,273 L858,288 L570,288 L570,295" fill="none" stroke="#333" stroke-width="1.3" stroke-dasharray="5,3" marker-end="url(#a)"/>
+  <text x="714" y="284" text-anchor="middle" font-family="Arial" font-size="9" fill="#666" font-style="italic">[Xác nhận tạo HĐ]</text>
+
+  <!-- Ghi nhận lịch sử vào CSDL -->
+  <rect x="758" y="305" width="200" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="858" y="322" text-anchor="middle" font-family="Arial" font-size="11">Ghi nhận lịch sử</text>
+  <text x="858" y="336" text-anchor="middle" font-family="Arial" font-size="10">vào CSDL</text>
+
+  <!-- ===== SEPARATOR: LUỒNG TỰ ĐỘNG ===== -->
+  <line x1="30" y1="432" x2="1070" y2="432" stroke="#bbb" stroke-width="1" stroke-dasharray="10,5"/>
+  <text x="550" y="452" text-anchor="middle" font-family="Arial" font-size="10.5" fill="#999" font-style="italic">Luồng tự động – Cảnh báo hợp đồng sắp hết hạn</text>
+
+  <!-- ===== HỆ THỐNG: AUTO CẢNH BÁO ===== -->
+
+  <!-- Initial auto node -->
+  <circle cx="915" cy="490" r="11" fill="#333"/>
+  <line x1="915" y1="501" x2="915" y2="530" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Time Event: Kiểm tra định kỳ -->
+  <rect x="758" y="535" width="314" height="36" rx="18" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <!-- Hourglass icon -->
+  <polygon points="768,542 782,542 782,547 775,554 782,561 782,566 768,566 768,561 775,554 768,547" fill="#333"/>
+  <text x="930" y="558" text-anchor="middle" font-family="Arial" font-size="11">Kiểm tra định kỳ hàng ngày</text>
+
+  <line x1="915" y1="571" x2="915" y2="606" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Decision: HĐ còn < 30 ngày? -->
+  <polygon points="915,610 985,650 915,690 845,650" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="915" y="647" text-anchor="middle" font-family="Arial" font-size="10">HĐ còn</text>
+  <text x="915" y="659" text-anchor="middle" font-family="Arial" font-size="10">&lt; 30 ngày?</text>
+
+  <!-- No → End -->
+  <line x1="985" y1="650" x2="1040" y2="650" stroke="#333" stroke-width="1.5"/>
+  <text x="1012" y="642" font-family="Arial" font-size="10" fill="#333" font-weight="bold">[No]</text>
+  <line x1="1040" y1="650" x2="1040" y2="694" stroke="#333" stroke-width="1.5"/>
+  <text x="1040" y="682" text-anchor="middle" font-family="Arial" font-size="9" fill="#888" font-style="italic">Không làm gì</text>
+  <circle cx="1040" cy="706" r="9" fill="#fff" stroke="#333" stroke-width="2"/>
+  <circle cx="1040" cy="706" r="4.5" fill="#333"/>
+
+
+  <!-- Yes -->
+  <line x1="915" y1="690" x2="915" y2="722" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="930" y="710" font-family="Arial" font-size="10" fill="#333" font-weight="bold">[Yes]</text>
+
+  <!-- Gửi cảnh báo tới HR -->
+  <rect x="758" y="727" width="314" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="915" y="749" text-anchor="middle" font-family="Arial" font-size="11">Gửi cảnh báo tới HR</text>
+
+  <!-- Arrow → HR nhận cảnh báo -->
+  <line x1="758" y1="744" x2="700" y2="744" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- HR: Nhận cảnh báo HĐ sắp hết hạn -->
+  <rect x="430" y="727" width="268" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="564" y="749" text-anchor="middle" font-family="Arial" font-size="11">Nhận cảnh báo HĐ sắp hết hạn</text>
+
+  <line x1="564" y1="761" x2="564" y2="800" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Decision: Gia hạn HĐ? -->
+  <polygon points="564,804 634,844 564,884 494,844" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="564" y="841" text-anchor="middle" font-family="Arial" font-size="10">Gia hạn</text>
+  <text x="564" y="853" text-anchor="middle" font-family="Arial" font-size="10">HĐ?</text>
+
+  <!-- Yes: Tạo HĐ mới -->
+  <line x1="564" y1="884" x2="564" y2="918" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="580" y="904" font-family="Arial" font-size="10" fill="#333" font-weight="bold">[Yes]</text>
+
+  <rect x="518" y="923" width="200" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="618" y="945" text-anchor="middle" font-family="Arial" font-size="11">Tạo HĐ mới / Gia hạn</text>
+
+  <!-- Arrow → Hệ thống cập nhật HĐ -->
+  <line x1="718" y1="940" x2="752" y2="940" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Hệ thống: Cập nhật HĐ -->
+  <rect x="758" y="923" width="200" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="858" y="945" text-anchor="middle" font-family="Arial" font-size="11">Cập nhật HĐ trong CSDL</text>
+
+  <!-- No: Chấm dứt -->
+  <line x1="494" y1="844" x2="448" y2="844" stroke="#333" stroke-width="1.5"/>
+  <text x="465" y="836" font-family="Arial" font-size="10" fill="#333" font-weight="bold">[No]</text>
+  <line x1="448" y1="844" x2="448" y2="923" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="393" y="928" width="110" height="40" rx="20" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="448" y="944" text-anchor="middle" font-family="Arial" font-size="10">Ghi nhận</text>
+  <text x="448" y="958" text-anchor="middle" font-family="Arial" font-size="10">chấm dứt HĐ</text>
+
+  <!-- Merge: Yes & No → thông báo NV -->
+  <line x1="448" y1="968" x2="448" y2="1010" stroke="#333" stroke-width="1.5"/>
+  <line x1="618" y1="957" x2="618" y2="1010" stroke="#333" stroke-width="1.5"/>
+  <!-- merge diamond -->
+  <polygon points="533,1010 564,1035 533,1060 502,1035" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <line x1="448" y1="1010" x2="502" y2="1035" stroke="#333" stroke-width="1.5"/>
+  <line x1="618" y1="1010" x2="564" y2="1035" stroke="#333" stroke-width="1.5"/>
+
+  <line x1="533" y1="1060" x2="533" y2="1104" stroke="#333" stroke-width="1.5"/>
+  <line x1="533" y1="1104" x2="322" y2="1104" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+
+
+  <!-- NV: Nhận thông báo kết quả HĐ -->
+  <rect x="88" y="1087" width="234" height="34" rx="17" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="205" y="1104" text-anchor="middle" font-family="Arial" font-size="11">Nhận thông báo kết quả HĐ</text>
+
+  <!-- Final Node NV -->
+  <line x1="205" y1="1121" x2="205" y2="1148" stroke="#333" stroke-width="1.5"/>
+  <circle cx="205" cy="1157" r="9" fill="#fff" stroke="#333" stroke-width="2"/>
+  <circle cx="205" cy="1157" r="4.5" fill="#333"/>
+
+  <!-- ===== LEGEND ===== -->
+  <rect x="20" y="1195" width="1060" height="34" fill="#f5f5f5" stroke="#ddd" stroke-width="1" rx="4"/>
+  <circle cx="46"  cy="1212" r="5" fill="#333"/>
+  <text x="58"  y="1216" font-family="Arial" font-size="9.5" fill="#333">Initial Node</text>
+  <circle cx="128" cy="1212" r="6" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <circle cx="128" cy="1212" r="3" fill="#333"/>
+  <text x="140" y="1216" font-family="Arial" font-size="9.5" fill="#333">Final Node</text>
+  <rect x="210" y="1204" width="44" height="16" rx="8" fill="#fff" stroke="#333" stroke-width="1"/>
+  <text x="265" y="1216" font-family="Arial" font-size="9.5" fill="#333">Activity</text>
+  <polygon points="322,1204 336,1212 322,1220 308,1212" fill="#fff" stroke="#333" stroke-width="1"/>
+  <text x="345" y="1216" font-family="Arial" font-size="9.5" fill="#333">Decision / Merge</text>
+  <rect x="448" y="1209" width="35" height="5" rx="2" fill="#333"/>
+  <text x="490" y="1216" font-family="Arial" font-size="9.5" fill="#333">Fork / Join</text>
+  <line x1="556" y1="1212" x2="582" y2="1212" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="590" y="1216" font-family="Arial" font-size="9.5" fill="#333">Control Flow</text>
+  <!-- hourglass mini -->
+  <polygon points="668,1205 677,1205 677,1209 672,1213 677,1217 677,1221 668,1221 668,1217 672,1213 668,1209" fill="#333"/>
+  <text x="683" y="1216" font-family="Arial" font-size="9.5" fill="#333">Time Event</text>
+  <rect x="754" y="1205" width="12" height="12" rx="2" fill="#f0f0f0" stroke="#aaa"/>
+  <text x="770" y="1216" font-family="Arial" font-size="9.5" fill="#333">NV</text>
+  <rect x="800" y="1205" width="12" height="12" rx="2" fill="#f0f0f0" stroke="#aaa"/>
+  <text x="816" y="1216" font-family="Arial" font-size="9.5" fill="#333">HR</text>
+  <rect x="848" y="1205" width="12" height="12" rx="2" fill="#f0f0f0" stroke="#aaa"/>
+  <text x="864" y="1216" font-family="Arial" font-size="9.5" fill="#333">Hệ thống</text>
+</svg>
+</div>
+</body>
+</html>

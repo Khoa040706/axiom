@@ -62,12 +62,3 @@ Hệ thống được chia thành **4 phân hệ nghiệp vụ cốt lõi** có 
 
 ---
 
-## 4. Thông tin dự án
-
-| Mục | Chi tiết |
-|-----|---------|
-| **Tech Stack** | C# .NET 6+ · WinForms · SQL Server LocalDB |
-| **Kiến trúc** | 3 lớp (DAL / BLL / UI) |
-| **Vai trò** | Admin · HR Manager · Nhân viên |
-| **Nhóm** | 52400017 · 52400133 · 52400004 |
-| **Môn học** | Đồ án Công nghệ Phần mềm |
