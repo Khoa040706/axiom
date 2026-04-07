@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { Filter, Download, Calendar, Search, X, Loader2 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getAttendanceByMonth, getTodayAttendance } from "@/lib/actions/attendance.actions"
+import { matchAny } from "@/lib/utils/search"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 const MONTHS_VI = ["Tháng 1/2026","Tháng 2/2026","Tháng 3/2026"]
@@ -73,7 +74,7 @@ export default function AttendancePage() {
   useEffect(() => { load() }, [load])
 
   const rows = staff.filter(s => {
-    const matchQ    = s.name.toLowerCase().includes(q.toLowerCase()) || s.id.toLowerCase().includes(q.toLowerCase())
+    const matchQ    = matchAny([s.name, s.id, s.dept], q)
     const matchMuon = muonF === "all" || (muonF === "yes" ? s.muon > 0 : s.muon === 0)
     const matchOt   = otF   === "all" || (otF   === "yes" ? s.ot   > 0 : s.ot   === 0)
     return matchQ && matchMuon && matchOt

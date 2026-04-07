@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Search, Plus, Edit, Trash2, Users, Building2, Loader2, X, Save } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getDepartments } from "@/lib/actions/department.actions"
-import { prisma } from "@/lib/prisma"
+import { matchAny } from "@/lib/utils/search"
 
 // ── Types ──────────────────────────────────────────────────────
 type Dept = {
@@ -43,9 +43,7 @@ export default function DepartmentsPage() {
 
   useEffect(() => { load() }, [load])
 
-  const filtered = depts.filter(d =>
-    !search || d.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = depts.filter(d => matchAny([d.name, d.description], search))
 
   // ── Styles ────────────────────────────────────────────────
   const hd: React.CSSProperties = {

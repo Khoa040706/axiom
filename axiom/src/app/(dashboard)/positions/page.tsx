@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { Search, Plus, Edit, Trash2, Shield } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { matchAny } from "@/lib/utils/search"
 
 const POSITIONS_DATA = [
   { id:1, code:"GD",   name:"Giám đốc",           dept:"Ban Giám đốc",  level:"C-Level",   headcount:1, salaryRange:"50–80 triệu" },
@@ -21,7 +22,7 @@ export default function PositionsPage(){
   const vi = lang === "vi"
   const [search, setSearch] = useState("")
 
-  const filtered = POSITIONS_DATA.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.dept.toLowerCase().includes(search.toLowerCase()))
+  const filtered = POSITIONS_DATA.filter(p => matchAny([p.name, p.dept, p.code, p.level], search))
   const hd: React.CSSProperties = { padding:"10px 12px", fontSize:11.5, fontWeight:700, color:th.tableHeadText, background:th.tableHead, borderBottom:`1px solid ${th.tableBorder}`, textAlign:"left" }
   const td: React.CSSProperties = { padding:"11px 12px", fontSize:12.5, color:th.text1, borderBottom:`1px solid ${th.tableBorder}` }
   const levelColor = (l:string) => l==="C-Level" ? { bg:"#FEF2F2", c:"#D0211C" } : l==="Manager" ? { bg:"#EFF6FF", c:"#1D4ED8" } : { bg:"#F3F4F6", c:"#374151" }

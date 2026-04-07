@@ -9,6 +9,7 @@ import {
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from "@/lib/actions/employee.actions"
 import { getDepartments, getPositions } from "@/lib/actions/department.actions"
+import { matchAny } from "@/lib/utils/search"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 // ── UI types ──────────────────────────────────────────────────
@@ -388,18 +389,7 @@ export default function EmployeesPage() {
   // ── Filter + sort ─────────────────────────────────────────
   const rows = useMemo(() => {
     let result = emps.filter(e => {
-      if (q) {
-        const qL = q.toLowerCase()
-        const hit =
-          e.id.toLowerCase().includes(qL) ||
-          e.name.toLowerCase().includes(qL) ||
-          e.dept.toLowerCase().includes(qL) ||
-          e.pos.toLowerCase().includes(qL) ||
-          e.type.toLowerCase().includes(qL) ||
-          e.date.includes(qL) ||
-          e.email.toLowerCase().includes(qL)
-        if (!hit) return false
-      }
+      if (q && !matchAny([e.id, e.name, e.dept, e.pos, e.type, e.date, e.email], q)) return false
       if (deptFilter   && e.deptId !== Number(deptFilter))   return false
       if (posFilter    && e.posId  !== Number(posFilter))    return false
       if (typeFilter   && e.type   !== typeFilter)            return false
@@ -659,7 +649,7 @@ export default function EmployeesPage() {
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6px 12px", marginBottom:12, fontSize:12.5 }}>
                 <div><span style={{ color:th.text2 }}>{vi?"Phòng ban":"Dept"}: </span><b style={{ color:th.text1 }}>{e.dept||"—"}</b></div>
                 <div><span style={{ color:th.text2 }}>{vi?"Chức vụ":"Position"}: </span><b style={{ color:th.text1 }}>{e.pos||"—"}</b></div>
-                <div><span style={{ color:th.text2 }}>{vi?"Hợp đồng":"Contract"}: </span><b style={{ color:th.text1 }}>{e.type}</b></div>
+                <div><span style={{ color:th.text2 }}>{vi?"Hợp đồng":"Contract"}: </span><b style={{ color:th.text1 }}>{vi?e.type:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"} as Record<string,string>)[e.type]??e.type}</b></div>
                 <div><span style={{ color:th.text2 }}>{vi?"Ngày vào":"Join"}: </span><b style={{ color:th.text1 }}>{e.date}</b></div>
               </div>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -732,11 +722,17 @@ export default function EmployeesPage() {
                   <td style={td}>{e.dept||"—"}</td>
                   <td style={td}>{e.pos||"—"}</td>
                   <td style={td}>
-                    <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:6, fontSize:12, fontWeight:600,
-                      background: e.type==="Chính thức"?"rgba(59,130,246,0.1)":e.type==="Thử việc"?"rgba(245,158,11,0.1)":"rgba(107,114,128,0.1)",
-                      color:       e.type==="Chính thức"?"#1D4ED8"           :e.type==="Thử việc"?"#92400E"              :th.text2 }}>
-                      {e.type}
-                    </span>
+                    {(() => {
+                      const typeMap: Record<string,string> = {"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"}
+                      const label = vi ? e.type : (typeMap[e.type] ?? e.type)
+                      return (
+                        <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:6, fontSize:12, fontWeight:600,
+                          background: e.type==="Chính thức"?"rgba(59,130,246,0.1)":e.type==="Thử việc"?"rgba(245,158,11,0.1)":"rgba(107,114,128,0.1)",
+                          color:       e.type==="Chính thức"?"#1D4ED8"           :e.type==="Thử việc"?"#92400E"              :th.text2 }}>
+                          {label}
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td style={td}>
                     <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600,

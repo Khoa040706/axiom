@@ -126,14 +126,16 @@ model CareerHistory {
 // ── 6. TÀI KHOẢN & PHÂN QUYỀN (RBAC) ───────────────────────────
 
 model User {
-  id           Int       @id @default(autoincrement()) @map("user_id")
-  username     String    @unique @db.VarChar(50)
-  passwordHash String    @map("password_hash") @db.VarChar(255)
-  employeeId   Int?      @unique @map("employee_id")
-  role         String    @default("Employee") @db.VarChar(20)
-  isActive     Boolean   @default(true) @map("is_active")
-  lastLogin    DateTime? @map("last_login")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id            Int       @id @default(autoincrement()) @map("user_id")
+  username      String    @unique @db.VarChar(50)
+  passwordHash  String    @map("password_hash") @db.VarChar(255)
+  employeeId    Int?      @unique @map("employee_id")
+  role          String    @default("Employee") @db.VarChar(20)
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLogin     DateTime? @map("last_login")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  /// Gmail cá nhân — dùng để nhận mật khẩu khi quên, bắt buộc thiết lập khi đăng nhập lần đầu
+  personalEmail String?   @map("personal_email") @db.VarChar(100)
 
   employee          Employee?      @relation(fields: [employeeId], references: [id])
   approvedLeaves    LeaveRequest[] @relation("ApprovedLeaves")

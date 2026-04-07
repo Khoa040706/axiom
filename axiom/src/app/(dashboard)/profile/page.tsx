@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { useCurrentUser, useEmployeeId, useUserId } from "@/hooks/use-current-user"
 import { changePasswordInDB, updateProfileInDB, getEmployeeAvatar } from "@/lib/actions/user-admin.actions"
@@ -11,15 +10,307 @@ import { AvatarImg } from "@/components/ui/avatar-img"
 import {
   User, Lock, Camera, Save, Eye, EyeOff, CheckCircle, XCircle,
   Phone, Mail, Building2, Briefcase, Shield, ChevronRight, ArrowLeft,
+  ZoomIn, ZoomOut, Move, RotateCcw, Crop,
 } from "lucide-react"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 type Tab = "info" | "password" | "avatar"
 
+// ─────────────────────────────────────────────────────────────
+// Avatar Crop Modal — drag to pan, scroll/buttons to zoom
+// ─────────────────────────────────────────────────────────────
+function AvatarCropModal({
+  imageSrc, onSave, onCancel, dark, vi,
+}: {
+  imageSrc: string
+  onSave: (croppedBase64: string) => void
+  onCancel: () => void
+  dark: boolean
+  vi: boolean
+}) {
+  const th = getTheme(dark)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Pan & zoom state
+  const [scale, setScale] = useState(1)
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
+  const dragStart = useRef({ x: 0, y: 0 })
+  const imgRef = useRef<HTMLImageElement | null>(null)
+  const [imgLoaded, setImgLoaded] = useState(false)
+
+  const CROP_SIZE = 260 // visual cropbox size
+  const OUTPUT_SIZE = 400 // output resolution
+
+  // Load image
+  useEffect(() => {
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      imgRef.current = img
+      setImgLoaded(true)
+      // Auto fit: scale so smaller dimension fills the crop box
+      const fitScale = CROP_SIZE / Math.min(img.width, img.height)
+      setScale(Math.max(fitScale, 0.1))
+      setOffset({ x: 0, y: 0 })
+    }
+    img.src = imageSrc
+  }, [imageSrc])
+
+  // Draw on canvas
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const img = imgRef.current
+    if (!canvas || !img || !imgLoaded) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    canvas.width = CROP_SIZE
+    canvas.height = CROP_SIZE
+
+    ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE)
+
+    // Clip to circle
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2)
+    ctx.clip()
+
+    const w = img.width * scale
+    const h = img.height * scale
+    const x = (CROP_SIZE - w) / 2 + offset.x
+    const y = (CROP_SIZE - h) / 2 + offset.y
+
+    ctx.drawImage(img, x, y, w, h)
+    ctx.restore()
+
+    // Draw circle border
+    ctx.beginPath()
+    ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2 - 1.5, 0, Math.PI * 2)
+    ctx.strokeStyle = "rgba(208,33,28,0.6)"
+    ctx.lineWidth = 3
+    ctx.stroke()
+  }, [scale, offset, imgLoaded])
+
+  // Mouse/touch drag
+  const onPointerDown = (e: React.PointerEvent) => {
+    setDragging(true)
+    dragStart.current = { x: e.clientX - offset.x, y: e.clientY - offset.y }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragging) return
+    setOffset({
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
+    })
+  }
+  const onPointerUp = () => setDragging(false)
+
+  // Scroll to zoom
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    setScale(s => Math.max(0.1, Math.min(5, s - e.deltaY * 0.001)))
+  }
+
+  // Save cropped result
+  const handleSave = () => {
+    const img = imgRef.current
+    if (!img) return
+    const out = document.createElement("canvas")
+    out.width = OUTPUT_SIZE
+    out.height = OUTPUT_SIZE
+    const ctx = out.getContext("2d")
+    if (!ctx) return
+
+    // Draw circular clip at output resolution
+    ctx.beginPath()
+    ctx.arc(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, 0, Math.PI * 2)
+    ctx.clip()
+
+    const ratio = OUTPUT_SIZE / CROP_SIZE
+    const w = img.width * scale * ratio
+    const h = img.height * scale * ratio
+    const x = (OUTPUT_SIZE - w) / 2 + offset.x * ratio
+    const y = (OUTPUT_SIZE - h) / 2 + offset.y * ratio
+
+    ctx.drawImage(img, x, y, w, h)
+
+    onSave(out.toDataURL("image/png"))
+  }
+
+  const btnSmall: React.CSSProperties = {
+    width: 38, height: 38, borderRadius: 10, border: `1.5px solid ${th.cardBorder}`,
+    background: th.cardBg, cursor: "pointer", display: "flex", alignItems: "center",
+    justifyContent: "center", color: th.text1, transition: "all .15s",
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div onClick={onCancel} style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(6px)", zIndex: 9998,
+      }} />
+      {/* Modal */}
+      <div style={{
+        position: "fixed", inset: 0, display: "flex", alignItems: "center",
+        justifyContent: "center", padding: 16, zIndex: 9999,
+      }}>
+        <div onClick={e => e.stopPropagation()} style={{
+          background: th.cardBg, border: `1px solid ${th.cardBorder}`,
+          borderRadius: 22, width: "min(440px, 95vw)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.4)", overflow: "hidden",
+          animation: "fadeDown .25s ease",
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: "18px 22px", borderBottom: `1px solid ${th.tableBorder}`,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "linear-gradient(135deg,#D0211C,#991414)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Crop size={17} color="#fff" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: th.text1 }}>
+                  {vi ? "Cắt ảnh đại diện" : "Crop Avatar"}
+                </div>
+                <div style={{ fontSize: 11.5, color: th.text2 }}>
+                  {vi ? "Kéo để di chuyển · Cuộn để phóng" : "Drag to pan · Scroll to zoom"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Canvas area */}
+          <div style={{
+            padding: "24px 0", display: "flex", flexDirection: "column",
+            alignItems: "center", gap: 16,
+            background: dark ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.04)",
+          }}>
+            {/* Checkerboard + canvas */}
+            <div style={{
+              position: "relative", width: CROP_SIZE, height: CROP_SIZE,
+              borderRadius: "50%", overflow: "hidden",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+              cursor: dragging ? "grabbing" : "grab",
+              backgroundImage: `repeating-conic-gradient(${dark?"#333":"#ddd"} 0% 25%, ${dark?"#222":"#eee"} 0% 50%)`,
+              backgroundSize: "20px 20px",
+            }}>
+              <canvas
+                ref={canvasRef}
+                width={CROP_SIZE}
+                height={CROP_SIZE}
+                style={{ display: "block", width: CROP_SIZE, height: CROP_SIZE }}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onWheel={onWheel}
+              />
+            </div>
+
+            {/* Zoom controls */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                onClick={() => setScale(s => Math.max(0.1, s - 0.15))}
+                style={btnSmall}
+                title={vi ? "Thu nhỏ" : "Zoom out"}
+              >
+                <ZoomOut size={16} />
+              </button>
+              <div style={{
+                width: 140, height: 6, borderRadius: 3,
+                background: th.tableBorder, position: "relative",
+              }}>
+                <div style={{
+                  position: "absolute",
+                  left: `${Math.min(100, Math.max(0, ((scale - 0.1) / 4.9) * 100))}%`,
+                  top: "50%", transform: "translate(-50%, -50%)",
+                  width: 16, height: 16, borderRadius: "50%",
+                  background: "linear-gradient(135deg,#D0211C,#991414)",
+                  boxShadow: "0 2px 6px rgba(208,33,28,0.3)",
+                  cursor: "pointer",
+                }} />
+                <div style={{
+                  position: "absolute", left: 0, top: 0, height: "100%",
+                  width: `${Math.min(100, Math.max(0, ((scale - 0.1) / 4.9) * 100))}%`,
+                  background: "#D0211C", borderRadius: 3,
+                }} />
+              </div>
+              <button
+                onClick={() => setScale(s => Math.min(5, s + 0.15))}
+                style={btnSmall}
+                title={vi ? "Phóng to" : "Zoom in"}
+              >
+                <ZoomIn size={16} />
+              </button>
+              <button
+                onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }) }}
+                style={btnSmall}
+                title={vi ? "Đặt lại" : "Reset"}
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
+
+            {/* Hint */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              fontSize: 11.5, color: th.text2,
+            }}>
+              <Move size={12} />
+              {vi ? "Kéo ảnh để điều chỉnh vị trí" : "Drag image to adjust position"}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{
+            padding: "16px 22px", borderTop: `1px solid ${th.tableBorder}`,
+            display: "flex", justifyContent: "flex-end", gap: 10,
+          }}>
+            <button onClick={onCancel} style={{
+              padding: "10px 20px", borderRadius: 10,
+              border: `1.5px solid ${th.cardBorder}`, background: "none",
+              cursor: "pointer", fontSize: 14, fontWeight: 600,
+              color: th.text2, fontFamily: "inherit",
+            }}>
+              {vi ? "Huỷ" : "Cancel"}
+            </button>
+            <button onClick={handleSave} style={{
+              padding: "10px 24px", borderRadius: 10, border: "none",
+              background: "linear-gradient(135deg,#D0211C,#991414)",
+              color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 700,
+              fontFamily: "inherit", boxShadow: "0 4px 14px rgba(208,33,28,0.3)",
+              display: "flex", alignItems: "center", gap: 8,
+              transition: "transform .15s",
+            }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-1px)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "none")}
+            >
+              <Crop size={15} />
+              {vi ? "Xác nhận cắt" : "Apply Crop"}
+            </button>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    </>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN: Profile Page
+// ─────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter()
   const { dark, lang } = useDashboard()
   const th = getTheme(dark)
+  const vi = lang === "vi"
   const { isMobile } = useBreakpoint()
 
   const sessionUser = useCurrentUser()
@@ -43,17 +334,25 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [avatarSaving, setAvatarSaving]   = useState(false)
   const [avatarChanged, setAvatarChanged] = useState(false)
+  // Crop modal
+  const [rawImage, setRawImage]     = useState<string | null>(null)
+  const [showCrop, setShowCrop]     = useState(false)
 
   useEffect(() => {
     if (!sessionUser) return
     setInfoForm({ name: sessionUser.name, email: sessionUser.email ?? "", phone: (sessionUser as any).phone ?? "" })
-    // Load avatar từ DB theo employeeId
     if (employeeId) {
       getEmployeeAvatar(employeeId).then(res => {
         if (res.avatarPath) setAvatarPreview(res.avatarPath)
+        if (res.email || res.phone) {
+          setInfoForm(f => ({
+            ...f,
+            email: res.email ?? f.email,
+            phone: res.phone ?? f.phone,
+          }))
+        }
       })
     }
-  // Dùng primitive values thay vì object reference để tránh infinite loop
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionUser?.name, sessionUser?.email, (sessionUser as any)?.phone, employeeId])
 
@@ -64,17 +363,15 @@ export default function ProfilePage() {
 
   // ── Save info ─────────────────────────────────────────────
   const handleSaveInfo = async () => {
-    if (!employeeId) { showToast("error", lang === "vi" ? "Không xác định được nhân viên" : "Cannot identify employee"); return }
-    if (!infoForm.name.trim()) { showToast("error", lang === "vi" ? "Họ tên không được để trống" : "Name is required"); return }
-    if (!infoForm.email.trim()) { showToast("error", lang === "vi" ? "Email không được để trống" : "Email is required"); return }
+    if (!employeeId) { showToast("error", vi ? "Không xác định được nhân viên" : "Cannot identify employee"); return }
+    if (!infoForm.email.trim()) { showToast("error", vi ? "Email không được để trống" : "Email is required"); return }
     setInfoSaving(true)
     const res = await updateProfileInDB(employeeId, {
-      fullName: infoForm.name.trim(),
       email: infoForm.email.trim(),
       phone: infoForm.phone.trim(),
     })
     if (res.success) {
-      showToast("success", lang === "vi" ? "Cập nhật thông tin thành công!" : "Profile updated!")
+      showToast("success", vi ? "Cập nhật thông tin thành công!" : "Profile updated!")
     } else {
       showToast("error", res.error ?? "Lỗi")
     }
@@ -83,8 +380,8 @@ export default function ProfilePage() {
 
   // ── Save password ─────────────────────────────────────────
   const handleSavePw = async () => {
-    if (!userId) { showToast("error", lang === "vi" ? "Không xác định được tài khoản" : "Cannot identify account"); return }
-    if (!pwForm.old) { showToast("error", lang === "vi" ? "Nhập mật khẩu cũ" : "Enter old password"); return }
+    if (!userId) { showToast("error", vi ? "Không xác định được tài khoản" : "Cannot identify account"); return }
+    if (!pwForm.old) { showToast("error", vi ? "Nhập mật khẩu cũ" : "Enter old password"); return }
     const REQS = [
       (v: string) => v.length >= 8,
       (v: string) => /[A-Z]/.test(v),
@@ -92,45 +389,65 @@ export default function ProfilePage() {
       (v: string) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(v),
     ]
     if (!REQS.every(r => r(pwForm.newP))) {
-      showToast("error", lang === "vi" ? "Mật khẩu chưa đáp ứng đủ 4 yêu cầu bảo mật" : "Password doesn't meet all 4 security requirements")
+      showToast("error", vi ? "Mật khẩu chưa đáp ứng đủ 4 yêu cầu bảo mật" : "Password doesn't meet all 4 security requirements")
       return
     }
-    if (pwForm.newP !== pwForm.confirm) { showToast("error", lang === "vi" ? "Xác nhận mật khẩu không khớp" : "Passwords don't match"); return }
+    if (pwForm.newP !== pwForm.confirm) { showToast("error", vi ? "Xác nhận mật khẩu không khớp" : "Passwords don't match"); return }
     setPwSaving(true)
     const result = await changePasswordInDB(userId, pwForm.old, pwForm.newP)
     if (result.success) {
       setPwForm({ old: "", newP: "", confirm: "" })
-      showToast("success", lang === "vi" ? "Đổi mật khẩu thành công!" : "Password changed!")
+      showToast("success", vi ? "Đổi mật khẩu thành công!" : "Password changed!")
     } else {
       showToast("error", result.error ?? "Lỗi")
     }
     setPwSaving(false)
   }
 
-  // ── Avatar upload ─────────────────────────────────────────
+  // ── Avatar: pick file → open crop modal ───────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { showToast("error", lang === "vi" ? "Ảnh tối đa 5MB" : "Max 5MB"); return }
+    if (file.size > 5 * 1024 * 1024) { showToast("error", vi ? "Ảnh tối đa 5MB" : "Max 5MB"); return }
     const reader = new FileReader()
     reader.onload = ev => {
-      setAvatarPreview(ev.target?.result as string)
-      setAvatarChanged(true)
+      setRawImage(ev.target?.result as string)
+      setShowCrop(true)
     }
     reader.readAsDataURL(file)
+    // Reset input so same file can be re-selected
+    e.target.value = ""
   }
 
+  // ── After crop: set preview ────────────────────────────────
+  const handleCropDone = (croppedBase64: string) => {
+    setAvatarPreview(croppedBase64)
+    setAvatarChanged(true)
+    setShowCrop(false)
+    setRawImage(null)
+  }
+
+  // ── Save avatar via API route ──────────────────────────────
   const handleSaveAvatar = async () => {
     if (!employeeId || !avatarPreview || !avatarChanged) return
     setAvatarSaving(true)
-    // Lưu base64 vào DB
-    const res = await updateProfileInDB(employeeId, { avatarPath: avatarPreview })
-    if (res.success) {
-      showToast("success", lang === "vi" ? "Cập nhật ảnh đại diện thành công!" : "Avatar updated!")
-      setAvatarChanged(false)  // reset flag, giữ nguyên preview để hiển thị ảnh mới
-      window.dispatchEvent(new Event("axiom-user-updated"))  // cập nhật sidebar + header
-    } else {
-      showToast("error", res.error ?? "Lỗi lưu ảnh")
+    try {
+      const res = await fetch("/api/upload-avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId, imageData: avatarPreview }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setAvatarPreview(json.avatarPath)
+        showToast("success", vi ? "Cập nhật ảnh đại diện thành công!" : "Avatar updated!")
+        setAvatarChanged(false)
+        window.dispatchEvent(new Event("axiom-user-updated"))
+      } else {
+        showToast("error", json.error ?? "Lỗi lưu ảnh")
+      }
+    } catch {
+      showToast("error", vi ? "Lỗi kết nối server" : "Server error")
     }
     setAvatarSaving(false)
   }
@@ -168,10 +485,10 @@ export default function ProfilePage() {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, color: th.text2, fontSize: 13 }}>
         <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: th.text2, fontFamily: "inherit", fontSize: 13, padding: 0 }}>
           <ArrowLeft size={14} />
-          {lang === "vi" ? "Quay lại" : "Back"}
+          {vi ? "Quay lại" : "Back"}
         </button>
         <ChevronRight size={14} />
-        <span style={{ color: th.text1, fontWeight: 600 }}>{lang === "vi" ? "Hồ sơ cá nhân" : "My Profile"}</span>
+        <span style={{ color: th.text1, fontWeight: 600 }}>{vi ? "Hồ sơ cá nhân" : "My Profile"}</span>
       </div>
 
       {/* ── Header card ── */}
@@ -183,18 +500,13 @@ export default function ProfilePage() {
         gap: isMobile ? 16 : 24, position: "relative", overflow: "hidden",
         boxShadow: "0 8px 32px rgba(208,33,28,0.3)",
       }}>
-        {/* Decorative circles */}
         <div style={{ position: "absolute", right: -40, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
         <div style={{ position: "absolute", right: 60, bottom: -60, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
 
         {/* Avatar */}
         <div style={{ position: "relative", flexShrink: 0, zIndex: 1 }}>
           <div style={{ width: 88, height: 88, borderRadius: "50%", overflow: "hidden", border: "3px solid rgba(255,255,255,0.4)", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
-            <AvatarImg
-              src={avatarPreview}
-              alt={user.name}
-              size={88}
-            />
+            <AvatarImg src={avatarPreview} alt={user.name} size={88} />
           </div>
           <button
             onClick={() => setTab("avatar")}
@@ -214,7 +526,7 @@ export default function ProfilePage() {
         <div style={{ zIndex: 1 }}>
           <div style={{ color: "#fff", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{user.name}</div>
           <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, marginBottom: 8 }}>
-            {lang === "vi" ? user.roleLabel : user.roleLabelEn} · {user.department}
+            {vi ? user.roleLabel : user.roleLabelEn} · {user.department}
           </div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.65)", fontSize: 13 }}>
@@ -237,7 +549,7 @@ export default function ProfilePage() {
           }}>
             <Shield size={16} color="rgba(255,255,255,0.9)" />
             <span style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>
-              {lang === "vi" ? user.roleLabel : user.roleLabelEn}
+              {vi ? user.roleLabel : user.roleLabelEn}
             </span>
           </div>
         </div>
@@ -246,7 +558,7 @@ export default function ProfilePage() {
       {/* ── Main grid: Tabs + Content ── */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr", gap: 20 }}>
 
-        {/* Tab sidebar — vertical on desktop, horizontal pills on mobile */}
+        {/* Tab sidebar */}
         <div style={{
           background: th.cardBg, border: `1px solid ${th.cardBorder}`,
           borderRadius: 16, padding: isMobile ? "8px 12px" : "12px",
@@ -280,7 +592,7 @@ export default function ProfilePage() {
               }}
             >
               {t.icon}
-              {lang === "vi" ? t.label : t.labelEn}
+              {vi ? t.label : t.labelEn}
             </button>
           ))}
         </div>
@@ -297,38 +609,23 @@ export default function ProfilePage() {
             <div>
               <h2 style={{ margin: "0 0 24px", fontSize: 18, fontWeight: 800, color: th.text1, display: "flex", alignItems: "center", gap: 10 }}>
                 <User size={20} color="#D0211C" />
-                {lang === "vi" ? "Thông tin cá nhân" : "Personal Information"}
+                {vi ? "Thông tin cá nhân" : "Personal Information"}
               </h2>
 
               <div style={{ display: "grid", gap: 18 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
-                    <label style={labelStyle}>
-                      {lang === "vi" ? "Họ và tên" : "Full Name"} <span style={{ color: "#EF4444" }}>*</span>
-                    </label>
-                    <input
-                      style={inputStyle}
-                      value={infoForm.name}
-                      onChange={e => setInfoForm(f => ({ ...f, name: e.target.value }))}
-                      placeholder={lang === "vi" ? "Nguyễn Văn A" : "Full name"}
-                      onFocus={e => (e.target.style.borderColor = "#D0211C")}
-                      onBlur={e => (e.target.style.borderColor = th.inputBorder)}
-                    />
+                    <label style={labelStyle}>{vi ? "Họ và tên" : "Full Name"}</label>
+                    <input style={{ ...inputStyle, opacity: 0.6, cursor: "not-allowed" }} value={infoForm.name} readOnly />
                   </div>
                   <div>
-                    <label style={labelStyle}>{lang === "vi" ? "Mã nhân viên" : "Employee ID"}</label>
-                    <input
-                      style={{ ...inputStyle, opacity: 0.6, cursor: "not-allowed" }}
-                      value={user.id} readOnly
-                    />
+                    <label style={labelStyle}>{vi ? "Mã nhân viên" : "Employee ID"}</label>
+                    <input style={{ ...inputStyle, opacity: 0.6, cursor: "not-allowed" }} value={user.id} readOnly />
                   </div>
                 </div>
-
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
-                    <label style={labelStyle}>
-                      Email <span style={{ color: "#EF4444" }}>*</span>
-                    </label>
+                    <label style={labelStyle}>Email <span style={{ color: "#EF4444" }}>*</span></label>
                     <div style={{ position: "relative" }}>
                       <Mail size={15} color={th.text2} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)" }} />
                       <input
@@ -342,7 +639,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div>
-                    <label style={labelStyle}>{lang === "vi" ? "Số điện thoại" : "Phone"}</label>
+                    <label style={labelStyle}>{vi ? "Số điện thoại" : "Phone"}</label>
                     <div style={{ position: "relative" }}>
                       <Phone size={15} color={th.text2} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)" }} />
                       <input
@@ -356,30 +653,22 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
-                    <label style={labelStyle}>{lang === "vi" ? "Phòng ban" : "Department"}</label>
+                    <label style={labelStyle}>{vi ? "Phòng ban" : "Department"}</label>
                     <div style={{ position: "relative" }}>
                       <Building2 size={15} color={th.text2} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)" }} />
-                      <input
-                        style={{ ...inputStyle, paddingLeft: 38, opacity: 0.6, cursor: "not-allowed" }}
-                        value={user.department} readOnly
-                      />
+                      <input style={{ ...inputStyle, paddingLeft: 38, opacity: 0.6, cursor: "not-allowed" }} value={user.department} readOnly />
                     </div>
                   </div>
                   <div>
-                    <label style={labelStyle}>{lang === "vi" ? "Chức vụ" : "Position"}</label>
+                    <label style={labelStyle}>{vi ? "Chức vụ" : "Position"}</label>
                     <div style={{ position: "relative" }}>
                       <Briefcase size={15} color={th.text2} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)" }} />
-                      <input
-                        style={{ ...inputStyle, paddingLeft: 38, opacity: 0.6, cursor: "not-allowed" }}
-                        value={lang === "vi" ? user.roleLabel : user.roleLabelEn} readOnly
-                      />
+                      <input style={{ ...inputStyle, paddingLeft: 38, opacity: 0.6, cursor: "not-allowed" }} value={vi ? user.roleLabel : user.roleLabelEn} readOnly />
                     </div>
                   </div>
                 </div>
-
                 <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 8 }}>
                   <button
                     onClick={handleSaveInfo}
@@ -389,9 +678,7 @@ export default function ProfilePage() {
                     onMouseLeave={e => ((e.currentTarget as HTMLElement).style.transform = "none")}
                   >
                     <Save size={15} />
-                    {infoSaving
-                      ? (lang === "vi" ? "Đang lưu..." : "Saving...")
-                      : (lang === "vi" ? "Lưu thay đổi" : "Save Changes")}
+                    {infoSaving ? (vi ? "Đang lưu..." : "Saving...") : (vi ? "Lưu thay đổi" : "Save Changes")}
                   </button>
                 </div>
               </div>
@@ -403,18 +690,15 @@ export default function ProfilePage() {
             <div>
               <h2 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 800, color: th.text1, display: "flex", alignItems: "center", gap: 10 }}>
                 <Lock size={20} color="#D0211C" />
-                {lang === "vi" ? "Đổi mật khẩu" : "Change Password"}
+                {vi ? "Đổi mật khẩu" : "Change Password"}
               </h2>
               <p style={{ margin: "0 0 28px", color: th.text2, fontSize: 13 }}>
-                {lang === "vi"
-                  ? "Mật khẩu mới phải đáp ứng đầy đủ 4 yêu cầu bảo mật bên dưới."
-                  : "New password must meet all 4 security requirements below."}
+                {vi ? "Mật khẩu mới phải đáp ứng đầy đủ 4 yêu cầu bảo mật bên dưới." : "New password must meet all 4 security requirements below."}
               </p>
 
               <div style={{ display: "grid", gap: 18, maxWidth: 440 }}>
-                {/* Old password */}
                 <div>
-                  <label style={labelStyle}>{lang === "vi" ? "Mật khẩu hiện tại" : "Current Password"} <span style={{ color: "#EF4444" }}>*</span></label>
+                  <label style={labelStyle}>{vi ? "Mật khẩu hiện tại" : "Current Password"} <span style={{ color: "#EF4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
                     <input
                       style={{ ...inputStyle, paddingRight: 44 }}
@@ -432,9 +716,8 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* New password */}
                 <div>
-                  <label style={labelStyle}>{lang === "vi" ? "Mật khẩu mới" : "New Password"} <span style={{ color: "#EF4444" }}>*</span></label>
+                  <label style={labelStyle}>{vi ? "Mật khẩu mới" : "New Password"} <span style={{ color: "#EF4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
                     <input
                       style={{ ...inputStyle, paddingRight: 44 }}
@@ -450,7 +733,6 @@ export default function ProfilePage() {
                       {showPw.newP ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
-                  {/* 4-requirement strength indicator */}
                   {(() => {
                     const REQS: { label: string; labelEn: string; test: (v: string) => boolean }[] = [
                       { label: "Ít nhất 8 ký tự",             labelEn: "At least 8 characters",    test: v => v.length >= 8 },
@@ -460,10 +742,10 @@ export default function ProfilePage() {
                     ]
                     const COLORS = ["#EF4444", "#F97316", "#EAB308", "#22C55E"]
                     const LABELS = ["Rất yếu", "Yếu", "Trung bình", "Mạnh", "Rất mạnh"]
+                    const LABELS_EN = ["Very weak", "Weak", "Medium", "Strong", "Very strong"]
                     const score  = REQS.filter(r => r.test(pwForm.newP)).length
                     return (
                       <div style={{ marginTop: 10 }}>
-                        {/* Bars */}
                         <div style={{ display: "flex", gap: 5, marginBottom: 6 }}>
                           {[0,1,2,3].map(i => (
                             <div key={i} style={{
@@ -473,11 +755,9 @@ export default function ProfilePage() {
                             }} />
                           ))}
                         </div>
-                        {/* Label */}
                         <div style={{ fontSize: 11.5, fontWeight: 700, color: score > 0 ? COLORS[score - 1] : th.text2, marginBottom: 8 }}>
-                          {score === 0 ? (lang === "vi" ? "Nhập mật khẩu..." : "Typing...") : (lang === "vi" ? LABELS[score] : LABELS[score])}
+                          {score === 0 ? (vi ? "Nhập mật khẩu..." : "Typing...") : (vi ? LABELS[score] : LABELS_EN[score])}
                         </div>
-                        {/* Requirements list */}
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                           {REQS.map((req, i) => {
                             const ok = req.test(pwForm.newP)
@@ -489,7 +769,7 @@ export default function ProfilePage() {
                                   transition: "background .2s",
                                   boxShadow: ok ? "0 0 0 3px rgba(16,185,129,0.15)" : "none",
                                 }} />
-                                <span style={{ fontWeight: ok ? 600 : 400 }}>{lang === "vi" ? req.label : req.labelEn}</span>
+                                <span style={{ fontWeight: ok ? 600 : 400 }}>{vi ? req.label : req.labelEn}</span>
                               </div>
                             )
                           })}
@@ -499,9 +779,8 @@ export default function ProfilePage() {
                   })()}
                 </div>
 
-                {/* Confirm */}
                 <div>
-                  <label style={labelStyle}>{lang === "vi" ? "Xác nhận mật khẩu" : "Confirm Password"} <span style={{ color: "#EF4444" }}>*</span></label>
+                  <label style={labelStyle}>{vi ? "Xác nhận mật khẩu" : "Confirm Password"} <span style={{ color: "#EF4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
                     <input
                       style={{
@@ -522,7 +801,7 @@ export default function ProfilePage() {
                   </div>
                   {pwForm.confirm && pwForm.newP !== pwForm.confirm && (
                     <div style={{ fontSize: 12, color: "#EF4444", marginTop: 4 }}>
-                      {lang === "vi" ? "Mật khẩu không khớp" : "Passwords don't match"}
+                      {vi ? "Mật khẩu không khớp" : "Passwords don't match"}
                     </div>
                   )}
                 </div>
@@ -536,9 +815,7 @@ export default function ProfilePage() {
                     onMouseLeave={e => ((e.currentTarget as HTMLElement).style.transform = "none")}
                   >
                     <Lock size={15} />
-                    {pwSaving
-                      ? (lang === "vi" ? "Đang lưu..." : "Saving...")
-                      : (lang === "vi" ? "Đổi mật khẩu" : "Change Password")}
+                    {pwSaving ? (vi ? "Đang lưu..." : "Saving...") : (vi ? "Đổi mật khẩu" : "Change Password")}
                   </button>
                 </div>
               </div>
@@ -550,12 +827,12 @@ export default function ProfilePage() {
             <div>
               <h2 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 800, color: th.text1, display: "flex", alignItems: "center", gap: 10 }}>
                 <Camera size={20} color="#D0211C" />
-                {lang === "vi" ? "Ảnh đại diện" : "Profile Photo"}
+                {vi ? "Ảnh đại diện" : "Profile Photo"}
               </h2>
               <p style={{ margin: "0 0 28px", color: th.text2, fontSize: 13 }}>
-                {lang === "vi"
-                  ? "Chọn ảnh JPG, PNG hoặc WebP. Tối đa 5MB."
-                  : "Choose JPG, PNG, or WebP. Max 5MB."}
+                {vi
+                  ? "Chọn ảnh JPG, PNG hoặc WebP. Tối đa 5MB. Bạn có thể kéo & phóng ảnh để vừa khung tròn."
+                  : "Choose JPG, PNG, or WebP. Max 5MB. You can drag & zoom to fit the circular frame."}
               </p>
 
               <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -566,14 +843,10 @@ export default function ProfilePage() {
                     border: `3px solid ${th.cardBorder}`,
                     boxShadow: dark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.12)",
                   }}>
-                    <AvatarImg
-                      src={avatarPreview}
-                      alt="Preview"
-                      size={140}
-                    />
+                    <AvatarImg src={avatarPreview} alt="Preview" size={140} />
                   </div>
                   <div style={{ fontSize: 12, color: th.text2, textAlign: "center" }}>
-                    {lang === "vi" ? "Xem trước" : "Preview"}
+                    {vi ? "Xem trước" : "Preview"}
                   </div>
                 </div>
 
@@ -598,10 +871,19 @@ export default function ProfilePage() {
                   >
                     <Camera size={32} color={th.text2} style={{ marginBottom: 12 }} />
                     <div style={{ color: th.text1, fontWeight: 600, fontSize: 14, marginBottom: 6 }}>
-                      {lang === "vi" ? "Nhấn để chọn ảnh" : "Click to choose photo"}
+                      {vi ? "Nhấn để chọn ảnh" : "Click to choose photo"}
                     </div>
-                    <div style={{ color: th.text2, fontSize: 12 }}>
-                      JPG, PNG, WebP · {lang === "vi" ? "Tối đa" : "Max"} 5MB
+                    <div style={{ color: th.text2, fontSize: 12, marginBottom: 8 }}>
+                      JPG, PNG, WebP · {vi ? "Tối đa" : "Max"} 5MB
+                    </div>
+                    <div style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      background: dark ? "rgba(208,33,28,0.15)" : "rgba(208,33,28,0.08)",
+                      color: "#D0211C", borderRadius: 8, padding: "6px 12px",
+                      fontSize: 12, fontWeight: 600,
+                    }}>
+                      <Crop size={13} />
+                      {vi ? "Hỗ trợ cắt & di chuyển ảnh" : "Crop & pan support"}
                     </div>
                   </div>
                   <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
@@ -614,8 +896,8 @@ export default function ProfilePage() {
                     >
                       <Save size={15} />
                       {avatarSaving
-                        ? (lang === "vi" ? "Đang lưu..." : "Saving...")
-                        : (lang === "vi" ? "Lưu ảnh" : "Save Photo")}
+                        ? (vi ? "Đang lưu..." : "Saving...")
+                        : (vi ? "Lưu ảnh" : "Save Photo")}
                     </button>
                     {avatarChanged && (
                       <button
@@ -626,7 +908,7 @@ export default function ProfilePage() {
                           color: th.text2, fontFamily: "inherit", transition: "all .15s",
                         }}
                       >
-                        {lang === "vi" ? "Huỷ" : "Cancel"}
+                        {vi ? "Huỷ" : "Cancel"}
                       </button>
                     )}
                   </div>
@@ -636,6 +918,17 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* ── Crop Modal ── */}
+      {showCrop && rawImage && (
+        <AvatarCropModal
+          imageSrc={rawImage}
+          dark={dark}
+          vi={vi}
+          onSave={handleCropDone}
+          onCancel={() => { setShowCrop(false); setRawImage(null) }}
+        />
+      )}
 
       {/* ── Toast ── */}
       {toast && (

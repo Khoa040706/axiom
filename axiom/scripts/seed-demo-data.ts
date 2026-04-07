@@ -294,7 +294,8 @@ async function main() {
     for (let s = 0; s < 10; s++) {
       const code = nextCode()
       const gender = (d + s) % 3 === 0 ? "Nữ" : "Nam" as const
-      const name = genName(gender)
+      // Tài khoản nhanvien/nhanvien — dùng tên thật
+      const name = (d === 0 && s === 0) ? "Hoàng Thái Đăng Khoa" : genName(gender)
       const [minS, maxS] = deptSalaryRange[d]
       const salary = Math.round((minS + Math.random() * (maxS - minS)) / 500_000) * 500_000
       const allowance = Math.round((1_000_000 + Math.random() * 3_000_000) / 500_000) * 500_000
@@ -355,17 +356,23 @@ async function main() {
   // ═══════════════════════════════════════════════════════════════
   console.log("🔐 4. Tạo tài khoản đăng nhập...")
   const hash = await bcrypt.hash("123456", 10)
-  const adminHash = await bcrypt.hash("admin", 10)
+  const adminHash    = await bcrypt.hash("admin",    10)
+  const giamdocHash  = await bcrypt.hash("giamdoc",  10)
+  const nhansuHash   = await bcrypt.hash("nhansu",   10)
+  const ketoanHash   = await bcrypt.hash("ketoan",   10)
+  const quanlyHash   = await bcrypt.hash("quanly",   10)
+  const nhanvienHash = await bcrypt.hash("nhanvien", 10)
 
-  // 1 Admin (không gắn nhân viên)
+  // 1 Admin (không gắn nhân viên, exempt khỏi yêu cầu personalEmail)
   await prisma.user.create({
     data: { username: "admin", passwordHash: adminHash, role: "Admin" },
   })
 
   // Ban Giám đốc
   await prisma.user.create({
-    data: { username: "giamdoc", passwordHash: await bcrypt.hash("giamdoc", 10),
-            role: "Director", employeeId: allEmployees[0].emp.id },
+    data: { username: "giamdoc", passwordHash: giamdocHash,
+            role: "Director", employeeId: allEmployees[0].emp.id,
+            personalEmail: "giamdoc@gmail.com" },
   })
   await prisma.user.create({
     data: { username: "pgd1", passwordHash: hash,
@@ -376,27 +383,35 @@ async function main() {
             role: "Director", employeeId: allEmployees[2].emp.id },
   })
 
-  // Trưởng phòng (index 3-7)
-  const headUsernames = ["tp_cntt", "tp_nhansu", "tp_ketoan", "tp_kinhdoanh", "tp_marketing"]
+  // Trưởng phòng (index 3–7)
+  // quanly = TP CNTT (Manager), nhansu = TP Nhân sự (HRManager), ketoan = TP Kế toán (Accountant)
+  const headUsernames    = ["quanly",         "nhansu",         "ketoan",         "tp_kinhdoanh", "tp_marketing"]
+  const headPassHashes   = [quanlyHash,        nhansuHash,       ketoanHash,       hash,            hash          ]
+  const headPersonalMail = ["quanly@gmail.com","nhansu@gmail.com","ketoan@gmail.com", null,           null          ]
   for (let i = 0; i < 5; i++) {
     await prisma.user.create({
       data: {
-        username: headUsernames[i],
-        passwordHash: hash,
-        role: allEmployees[3 + i].role,
-        employeeId: allEmployees[3 + i].emp.id,
+        username:     headUsernames[i],
+        passwordHash: headPassHashes[i],
+        role:         allEmployees[3 + i].role,
+        employeeId:   allEmployees[3 + i].emp.id,
+        ...(headPersonalMail[i] ? { personalEmail: headPersonalMail[i]! } : {}),
       },
     })
   }
 
-  // Nhân viên (index 8 đến cuối) — username = mã NV viết thường
+  // Nhân viên (index 8 đến cuối)
+  // — Tài khoản đầu tiên (NV009) = nhanvien / nhanvien có personalEmail sẵn (demo)
+  // — Các tài khoản còn lại: không có personalEmail → được yêu cầu thiết lập khi login lần đầu
   for (let i = 8; i < allEmployees.length; i++) {
+    const isFirstEmp = i === 8
     await prisma.user.create({
       data: {
-        username: allEmployees[i].emp.code.toLowerCase(),
-        passwordHash: hash,
-        role: allEmployees[i].role,
-        employeeId: allEmployees[i].emp.id,
+        username:     isFirstEmp ? "nhanvien" : allEmployees[i].emp.code.toLowerCase(),
+        passwordHash: isFirstEmp ? nhanvienHash : hash,
+        role:         allEmployees[i].role,
+        employeeId:   allEmployees[i].emp.id,
+        ...(isFirstEmp ? { personalEmail: "dangkhoa040706@gmail.com" } : {}),
       },
     })
   }
@@ -599,7 +614,7 @@ async function main() {
    📅 63 quỹ nghỉ phép | 📋 8 đơn nghỉ phép
    📜 ${careerEvents.length} sự kiện công tác | ✈️ ${trips.length} chuyến CT
 
-📌 TÀI KHOẢN ĐĂNG NHẬP (mật khẩu mặc định: 123456):
+📌 TÀI KHOẢN ĐĂNG NHẬP:
    ┌────────────────┬────────────┬──────────────┬──────────────────────┐
    │ Username       │ Mật khẩu   │ Role         │ Dashboard            │
    ├────────────────┼────────────┼──────────────┼──────────────────────┤
@@ -607,12 +622,13 @@ async function main() {
    │ giamdoc        │ giamdoc    │ Director     │ /dashboard-director  │
    │ pgd1           │ 123456     │ Director     │ /dashboard-director  │
    │ pgd2           │ 123456     │ Director     │ /dashboard-director  │
-   │ tp_cntt        │ 123456     │ Manager      │ /dashboard-manager   │
-   │ tp_nhansu      │ 123456     │ HRManager    │ /dashboard-hr        │
-   │ tp_ketoan      │ 123456     │ Accountant   │ /dashboard-accountant│
+   │ quanly         │ quanly     │ Manager      │ /dashboard-manager   │
+   │ nhansu         │ nhansu     │ HRManager    │ /dashboard-hr        │
+   │ ketoan         │ ketoan     │ Accountant   │ /dashboard-accountant│
    │ tp_kinhdoanh   │ 123456     │ Manager      │ /dashboard-manager   │
    │ tp_marketing   │ 123456     │ Manager      │ /dashboard-manager   │
-   │ nv009..nv063   │ 123456     │ Employee     │ /dashboard-employee  │
+   │ nhanvien       │ nhanvien   │ Employee     │ /dashboard-employee  │
+   │ nv010..nv063   │ 123456     │ Employee     │ /dashboard-employee  │
    └────────────────┴────────────┴──────────────┴──────────────────────┘
 
 ⚠️  SAU KHI SEED, NHỚ CHẠY:

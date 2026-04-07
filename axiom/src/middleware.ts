@@ -1,60 +1,63 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-
 /**
- * proxy.ts — Bảo vệ route cho AXIOM HRM (Next.js 16+ convention)
- * Dùng NextAuth v5 session cookie để kiểm tra xác thực
+ * middleware.ts — Auth guard cho AXIOM HRM
+ * Dùng NextAuth instance riêng với authConfig (Edge-safe, không bcryptjs)
+ * Không import auth.ts (có bcrypt) để tránh lỗi Edge Runtime crypto
  */
 
-// Các route công khai (không cần đăng nhập)
+import NextAuth from "next-auth"
+import { authConfig } from "@/lib/auth.config"
+import { NextResponse } from "next/server"
+
+// Tạo NextAuth instance CHỈ với authConfig (Edge-compatible)
+const { auth } = NextAuth(authConfig)
+
 const PUBLIC_PATHS = [
   "/login",
   "/forgot-password",
   "/reset-password",
   "/api/auth",
   "/api/forgot-password",
+  "/setup-email",
   "/_next",
   "/favicon.ico",
 ]
 
-function isPublic(pathname: string) {
-  return PUBLIC_PATHS.some((p) => pathname.startsWith(p))
-}
+const ROLES_SKIP_EMAIL_CHECK = ["Admin"]
 
-// Next.js 16: export default function hoặc named export "proxy"
-export default function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
+export default auth((req) => {
+  const { pathname } = req.nextUrl
+  const session = req.auth
 
   // Redirect root → login
   if (pathname === "/") {
-    return NextResponse.redirect(new URL("/login", request.url))
+    return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  // Cho phép route công khai
-  if (isPublic(pathname)) {
+  // Route công khai — bỏ qua mọi check
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next()
   }
 
-  // ── Kiểm tra NextAuth v5 session token ──────────────────
-  // NextAuth v5 dùng "authjs.session-token" (development) hoặc "__Secure-authjs.session-token" (production)
-  const token =
-    request.cookies.get("authjs.session-token") ??
-    request.cookies.get("__Secure-authjs.session-token") ??
-    // NextAuth v4 fallback
-    request.cookies.get("next-auth.session-token") ??
-    request.cookies.get("__Secure-next-auth.session-token")
+  // Chưa đăng nhập → login
+  if (!session) {
+    const url = new URL("/login", req.url)
+    url.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(url)
+  }
 
-  if (!token) {
-    const loginUrl = new URL("/login", request.url)
-    loginUrl.searchParams.set("callbackUrl", pathname)
-    return NextResponse.redirect(loginUrl)
+  // Chưa thiết lập Gmail cá nhân → /setup-email (trừ Admin)
+  const role = session.user?.role ?? ""
+  if (
+    !session.user?.personalEmail &&
+    !ROLES_SKIP_EMAIL_CHECK.includes(role)
+  ) {
+    return NextResponse.redirect(new URL("/setup-email", req.url))
   }
 
   return NextResponse.next()
-}
+})
 
 export const config = {
-  // Áp dụng proxy cho tất cả route trừ static files
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

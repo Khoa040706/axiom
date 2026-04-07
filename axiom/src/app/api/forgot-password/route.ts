@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import nodemailer from "nodemailer"
 
 function generateTempPassword(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#"
@@ -72,24 +73,27 @@ export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json() as { email: string }
     if (!email) {
-      return NextResponse.json({ error: "Email là bắt buộc" }, { status: 400 })
+      return NextResponse.json({ error: "Gmail là bắt buộc" }, { status: 400 })
     }
 
-    // Tìm employee theo email trong DB
-    const employee = await prisma.employee.findFirst({
-      where: { email: email.trim() },
+    const trimmedEmail = email.trim().toLowerCase()
+
+    // Tìm user theo personalEmail (Gmail cá nhân đã đăng ký)
+    const user = await prisma.user.findFirst({
+      where: { personalEmail: trimmedEmail },
       include: {
-        user: { select: { id: true, isActive: true } },
-        department: { select: { name: true } },
+        employee: {
+          include: { department: { select: { name: true } } },
+        },
       },
     })
 
-    if (!employee || !employee.user) {
+    if (!user) {
       // Trả về success để tránh lộ thông tin (security best practice)
       return NextResponse.json({ success: true })
     }
 
-    if (!employee.user.isActive) {
+    if (!user.isActive) {
       return NextResponse.json({ error: "Tài khoản đã bị khoá. Liên hệ Admin." }, { status: 403 })
     }
 
@@ -99,35 +103,41 @@ export async function POST(req: NextRequest) {
 
     // Cập nhật password trong DB
     await prisma.user.update({
-      where: { id: employee.user.id },
+      where: { id: user.id },
       data:  { passwordHash },
     })
 
-    const deptName = employee.department?.name ?? "Không rõ"
-    const html     = buildEmailHtml(employee.fullName, employee.code, deptName, tempPw)
+    const emp      = user.employee
+    const deptName = emp?.department?.name ?? "Không rõ"
+    const html     = buildEmailHtml(
+      emp?.fullName ?? user.username,
+      emp?.code ?? "N/A",
+      deptName,
+      tempPw,
+    )
 
-    // Gửi email nếu cấu hình SMTP
+    // Gửi email đến Gmail cá nhân đã đăng ký
     const gmailUser = process.env.GMAIL_USER
     const gmailPass = process.env.GMAIL_APP_PASSWORD
     if (gmailUser && gmailPass) {
       try {
-        // @ts-expect-error nodemailer optional dep
-        const nm = await import("nodemailer")
-        const transporter = nm.default.createTransport({
+        const transporter = nodemailer.createTransport({
           service: "gmail",
           auth: { user: gmailUser, pass: gmailPass },
         })
         await transporter.sendMail({
           from:    `"AXIOM HRM" <${gmailUser}>`,
-          to:      employee.email ?? email.trim(),
+          to:      user.personalEmail!,   // luôn gửi về Gmail cá nhân
           subject: "🔑 Mật khẩu tạm thời — AXIOM HRM",
           html,
         })
-      } catch {
-        console.log(`[forgot-password][demo] tempPw=${tempPw}`)
+        console.log(`[forgot-password] Email sent to ${user.personalEmail}`)
+      } catch (mailErr) {
+        console.error(`[forgot-password][smtp-error]`, mailErr)
+        // Vẫn tiếp tục — không fail request vì mail lỗi
       }
     } else {
-      console.log(`[forgot-password][demo] email=${email} tempPw=${tempPw}`)
+      console.log(`[forgot-password][demo] personalEmail=${user.personalEmail} tempPw=${tempPw}`)
     }
 
     // Production: chỉ trả success, KHÔNG trả tempPw
@@ -136,7 +146,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       ...(isDev ? { tempPw } : {}),
-      email: employee.email ?? email.trim(),
+      email: user.personalEmail,
     })
 
   } catch (err) {

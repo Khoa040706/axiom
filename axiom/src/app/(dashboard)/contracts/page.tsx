@@ -7,6 +7,7 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, Calendar,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { matchAny } from "@/lib/utils/search"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { getAllContracts, createContract } from "@/lib/actions/contract.actions"
 import { getDepartments } from "@/lib/actions/department.actions"
@@ -530,13 +531,7 @@ export default function ContractsPage() {
     // helper: parse dd/mm/yyyy → yyyy-mm-dd string for comparison
     const toISO = (d: string) => d ? d.split("/").reverse().join("-") : ""
     let result = contracts.filter(c => {
-      if (q) {
-        const qL = q.toLowerCase()
-        if (!c.empName.toLowerCase().includes(qL) &&
-            !c.empCode.toLowerCase().includes(qL) &&
-            !c.dept.toLowerCase().includes(qL) &&
-            !c.contractType.toLowerCase().includes(qL)) return false
-      }
+      if (q && !matchAny([c.empName, c.empCode, c.dept, c.contractType], q)) return false
       if (deptFilter    && String(c.deptId) !== deptFilter)   return false
       if (typeFilter    && c.contractType   !== typeFilter)    return false
       if (statusFilter  && c.uiStatus       !== statusFilter)  return false
@@ -781,7 +776,7 @@ export default function ContractsPage() {
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
                   gap:"4px 12px", fontSize:12.5, marginBottom:10 }}>
-                  <div><span style={{ color:th.text2 }}>{vi?"Loại":"Type"}: </span><b>{c.contractType}</b></div>
+                  <div><span style={{ color:th.text2 }}>{vi?"Loại":"Type"}: </span><b>{vi?c.contractType:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"} as Record<string,string>)[c.contractType]??c.contractType}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Lương":"Salary"}: </span><b>{fmtSalary(c.baseSalary)}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Bắt đầu":"Start"}: </span><b>{c.startDate}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Kết thúc":"End"}: </span><b>{c.endDate ?? "—"}</b></div>
@@ -866,13 +861,18 @@ export default function ContractsPage() {
                         borderRadius:8, padding:"2px 8px" }}>{c.dept||"—"}</span>
                     </td>
                     <td style={td}>
-                      <span style={{
-                        background: c.contractType==="Chính thức"?"#D1FAE5"
-                          :c.contractType==="Thử việc"?"#FEF3C7":"#E0E7FF",
-                        color: c.contractType==="Chính thức"?"#065F46"
-                          :c.contractType==="Thử việc"?"#92400E":"#3730A3",
-                        borderRadius:10, padding:"2px 10px", fontSize:11.5, fontWeight:600,
-                      }}>{c.contractType}</span>
+                      {(() => {
+                        const typeMap: Record<string,string> = {"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"}
+                        return (
+                          <span style={{
+                            background: c.contractType==="Chính thức"?"#D1FAE5"
+                              :c.contractType==="Thử việc"?"#FEF3C7":"#E0E7FF",
+                            color: c.contractType==="Chính thức"?"#065F46"
+                              :c.contractType==="Thử việc"?"#92400E":"#3730A3",
+                            borderRadius:10, padding:"2px 10px", fontSize:11.5, fontWeight:600,
+                          }}>{vi ? c.contractType : (typeMap[c.contractType] ?? c.contractType)}</span>
+                        )
+                      })()}
                     </td>
                     <td style={td}>{c.startDate}</td>
                     <td style={td}>{c.endDate ?? <span style={{ color:th.text3 }}>—</span>}</td>
@@ -975,7 +975,7 @@ export default function ContractsPage() {
                 {[
                   { l:vi?"Nhân viên":"Employee",    v:`${selected.empName} (${selected.empCode})` },
                   { l:vi?"Phòng ban":"Department",  v:selected.dept||"—" },
-                  { l:vi?"Loại hợp đồng":"Type",   v:selected.contractType },
+                  { l:vi?"Loại hợp đồng":"Type",   v:vi?selected.contractType:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"} as Record<string,string>)[selected.contractType]??selected.contractType },
                   { l:vi?"Ngày bắt đầu":"Start",   v:selected.startDate },
                   { l:vi?"Ngày kết thúc":"End",     v:selected.endDate??(vi?"Không xác định":"Open-ended") },
                   { l:vi?"Lương cơ bản":"Base",     v:fmtSalary(selected.baseSalary) },

@@ -137,18 +137,23 @@ export async function updateProfileInDB(employeeId: number, data: {
   }
 }
 
-/** Lấy avatarPath của employee từ DB (dùng để đồng bộ avatar sau khi upload) */
+/** Lấy thông tin hiển thị của employee từ DB (avatar, email, phone) */
 export async function getEmployeeAvatar(employeeId: number) {
   try {
     const { prisma } = await import("@/lib/prisma")
     const emp = await prisma.employee.findUnique({
       where: { id: employeeId },
-      select: { avatarPath: true },
+      select: { avatarPath: true, email: true, phone: true },
     })
-    return { success: true, avatarPath: emp?.avatarPath ?? null }
+    return {
+      success:   true,
+      avatarPath: emp?.avatarPath ?? null,
+      email:     emp?.email ?? null,
+      phone:     emp?.phone ?? null,
+    }
   } catch (err) {
     console.error("[getEmployeeAvatar]", err)
-    return { success: false, avatarPath: null }
+    return { success: false, avatarPath: null, email: null, phone: null }
   }
 }
 
@@ -171,5 +176,43 @@ export async function setTempPasswordInDB(username: string): Promise<{
     console.error("[setTempPasswordInDB]", err)
     const msg = err instanceof Error ? err.message : "Không thể đặt lại mật khẩu"
     return { success: false, error: msg }
+  }
+}
+
+/** Lưu Gmail cá nhân (bắt buộc thiết lập khi login lần đầu) */
+export async function savePersonalEmailInDB(userId: string, personalEmail: string) {
+  try {
+    if (!userId) return { success: false, error: "Không xác định được tài khoản" }
+    const trimmed = personalEmail.trim().toLowerCase()
+    if (!trimmed.endsWith("@gmail.com")) {
+      return { success: false, error: "Chỉ chấp nhận địa chỉ Gmail (@gmail.com)" }
+    }
+    if (!/^[a-zA-Z0-9._%+\-]+@gmail\.com$/.test(trimmed)) {
+      return { success: false, error: "Gmail không hợp lệ" }
+    }
+    const { prisma } = await import("@/lib/prisma")
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data:  { personalEmail: trimmed },
+    })
+    return { success: true, personalEmail: trimmed }
+  } catch (err) {
+    console.error("[savePersonalEmailInDB]", err)
+    return { success: false, error: "Không thể lưu Gmail. Vui lòng thử lại." }
+  }
+}
+
+/** Lấy Gmail cá nhân hiện tại của user */
+export async function getPersonalEmail(userId: string) {
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    const user = await prisma.user.findUnique({
+      where:  { id: parseInt(userId) },
+      select: { personalEmail: true },
+    })
+    return { success: true, personalEmail: user?.personalEmail ?? null }
+  } catch (err) {
+    console.error("[getPersonalEmail]", err)
+    return { success: false, personalEmail: null }
   }
 }

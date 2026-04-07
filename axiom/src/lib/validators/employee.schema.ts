@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { EMPLOYEE_STATUS, CONTRACT_TYPES } from "@/lib/constants"
+import { EMPLOYEE_STATUS } from "@/lib/constants"
 
 export const employeeSchema = z.object({
   code: z.string().min(1, "Vui lòng nhập mã nhân viên").max(20),

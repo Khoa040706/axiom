@@ -12,6 +12,7 @@ declare module "next-auth" {
       role: string
       employeeId?: number
       dashboardPath?: string
+      personalEmail?: string | null
     }
   }
 
@@ -20,6 +21,7 @@ declare module "next-auth" {
     role: string
     employeeId?: number
     dashboardPath?: string
+    personalEmail?: string | null
   }
 }
 
@@ -28,5 +30,6 @@ declare module "next-auth/jwt" {
     role?: string
     employeeId?: number
     dashboardPath?: string
+    personalEmail?: string | null
   }
 }

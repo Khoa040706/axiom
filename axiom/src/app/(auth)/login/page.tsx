@@ -45,6 +45,23 @@ const i18n = {
     chart1: "Quản lý lương", chart1v: "T1-T2/26",
     chart2: "5 Phòng ban", chart2v: "IT • HR • KD • KT • HC", chart2s: "Hoạt động",
     flag: "/images/CoVietNam.png", lang: "VI",
+    // Forgot password
+    fpTitle: "Quên mật khẩu",
+    fpSub: "Nhập Gmail cá nhân của bạn — hệ thống sẽ gửi mật khẩu tạm thời.",
+    fpEmailLabel: "Gmail cá nhân",
+    fpEmailPh: "tenban@gmail.com",
+    fpBtn: "Gửi mật khẩu tạm thời",
+    fpLoading: "Đang gửi…",
+    fpBack: "← Quay lại đăng nhập",
+    fpSuccessTitle: "Email đã được gửi!",
+    fpSuccessSub: "Kiểm tra Gmail cá nhân của bạn — mật khẩu tạm thời sẽ đến trong vài giây.",
+    fpSuccessBtn: "Đăng nhập ngay",
+    fpErrNotFound: "Gmail này chưa được liên kết với tài khoản nào trong hệ thống.",
+    fpErrGen: "Không thể gửi email. Vui lòng thử lại.",
+    fpReq1: "Định dạng email hợp lệ",
+    fpReq2: "Sử dụng Gmail cá nhân (@gmail.com)",
+    fpReq3: "Tên người dùng ≥ 3 ký tự",
+    fpReq4: "Không chứa khoảng trắng",
   },
   en: {
     online: "System Online",
@@ -69,15 +86,34 @@ const i18n = {
     contact: "Contact IT →",
     errCred: "Invalid employee ID or password.",
     errGen: "An error occurred. Please try again.",
-    chart1: "Payroll Mgmt", chart1v: "Jan-Feb",
+    chart1: "Payroll Management", chart1v: "Jan-Feb",
     chart2: "5 Departments", chart2v: "IT • HR • BD • AC • GA", chart2s: "Active",
     flag: "/images/coanh.png", lang: "EN",
+    // Forgot password
+    fpTitle: "Forgot Password",
+    fpSub: "Enter your personal Gmail — we'll send a temporary password to your inbox.",
+    fpEmailLabel: "Personal Gmail",
+    fpEmailPh: "yourname@gmail.com",
+    fpBtn: "Send Temporary Password",
+    fpLoading: "Sending…",
+    fpBack: "← Back to Sign In",
+    fpSuccessTitle: "Email Sent!",
+    fpSuccessSub: "Check your personal Gmail — your temporary password will arrive in seconds.",
+    fpSuccessBtn: "Sign In Now",
+    fpErrNotFound: "This Gmail is not linked to any account in the system.",
+    fpErrGen: "Unable to send email. Please try again.",
+    fpReq1: "Valid email format",
+    fpReq2: "Must be a personal Gmail address (@gmail.com)",
+    fpReq3: "Username ≥ 3 characters",
+    fpReq4: "No whitespace allowed",
   },
 } as const
 type Lang = keyof typeof i18n
 
 /* Fake mini bar chart for decoration */
 const BARS = [40, 65, 45, 80, 55, 90, 70, 95, 60, 85]
+
+type View = "login" | "forgot" | "sent"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -92,7 +128,24 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  // Forgot password state
+  const [view, setView] = useState<View>("login")
+  const [prevView, setPrevView] = useState<View>("login")
+  const [fpEmail, setFpEmail] = useState("")
+  const [fpError, setFpError] = useState("")
+  const [fpLoading, setFpLoading] = useState(false)
+  const [fpFocused, setFpFocused] = useState(false)
+
   const t = i18n[lang]
+
+  // Email validation — 4 security requirements
+  const emailReqs = [
+    { label: t.fpReq1, ok: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fpEmail) },
+    { label: t.fpReq2, ok: fpEmail.toLowerCase().endsWith("@gmail.com") },
+    { label: t.fpReq3, ok: fpEmail.split("@")[0].length >= 3 },
+    { label: t.fpReq4, ok: fpEmail.length > 0 && !fpEmail.includes(" ") },
+  ]
+  const emailValid = emailReqs.every(r => r.ok)
 
   useEffect(() => { setTimeout(() => setMounted(true), 60) }, [])
 
@@ -144,6 +197,44 @@ export default function LoginPage() {
         router.refresh()
       }
     } catch { setLoading(false); setError(t.errGen) }
+  }
+
+  async function submitForgot(e: React.FormEvent) {
+    e.preventDefault()
+    if (!emailValid) return
+    setFpError(""); setFpLoading(true)
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: fpEmail.trim().toLowerCase() }),
+      })
+      if (res.ok) {
+        setView("sent")
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setFpError(data?.error === "not_found" ? t.fpErrNotFound : t.fpErrGen)
+      }
+    } catch {
+      setFpError(t.fpErrGen)
+    } finally {
+      setFpLoading(false)
+    }
+  }
+
+  function goForgot() {
+    setError("")
+    setFpError("")
+    setFpEmail("")
+    setPrevView("login")
+    setView("forgot")
+  }
+
+  function goLogin() {
+    setFpError("")
+    setFpEmail("")
+    setPrevView(view)
+    setView("login")
   }
 
   /* ── Theme tokens ── */
@@ -209,20 +300,25 @@ export default function LoginPage() {
         }
 
         /* ── Keyframes ── */
-        @keyframes fadeUp   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
-        @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
-        @keyframes slideR   { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:none} }
-        @keyframes sweep    { 0%{transform:translateX(-250%)} 40%,100%{transform:translateX(250%)} }
-        @keyframes spin     { to{transform:rotate(360deg)} }
-        @keyframes floatUp  { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-6px) rotate(0deg)} }
-        @keyframes floatUp2 { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-8px) rotate(0deg)} }
-        @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:.3} }
-        @keyframes barGrow  { from{transform:scaleY(0)} to{transform:scaleY(1)} }
-        @keyframes tilt1    { 0%,100%{transform:translateY(0px) rotate(-12deg)} 50%{transform:translateY(-12px) rotate(-8deg)} }
-        @keyframes tilt2    { 0%,100%{transform:translateY(0px) rotate(5deg)}  50%{transform:translateY(-10px) rotate(7deg)} }
-        @keyframes tilt3    { 0%,100%{transform:translateY(0px) rotate(4deg)}  50%{transform:translateY(-8px)  rotate(2deg)} }
-        @keyframes tilt4    { 0%,100%{transform:translateY(0px) rotate(-6deg)} 50%{transform:translateY(-14px) rotate(-4deg)} }
-        @keyframes gradMove { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes fadeUp      { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+        @keyframes fadeIn      { from{opacity:0} to{opacity:1} }
+        @keyframes slideR      { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:none} }
+        @keyframes sweep       { 0%{transform:translateX(-250%)} 40%,100%{transform:translateX(250%)} }
+        @keyframes spin        { to{transform:rotate(360deg)} }
+        @keyframes floatUp     { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-6px) rotate(0deg)} }
+        @keyframes floatUp2    { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-8px) rotate(0deg)} }
+        @keyframes blink       { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes barGrow     { from{transform:scaleY(0)} to{transform:scaleY(1)} }
+        @keyframes tilt1       { 0%,100%{transform:translateY(0px) rotate(-12deg)} 50%{transform:translateY(-12px) rotate(-8deg)} }
+        @keyframes tilt2       { 0%,100%{transform:translateY(0px) rotate(5deg)}  50%{transform:translateY(-10px) rotate(7deg)} }
+        @keyframes tilt3       { 0%,100%{transform:translateY(0px) rotate(4deg)}  50%{transform:translateY(-8px)  rotate(2deg)} }
+        @keyframes tilt4       { 0%,100%{transform:translateY(0px) rotate(-6deg)} 50%{transform:translateY(-14px) rotate(-4deg)} }
+        @keyframes gradMove    { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes slideOutUp  { 0%{opacity:1;transform:translateY(0) scale(1)} 50%{opacity:.4} 100%{opacity:0;transform:translateY(-32px) scale(.98)} }
+        @keyframes slideInUp   { 0%{opacity:0;transform:translateY(32px) scale(.98)} 50%{opacity:.5} 100%{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes slideOutDn  { 0%{opacity:1;transform:translateY(0) scale(1)} 50%{opacity:.4} 100%{opacity:0;transform:translateY(32px) scale(.98)} }
+        @keyframes slideInDn   { 0%{opacity:0;transform:translateY(-32px) scale(.98)} 50%{opacity:.5} 100%{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes checkPop    { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
 
         /* ── Round Checkbox ── */
         .ax-round-chk {
@@ -366,9 +462,9 @@ export default function LoginPage() {
 
           {/* TOP-LEFT: Quản lý lương */}
           <div style={{
-            position: "absolute", top: "17%", left: -40,
+            position: "absolute", top: "15%", left: -60,
             background: miniCardBg, border: `1.5px solid ${dark ? "#2a1010" : "#F0F0F0"}`,
-            borderRadius: 14, padding: "12px 14px", width: 158,
+            borderRadius: 14, padding: "12px 14px", width: 178,
             boxShadow: dark ? "0 8px 28px rgba(0,0,0,.5)" : "0 8px 28px rgba(0,0,0,.1)",
             animation: "tilt1 7s ease-in-out infinite",
             transition: "background .4s, border-color .4s",
@@ -383,7 +479,7 @@ export default function LoginPage() {
                 <span style={{ fontSize: 10, fontWeight: 700, color: "#D32F2F", background: "rgba(211,47,47,0.1)", padding: "2px 7px", borderRadius: 99, alignSelf: "flex-start" }}>
                   {t.chart1v}
                 </span>
-                <div style={{ fontSize: 11, fontWeight: 700, color: text1, transition: "color .4s" }}>{t.chart1}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: text1, transition: "color .4s", whiteSpace: "nowrap" }}>{t.chart1}</div>
               </div>
             </div>
             {/* Bar chart */}
@@ -480,13 +576,9 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ════ RIGHT COLUMN — Login card ════ */}
+        {/* ════ RIGHT COLUMN — Single fixed card ════ */}
         <div className="right-col" style={{
           flex: "0 0 360px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px 0",
           opacity: mounted ? 1 : 0,
           animation: mounted ? "slideR .7s cubic-bezier(.22,1,.36,1) .2s both" : "none",
         }}>
@@ -502,7 +594,7 @@ export default function LoginPage() {
               : "0 20px 50px rgba(0,0,0,.08)",
             transition: "background .4s, border-color .4s, box-shadow .4s",
           }}>
-            {/* Red top accent bar — animated */}
+            {/* ── Red top accent bar (static) ── */}
             <div style={{
               height: 3,
               background: "linear-gradient(90deg,#FF6659,#D32F2F,#9A0007,#FF4444,#FF6659)",
@@ -510,7 +602,7 @@ export default function LoginPage() {
               animation: "gradMove 2s linear infinite",
             }} />
 
-            {/* ── Controls: absolute top-right ── */}
+            {/* ── Controls: lang + theme (static) ── */}
             <div style={{
               position: "absolute", top: 14, right: 16,
               display: "flex", gap: 6, alignItems: "center",
@@ -545,14 +637,13 @@ export default function LoginPage() {
             </div>
 
             <div style={{ padding: "16px 20px 20px" }}>
-              {/* ── Logo + Brand ── */}
+              {/* ── Logo + Brand (static) ── */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, paddingRight: 90 }}>
                 <div style={{
                   width: 38, height: 38, borderRadius: "50%",
                   background: "linear-gradient(140deg,#FF6659,#9A0007)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 4px 14px rgba(154,0,7,0.35)",
-                  flexShrink: 0,
+                  boxShadow: "0 4px 14px rgba(154,0,7,0.35)", flexShrink: 0,
                 }}>
                   <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={32} height={32}
                     style={{ objectFit: "contain", filter: "brightness(0) invert(1)" }} />
@@ -570,149 +661,230 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Divider */}
-              <div style={{ height: 1, background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)", marginBottom: 18 }} />
+              {/* ── Divider (static) ── */}
+              <div style={{ height: 1, background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)", marginBottom: 0 }} />
 
-              {/* Greeting */}
-              <p style={{ fontSize: 15, marginBottom: 22, lineHeight: 1.6 }}>
-                <span style={{ color: text2, transition: "color .4s" }}>
-                  {lang === "vi" ? "Chào mừng trở lại, " : "Welcome back, "}
-                </span>
-                <span style={{
-                  fontWeight: 700,
-                  background: "linear-gradient(90deg,#FF6659,#D32F2F)",
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
+              {/* ══ SLIDING CONTENT AREA — only this part moves ══ */}
+              <div style={{ position: "relative", overflow: "hidden", minHeight: 310 }}>
+
+                {/* ── LOGIN FORM (slides out up / back in from top) ── */}
+                <div style={{
+                  paddingTop: 18,
+                  pointerEvents: view === "login" ? "auto" : "none",
+                  willChange: view !== "login" || prevView !== "login" ? "transform, opacity" : "auto",
+                  animation: !mounted
+                    ? "none"
+                    : view === "login" && prevView !== "login"
+                      ? "slideInDn .7s cubic-bezier(.22,.68,0,1) both"
+                      : view !== "login" && prevView === "login"
+                        ? "slideOutUp .55s cubic-bezier(.4,0,.2,1) both"
+                        : "none",
                 }}>
-                  {lang === "vi" ? "Cộng sự" : "Partner"}
-                </span>
-                <span style={{ color: text2, transition: "color .4s" }}> !</span>
-              </p>
+                  <p style={{ fontSize: 15, marginBottom: 20, lineHeight: 1.6 }}>
+                    <span style={{ color: text2, transition: "color .4s" }}>
+                      {lang === "vi" ? "Chào mừng trở lại, " : "Welcome back, "}
+                    </span>
+                    <span style={{
+                      fontWeight: 700,
+                      background: "linear-gradient(90deg,#FF6659,#D32F2F)",
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}>
+                      {lang === "vi" ? "Cộng sự" : "Partner"}
+                    </span>
+                    <span style={{ color: text2, transition: "color .4s" }}> !</span>
+                  </p>
 
-              <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {/* Employee ID */}
-                <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: focusId === "id" ? "#D32F2F" : text2, marginBottom: 6, letterSpacing: .3, transition: "color .2s" }}>
-                    {t.idLabel}
-                  </label>
-                  <input
-                    id="login-username"
-                    className="inp nop"
-                    type="text" required autoComplete="username"
-                    placeholder={t.idPh}
-                    value={username} onChange={e => setUsername(e.target.value)}
-                    onFocus={() => setFocusId("id")} onBlur={() => setFocusId(null)}
-                  />
-                </div>
-
-                {/* Password */}
-                <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: focusId === "pw" ? "#D32F2F" : text2, marginBottom: 6, letterSpacing: .3, transition: "color .2s" }}>
-                    {t.pwLabel}
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      id="login-password"
-                      className="inp"
-                      type={showPw ? "text" : "password"} required autoComplete="current-password"
-                      placeholder={t.pwPh}
-                      value={password} onChange={e => setPassword(e.target.value)}
-                      onFocus={() => setFocusId("pw")} onBlur={() => setFocusId(null)}
-                    />
-                    <button type="button" onClick={() => setShowPw(v => !v)} style={{
-                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                      background: "none", border: "none", cursor: "pointer",
-                      color: dark ? "rgba(255,255,255,.25)" : "#AAAAAA",
-                      display: "flex", padding: 4, transition: "color .2s",
+                  <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: focusId === "id" ? "#D32F2F" : text2, marginBottom: 6, letterSpacing: .3, transition: "color .2s" }}>
+                        {t.idLabel}
+                      </label>
+                      <input id="login-username" className="inp nop" type="text" required autoComplete="username"
+                        placeholder={t.idPh} value={username} onChange={e => setUsername(e.target.value)}
+                        onFocus={() => setFocusId("id")} onBlur={() => setFocusId(null)} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: focusId === "pw" ? "#D32F2F" : text2, marginBottom: 6, letterSpacing: .3, transition: "color .2s" }}>
+                        {t.pwLabel}
+                      </label>
+                      <div style={{ position: "relative" }}>
+                        <input id="login-password" className="inp" type={showPw ? "text" : "password"} required autoComplete="current-password"
+                          placeholder={t.pwPh} value={password} onChange={e => setPassword(e.target.value)}
+                          onFocus={() => setFocusId("pw")} onBlur={() => setFocusId(null)} />
+                        <button type="button" onClick={() => setShowPw(v => !v)} style={{
+                          position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                          background: "none", border: "none", cursor: "pointer",
+                          color: dark ? "rgba(255,255,255,.25)" : "#AAAAAA", display: "flex", padding: 4, transition: "color .2s",
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#D32F2F"}
+                          onMouseLeave={e => e.currentTarget.style.color = dark ? "rgba(255,255,255,.25)" : "#AAAAAA"}
+                        >
+                          {showPw ? <EyeOff size={16} strokeWidth={1.8} /> : <Eye size={16} strokeWidth={1.8} />}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: -4 }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: text2, cursor: "pointer", userSelect: "none", transition: "color .4s" }}>
+                        <input type="checkbox" className="ax-round-chk" />
+                        {lang === "vi" ? "Ghi nhớ đăng nhập" : "Remember me"}
+                      </label>
+                      <button type="button" onClick={goForgot} style={{
+                        fontSize: 12.5, fontWeight: 500, color: text2, background: "none", border: "none",
+                        cursor: "pointer", padding: 0, fontFamily: "inherit", transition: "color .2s",
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.color = "#D32F2F"}
+                        onMouseLeave={e => e.currentTarget.style.color = text2}
+                      >{t.forgot}</button>
+                    </div>
+                    {error && (
+                      <div style={{
+                        padding: "10px 14px", background: dark ? "rgba(211,47,47,0.08)" : "#FFF5F5",
+                        border: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderLeft: "3px solid #D32F2F",
+                        borderRadius: 8, fontSize: 12.5, color: dark ? "#fca5a5" : "#9A0007",
+                        display: "flex", gap: 8, alignItems: "center",
+                      }}>
+                        <span style={{ flexShrink: 0 }}>⚠️</span>{error}
+                      </div>
+                    )}
+                    <button id="login-submit" type="submit" disabled={loading} style={{
+                      width: "100%", height: 46, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      background: "linear-gradient(135deg,#FF6659 0%,#D32F2F 35%,#9A0007 65%,#FF6659 100%)",
+                      backgroundSize: "300% 100%", animation: loading ? "none" : "gradMove 2.5s linear infinite",
+                      color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: "inherit",
+                      cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 4px 18px rgba(154,0,7,.3)",
+                      transition: "all .25s cubic-bezier(.22,1,.36,1)", position: "relative", overflow: "hidden", marginTop: 4,
                     }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#D32F2F"}
-                      onMouseLeave={e => e.currentTarget.style.color = dark ? "rgba(255,255,255,.25)" : "#AAAAAA"}
+                      onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(154,0,7,.4)" } }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(154,0,7,.3)" }}
                     >
-                      {showPw ? <EyeOff size={16} strokeWidth={1.8} /> : <Eye size={16} strokeWidth={1.8} />}
+                      {!loading && <span style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(100deg,transparent 35%,rgba(255,255,255,0.15) 50%,transparent 65%)", animation: "sweep 3.5s ease-in-out infinite" }} />}
+                      {loading ? <span style={{ width: 17, height: 17, border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .65s linear infinite", display: "inline-block" }} /> : <>{t.btn}</>}
                     </button>
-                  </div>
+                  </form>
                 </div>
 
-                {/* Remember + Forgot row */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: -4 }}>
-                  <label style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    fontSize: 13, color: text2, cursor: "pointer", userSelect: "none",
-                    transition: "color .4s",
-                  }}>
-                    <input type="checkbox" className="ax-round-chk" />
-                    {lang === "vi" ? "Ghi nhớ đăng nhập" : "Remember me"}
-                  </label>
-                  <Link href="/forgot-password" style={{
-                    fontSize: 12.5, fontWeight: 500, color: text2,
-                    textDecoration: "none", transition: "color .2s",
-                  }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#D32F2F"}
-                    onMouseLeave={e => e.currentTarget.style.color = text2}
-                  >
-                    {t.forgot}
-                  </Link>
-                </div>
-
-                {/* Error */}
-                {error && (
-                  <div style={{
-                    padding: "10px 14px",
-                    background: dark ? "rgba(211,47,47,0.08)" : "#FFF5F5",
-                    border: `1px solid rgba(211,47,47,${dark ? .2 : .15})`,
-                    borderLeft: "3px solid #D32F2F",
-                    borderRadius: 8,
-                    fontSize: 12.5, color: dark ? "#fca5a5" : "#9A0007",
-                    display: "flex", gap: 8, alignItems: "center",
-                  }}>
-                    <span style={{ flexShrink: 0 }}>⚠️</span>{error}
-                  </div>
-                )}
-
-                {/* Submit */}
-                <button
-                  id="login-submit"
-                  type="submit" disabled={loading}
-                  style={{
-                    width: "100%", height: 46,
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    background: "linear-gradient(135deg,#FF6659 0%,#D32F2F 35%,#9A0007 65%,#FF6659 100%)",
-                    backgroundSize: "300% 100%",
-                    animation: loading ? "none" : "gradMove 2.5s linear infinite",
-                    color: "#fff", border: "none", borderRadius: 10,
-                    fontSize: 14, fontWeight: 700, fontFamily: "inherit",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    boxShadow: "0 4px 18px rgba(154,0,7,.3)",
-                    transition: "all .25s cubic-bezier(.22,1,.36,1)",
-                    position: "relative", overflow: "hidden",
-                    marginTop: 4,
-                  }}
-                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(154,0,7,.4)" } }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(154,0,7,.3)" }}
-                >
-                  {!loading && (
-                    <span style={{
-                      position: "absolute", inset: 0, pointerEvents: "none",
-                      background: "linear-gradient(100deg,transparent 35%,rgba(255,255,255,0.15) 50%,transparent 65%)",
-                      animation: "sweep 3.5s ease-in-out infinite",
-                    }} />
-                  )}
-                  {loading ? (
-                    <span style={{
-                      width: 17, height: 17,
-                      border: "2px solid rgba(255,255,255,.3)",
-                      borderTopColor: "#fff", borderRadius: "50%",
-                      animation: "spin .65s linear infinite", display: "inline-block",
-                    }} />
+                {/* ── FORGOT / SENT FORM (slides in from below / out downward) ── */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0,
+                  paddingTop: 18,
+                  pointerEvents: view !== "login" ? "auto" : "none",
+                  visibility: (view === "login" && prevView === "login") ? "hidden" : "visible",
+                  willChange: view !== "login" || prevView !== "login" ? "transform, opacity" : "auto",
+                  animation: !mounted
+                    ? "none"
+                    : view !== "login" && prevView === "login"
+                      ? "slideInUp .7s cubic-bezier(.22,.68,0,1) both"
+                      : view === "login" && prevView !== "login"
+                        ? "slideOutDn .55s cubic-bezier(.4,0,.2,1) both"
+                        : "none",
+                }}>
+                  {view === "sent" ? (
+                    <div style={{ textAlign: "center", padding: "16px 0 8px" }}>
+                      <div style={{
+                        width: 52, height: 52, borderRadius: "50%",
+                        background: "linear-gradient(135deg,#FF6659,#D32F2F)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        margin: "0 auto 14px", boxShadow: "0 8px 24px rgba(211,47,47,.35)",
+                        animation: "checkPop .5s cubic-bezier(.34,1.56,.64,1) both",
+                      }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: text1, marginBottom: 8, transition: "color .4s" }}>{t.fpSuccessTitle}</div>
+                      <div style={{ fontSize: 12.5, color: text2, lineHeight: 1.6, marginBottom: 20, transition: "color .4s" }}>{t.fpSuccessSub}</div>
+                      <button onClick={goLogin} style={{
+                        width: "100%", height: 42,
+                        background: "linear-gradient(135deg,#FF6659,#D32F2F,#9A0007)",
+                        backgroundSize: "300% 100%", animation: "gradMove 2.5s linear infinite",
+                        color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700,
+                        fontFamily: "inherit", cursor: "pointer", boxShadow: "0 4px 18px rgba(154,0,7,.3)",
+                      }}>{t.fpSuccessBtn}</button>
+                    </div>
                   ) : (
-                    <>{t.btn}</>
+                    <>
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: text1, marginBottom: 4, transition: "color .4s" }}>{t.fpTitle}</div>
+                        <div style={{ fontSize: 12, color: text2, lineHeight: 1.55, transition: "color .4s" }}>{t.fpSub}</div>
+                      </div>
+                      <form onSubmit={submitForgot} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div>
+                          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: fpFocused ? "#D32F2F" : text2, marginBottom: 6, letterSpacing: .3, transition: "color .2s" }}>
+                            {t.fpEmailLabel}
+                          </label>
+                          <input id="fp-email" className="inp nop" type="email" required autoComplete="email"
+                            placeholder={t.fpEmailPh} value={fpEmail}
+                            onChange={e => { setFpEmail(e.target.value); setFpError("") }}
+                            onFocus={() => setFpFocused(true)} onBlur={() => setFpFocused(false)} />
+                        </div>
+                        {(fpEmail.length > 0 || fpFocused) && (
+                          <div style={{
+                            background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                            border: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+                            borderRadius: 10, padding: "8px 12px",
+                            display: "flex", flexDirection: "column", gap: 6,
+                          }}>
+                            {emailReqs.map((req, i) => (
+                              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div style={{
+                                  width: 15, height: 15, borderRadius: "50%", flexShrink: 0,
+                                  background: req.ok ? "#D32F2F" : (dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"),
+                                  border: req.ok ? "none" : `1.5px solid ${dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)"}`,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  transition: "all .25s",
+                                  animation: req.ok ? "checkPop .3s cubic-bezier(.34,1.56,.64,1)" : "none",
+                                }}>
+                                  {req.ok && <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                </div>
+                                <span style={{ fontSize: 11, fontWeight: 500, color: req.ok ? (dark ? "#fca5a5" : "#D32F2F") : text2, transition: "color .25s" }}>{req.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {fpError && (
+                          <div style={{
+                            padding: "9px 12px", background: dark ? "rgba(211,47,47,0.08)" : "#FFF5F5",
+                            border: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderLeft: "3px solid #D32F2F",
+                            borderRadius: 8, fontSize: 12, color: dark ? "#fca5a5" : "#9A0007",
+                            display: "flex", gap: 8, alignItems: "center",
+                          }}>
+                            <span style={{ flexShrink: 0 }}>⚠️</span>{fpError}
+                          </div>
+                        )}
+                        <button id="fp-submit" type="submit" disabled={fpLoading || !emailValid} style={{
+                          width: "100%", height: 44, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                          background: emailValid
+                            ? "linear-gradient(135deg,#FF6659 0%,#D32F2F 35%,#9A0007 65%,#FF6659 100%)"
+                            : (dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"),
+                          backgroundSize: "300% 100%", animation: (emailValid && !fpLoading) ? "gradMove 2.5s linear infinite" : "none",
+                          color: emailValid ? "#fff" : text2, border: "none", borderRadius: 10,
+                          fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                          cursor: (fpLoading || !emailValid) ? "not-allowed" : "pointer",
+                          boxShadow: emailValid ? "0 4px 18px rgba(154,0,7,.3)" : "none", transition: "all .3s",
+                        }}>
+                          {fpLoading
+                            ? <span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .65s linear infinite", display: "inline-block" }} />
+                            : t.fpBtn}
+                        </button>
+                        <button type="button" onClick={goLogin} style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          fontSize: 12, fontWeight: 500, color: text2,
+                          fontFamily: "inherit", textAlign: "center", padding: "2px 0", transition: "color .2s",
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#D32F2F"}
+                          onMouseLeave={e => e.currentTarget.style.color = text2}
+                        >{t.fpBack}</button>
+                      </form>
+                    </>
                   )}
-                </button>
+                </div>
 
-              </form>
+              </div>{/* end sliding content area */}
             </div>
           </div>
         </div>
+
       </div>
     </>
   )

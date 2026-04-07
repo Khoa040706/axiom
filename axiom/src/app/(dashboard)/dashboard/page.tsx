@@ -187,17 +187,22 @@ function NavTile({ icon, label, sub, href, color, tag, dark, emoji }: {
 type EventStatus = "past" | "ongoing" | "upcoming"
 type EventData = { emoji:string; title:string; date:string; status:EventStatus; desc:string }
 
-const STATUS_META: Record<EventStatus,{label:string;color:string;bg:string;bgDark:string}> = {
+const STATUS_META_VI: Record<EventStatus,{label:string;color:string;bg:string;bgDark:string}> = {
   past:     { label:"Đã xong",      color:"#6B7280", bg:"#F3F4F6", bgDark:"rgba(107,114,128,0.2)" },
   ongoing:  { label:"Đang diễn ra", color:"#10B981", bg:"#D1FAE5", bgDark:"rgba(16,185,129,0.2)"  },
   upcoming: { label:"Sắp tới",      color:"#7C3AED", bg:"#EDE9FE", bgDark:"rgba(124,58,237,0.2)"  },
 }
+const STATUS_META_EN: Record<EventStatus,{label:string;color:string;bg:string;bgDark:string}> = {
+  past:     { label:"Completed",  color:"#6B7280", bg:"#F3F4F6", bgDark:"rgba(107,114,128,0.2)" },
+  ongoing:  { label:"Ongoing",    color:"#10B981", bg:"#D1FAE5", bgDark:"rgba(16,185,129,0.2)"  },
+  upcoming: { label:"Upcoming",   color:"#7C3AED", bg:"#EDE9FE", bgDark:"rgba(124,58,237,0.2)"  },
+}
 
 /* ─── Event item (clickable) ────────────────────────── */
-function EventItem({ emoji, title, date, status, desc, dark, onOpen }: EventData & { dark:boolean; onOpen:()=>void }) {
+function EventItem({ emoji, title, date, status, desc, dark, onOpen, vi }: EventData & { dark:boolean; onOpen:()=>void; vi:boolean }) {
   const th = getTheme(dark)
   const [hov, setHov] = useState(false)
-  const s = STATUS_META[status]
+  const s = (vi ? STATUS_META_VI : STATUS_META_EN)[status]
   return (
     <div
       role="button" tabIndex={0}
@@ -235,9 +240,9 @@ function EventItem({ emoji, title, date, status, desc, dark, onOpen }: EventData
 }
 
 /* ─── Event detail modal ────────────────────────────── */
-function EventModal({ ev, dark, onClose }: { ev: EventData; dark: boolean; onClose: () => void }) {
+function EventModal({ ev, dark, onClose, vi }: { ev: EventData; dark: boolean; onClose: () => void; vi: boolean }) {
   const th = getTheme(dark)
-  const s = STATUS_META[ev.status]
+  const s = (vi ? STATUS_META_VI : STATUS_META_EN)[ev.status]
   const headerBg = ev.status === "ongoing"
     ? "linear-gradient(135deg,#059669,#047857)"
     : ev.status === "upcoming"
@@ -264,24 +269,24 @@ function EventModal({ ev, dark, onClose }: { ev: EventData; dark: boolean; onClo
             <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:10, background:dark?"rgba(255,255,255,0.04)":"#F9FAFB", border:`1px solid ${th.cardBorder}` }}>
               <CalendarDays size={16} color={s.color} style={{ flexShrink:0, marginTop:1 }}/>
               <div>
-                <div style={{ fontSize:11, color:th.text2, marginBottom:2 }}>Thời gian</div>
+                <div style={{ fontSize:11, color:th.text2, marginBottom:2 }}>{vi?"Thời gian":"Date"}</div>
                 <div style={{ fontSize:13.5, fontWeight:700, color:th.text1 }}>{ev.date}</div>
               </div>
             </div>
             <div style={{ padding:"12px 14px", borderRadius:10, background:dark?"rgba(255,255,255,0.04)":"#F9FAFB", border:`1px solid ${th.cardBorder}` }}>
-              <div style={{ fontSize:11, color:th.text2, marginBottom:6 }}>Mô tả sự kiện</div>
+              <div style={{ fontSize:11, color:th.text2, marginBottom:6 }}>{vi?"Mô tả sự kiện":"Event Description"}</div>
               <div style={{ fontSize:13.5, color:th.text1, lineHeight:1.6 }}>{ev.desc}</div>
             </div>
             {ev.status === "upcoming" && (
               <div style={{ padding:"10px 14px", borderRadius:10, background:"rgba(124,58,237,0.1)", border:"1.5px solid rgba(124,58,237,0.2)", display:"flex", alignItems:"center", gap:8 }}>
                 <Bell size={14} color="#7C3AED"/>
-                <span style={{ fontSize:12, color:"#7C3AED", fontWeight:500 }}>Sự kiện sắp diễn ra — hãy chuẩn bị sẵn sàng!</span>
+                <span style={{ fontSize:12, color:"#7C3AED", fontWeight:500 }}>{vi?"Sự kiện sắp diễn ra — hãy chuẩn bị sẵn sàng!":"Upcoming event — be prepared!"}</span>
               </div>
             )}
             {ev.status === "ongoing" && (
               <div style={{ padding:"10px 14px", borderRadius:10, background:"rgba(16,185,129,0.1)", border:"1.5px solid rgba(16,185,129,0.2)", display:"flex", alignItems:"center", gap:8 }}>
                 <div style={{ width:8, height:8, borderRadius:"50%", background:"#10B981", flexShrink:0 }}/>
-                <span style={{ fontSize:12, color:"#10B981", fontWeight:500 }}>Sự kiện đang diễn ra ngay bây giờ!</span>
+                <span style={{ fontSize:12, color:"#10B981", fontWeight:500 }}>{vi?"Sự kiện đang diễn ra ngay bây giờ!":"This event is happening right now!"}</span>
               </div>
             )}
             <button onClick={onClose} style={{
@@ -292,7 +297,7 @@ function EventModal({ ev, dark, onClose }: { ev: EventData; dark: boolean; onClo
             }}
               onMouseEnter={e=>(e.currentTarget.style.transform="translateY(-1px)")}
               onMouseLeave={e=>(e.currentTarget.style.transform="none")}
-            >Đóng</button>
+            >{vi?"Đóng":"Close"}</button>
           </div>
         </div>
       </div>
@@ -470,7 +475,7 @@ export default function HomePage() {
           <div style={secLabel}><Megaphone size={12} color="#D0211C"/>{vi?"Sự kiện công ty":"Company Events"}</div>
           <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
             {events.map((ev,i) => (
-              <EventItem key={i} {...ev} dark={dark} onOpen={() => setSelected(ev)}/>
+              <EventItem key={i} {...ev} dark={dark} vi={vi} onOpen={() => setSelected(ev)}/>
             ))}
           </div>
         </div>
@@ -498,7 +503,7 @@ export default function HomePage() {
                 </Pie>
                 <Tooltip
                   contentStyle={{ background:th.cardBg, border:`1px solid ${th.cardBorder}`, borderRadius:8, fontSize:12, color:th.text1 }}
-                  formatter={(v:any, n:any) => [v+" người", n]}
+                  formatter={(v:any, n:any) => [v+(vi?" người":" staff"), n]}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -580,7 +585,7 @@ export default function HomePage() {
       </div>
 
       {/* Event detail modal */}
-      {selectedEvent && <EventModal ev={selectedEvent} dark={dark} onClose={() => setSelected(null)}/>}
+      {selectedEvent && <EventModal ev={selectedEvent} dark={dark} vi={vi} onClose={() => setSelected(null)}/>}
     </div>
   )
 }

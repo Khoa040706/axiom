@@ -7,6 +7,7 @@ import { getBusinessTrips, createBusinessTrip, approveBusinessTrip } from "@/lib
 import { useEmployeeId } from "@/hooks/use-current-user"
 import { useSession } from "next-auth/react"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { matchAny } from "@/lib/utils/search"
 
 function EmpAvatar({ name, avatarPath, size = 30 }: { name: string; avatarPath?: string | null; size?: number }) {
   const [imgErr, setImgErr] = useState(false)
@@ -97,9 +98,7 @@ export default function BusinessTripsPage() {
 
   /* computed */
   const filtered = trips.filter(t =>
-    !search ||
-    t.employee?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-    t.destination?.toLowerCase().includes(search.toLowerCase())
+    matchAny([t.employee?.fullName, t.destination, t.purpose], search)
   )
   const totalApproved = trips.filter(t => t.status === "Đã duyệt").length
   const totalBudget   = trips.reduce((s: number, t: any) => s + Number(t.allowance ?? 0), 0)

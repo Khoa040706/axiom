@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react"
 import { useEmployeeId } from "@/hooks/use-current-user"
 import { getPayslipsByEmployee } from "@/lib/actions/payroll.actions"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { matchAny } from "@/lib/utils/search"
 
 function fmt(v: number){ return Math.round(v).toLocaleString("vi-VN")+" đ" }
 
@@ -36,8 +37,7 @@ export default function PayslipsPage(){
   const filtered = slips.filter(s => {
     const prName = s.payroll?.employee?.fullName ?? ""
     const period = `${s.payroll?.payMonth ?? ""}/${s.payroll?.payYear ?? ""}`
-    const q = search.toLowerCase()
-    return !q || prName.toLowerCase().includes(q) || period.includes(q)
+    return matchAny([prName, period], search)
   })
 
   const hd: React.CSSProperties = { padding:"10px 12px", fontSize:11.5, fontWeight:700, color:th.tableHeadText, background:th.tableHead, borderBottom:`1px solid ${th.tableBorder}`, textAlign:"left", whiteSpace:"nowrap", textTransform:"uppercase", letterSpacing:"0.04em" }

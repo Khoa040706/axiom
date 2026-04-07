@@ -160,7 +160,7 @@ type PaySortField = "name" | "days" | "gross" | "net" | null
 type SortDir = "asc" | "desc"
 
 function SortTh({
-  label, field, sortField, sortDir, onSort, onClear, th, options, hdStyle,
+  label, field, sortField, sortDir, onSort, onClear, th, options, hdStyle, vi,
 }: {
   label: string
   field: PaySortField
@@ -171,6 +171,7 @@ function SortTh({
   th: any
   options?: { label: string; dir: SortDir }[]
   hdStyle: React.CSSProperties
+  vi?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLTableCellElement>(null)
@@ -226,7 +227,7 @@ function SortTh({
               borderBottom: `1px solid ${th.tableBorder}`,
             }}
           >
-            <X size={12} /> Mặc định
+            <X size={12} /> {vi ? "Mặc định" : "Default"}
           </button>
           {options.map(opt => {
             const sel = active && sortDir === opt.dir
@@ -522,7 +523,7 @@ export default function PayrollPage() {
   const statCards = [
     { icon:<Banknote size={20} color="#D0211C"/>,   label:vi?"Tổng Gross":"Total Gross",   value:fmtShort(totals.gross)+"đ", accent:"#D0211C" },
     { icon:<TrendingUp size={20} color="#059669"/>, label:vi?"Tổng Net về tay":"Total Net", value:fmtShort(totals.net)+"đ",   accent:"#059669" },
-    { icon:<Shield size={20} color="#D97706"/>,     label:"Thuế TNCN",                      value:fmtShort(totals.pit)+"đ",   accent:"#D97706" },
+    { icon:<Shield size={20} color="#D97706"/>,     label:vi?"Thuế TNCN":"PIT",                    value:fmtShort(totals.pit)+"đ",   accent:"#D97706" },
     { icon:<Users size={20} color="#3B82F6"/>,      label:vi?"Đã thanh toán":"Paid",        value:`${paidCount}/${employees.length}`, accent:"#3B82F6" },
   ]
 
@@ -681,11 +682,11 @@ export default function PayrollPage() {
         <table style={{ width:"100%", borderCollapse:"collapse" }}>
           <thead><tr>
             <SortTh label={vi?"Nhân viên":"Employee"} field="name" sortField={sortField} sortDir={sortDir}
-              onSort={handleSort} onClear={clearSort} th={th} options={sortName} hdStyle={hd}/>
+              onSort={handleSort} onClear={clearSort} th={th} options={sortName} hdStyle={hd} vi={vi}/>
             <SortTh label={vi?"Ngày công":"Days"} field="days" sortField={sortField} sortDir={sortDir}
-              onSort={handleSort} onClear={clearSort} th={th} options={sortDays} hdStyle={hd}/>
+              onSort={handleSort} onClear={clearSort} th={th} options={sortDays} hdStyle={hd} vi={vi}/>
             <SortTh label={vi?"Gross (HĐ)":"Gross"} field="gross" sortField={sortField} sortDir={sortDir}
-              onSort={handleSort} onClear={clearSort} th={th} options={sortMoney} hdStyle={hd}/>
+              onSort={handleSort} onClear={clearSort} th={th} options={sortMoney} hdStyle={hd} vi={vi}/>
             <SortTh label={vi?"OT pay":"OT"} field={null} sortField={sortField} sortDir={sortDir}
               onSort={handleSort} onClear={clearSort} th={th} hdStyle={hd}/>
             <SortTh label={vi?"Thưởng":"Bonus"} field={null} sortField={sortField} sortDir={sortDir}
@@ -695,7 +696,7 @@ export default function PayrollPage() {
             <SortTh label={vi?"Thuế TNCN":"PIT"} field={null} sortField={sortField} sortDir={sortDir}
               onSort={handleSort} onClear={clearSort} th={th} hdStyle={hd}/>
             <SortTh label={vi?"Net về tay":"Net"} field="net" sortField={sortField} sortDir={sortDir}
-              onSort={handleSort} onClear={clearSort} th={th} options={sortMoney} hdStyle={hd}/>
+              onSort={handleSort} onClear={clearSort} th={th} options={sortMoney} hdStyle={hd} vi={vi}/>
             <SortTh label={vi?"Trạng thái":"Status"} field={null} sortField={sortField} sortDir={sortDir}
               onSort={handleSort} onClear={clearSort} th={th} hdStyle={hd}/>
             <SortTh label={vi?"Thao tác":"Actions"} field={null} sortField={sortField} sortDir={sortDir}
@@ -765,7 +766,7 @@ export default function PayrollPage() {
                 <td style={td}>
                   {calc.pit > 0
                     ? <><span style={{ color:"#D97706", fontWeight:700 }}>-{fmt(calc.pit)}</span><div style={{ fontSize:10.5, color:th.text2 }}>TNTT: {fmt(calc.taxableIncome)}</div></>
-                    : <span style={{ color:th.text2, fontSize:12 }}>Miễn thuế</span>}
+                    : <span style={{ color:th.text2, fontSize:12 }}>{vi?"Miễn thuế":"Tax-free"}</span>}
                 </td>
                 {/* Net */}
                 <td style={td}><b style={{ fontSize:14, color:"#059669" }}>{fmt(calc.net)}</b></td>
@@ -885,8 +886,11 @@ export default function PayrollPage() {
           <div style={{ padding:"14px 18px", display:"flex", flexDirection:"column", gap:8 }}>
             {/* Formula */}
             <div style={{ background:"linear-gradient(135deg,rgba(208,33,28,0.08),rgba(153,20,20,0.04))", borderRadius:10, padding:"11px 14px", fontSize:12.5, color:th.text1, fontWeight:600, lineHeight:1.7, border:`1px solid rgba(208,33,28,0.15)` }}>
-              Net = (Gross × Ngày công/Ngày chuẩn + OT + Thưởng + Phụ cấp)<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&minus; <span style={{ color:"#EF4444" }}>BH (10.5%)</span> &minus; <span style={{ color:"#D97706" }}>Thuế TNCN</span>
+              {vi
+                ? <>Net = (Gross × Ngày công/Ngày chuẩn + OT + Thưởng + Phụ cấp)<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&minus; <span style={{ color:"#EF4444" }}>BH (10.5%)</span> &minus; <span style={{ color:"#D97706" }}>Thuế TNCN</span></>
+                : <>Net = (Gross × Work days/Standard days + OT + Bonus + Allowances)<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&minus; <span style={{ color:"#EF4444" }}>Insurance (10.5%)</span> &minus; <span style={{ color:"#D97706" }}>PIT</span></>}
             </div>
 
             {/* Insurance */}
@@ -903,7 +907,7 @@ export default function PayrollPage() {
                 </div>
               ))}
               <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${th.tableBorder}`, display:"flex", justifyContent:"space-between", fontSize:12.5, fontWeight:800 }}>
-                <span style={{ color:th.text1 }}>TỔNG</span>
+                <span style={{ color:th.text1 }}>{vi?"TỔNG":"TOTAL"}</span>
                 <span style={{ color:"#EF4444" }}>10.5%</span>
               </div>
             </div>
@@ -912,11 +916,11 @@ export default function PayrollPage() {
             <div style={{ background:th.tableHead, borderRadius:10, padding:"11px 14px" }}>
               <div style={{ fontWeight:700, fontSize:12.5, color:th.text1, marginBottom:7 }}>📊 {vi?"Thuế TNCN — 5 Bậc Lũy Tiến 2026":"PIT — 5 Progressive Brackets 2026"}</div>
               {[
-                { bracket:"Bậc 1", range:"≤ 10 triệu",          rate:"5%",  formula:"0.05 × TNTT" },
-                { bracket:"Bậc 2", range:"10 – 30 triệu",       rate:"10%", formula:"0.1×TNTT − 0.5tr" },
-                { bracket:"Bậc 3", range:"30 – 60 triệu",       rate:"20%", formula:"0.2×TNTT − 3.5tr" },
-                { bracket:"Bậc 4", range:"60 – 100 triệu",      rate:"30%", formula:"0.3×TNTT − 9.5tr" },
-                { bracket:"Bậc 5", range:"> 100 triệu",          rate:"35%", formula:"0.35×TNTT − 14.5tr" },
+                 { bracket:vi?"Bậc 1":"Bracket 1", range:vi?"≤ 10 triệu":"≤ 10M",          rate:"5%",  formula:"0.05 × TNTT" },
+                 { bracket:vi?"Bậc 2":"Bracket 2", range:vi?"10 – 30 triệu":"10 – 30M",       rate:"10%", formula:"0.1×TNTT − 0.5tr" },
+                 { bracket:vi?"Bậc 3":"Bracket 3", range:vi?"30 – 60 triệu":"30 – 60M",       rate:"20%", formula:"0.2×TNTT − 3.5tr" },
+                 { bracket:vi?"Bậc 4":"Bracket 4", range:vi?"60 – 100 triệu":"60 – 100M",      rate:"30%", formula:"0.3×TNTT − 9.5tr" },
+                 { bracket:vi?"Bậc 5":"Bracket 5", range:vi?"> 100 triệu":"> 100M",          rate:"35%", formula:"0.35×TNTT − 14.5tr" },
               ].map((b,i) => (
                 <div key={i} style={{ display:"flex", gap:8, fontSize:11.5, marginBottom:3, alignItems:"center" }}>
                   <span style={{ background:"#D0211C", color:"#fff", borderRadius:4, padding:"1px 5px", fontSize:10, fontWeight:700, flexShrink:0 }}>{b.rate}</span>

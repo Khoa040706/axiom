@@ -16,6 +16,7 @@ import {
   CAREER_EVENT_TYPES, CAREER_EVENT_CATEGORIES, REWARD_TYPES, PENALTY_TYPES,
 } from "@/lib/constants"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { matchAny } from "@/lib/utils/search"
 import { useState as useStateImg } from "react"
 
 function EmpAvatar({ name, avatarPath, size = 36 }: { name: string; avatarPath?: string | null; size?: number }) {
@@ -193,10 +194,7 @@ export default function CareerHistoryPage() {
     const types = getCatTypes(catFilter)
     if (types.length > 0 && !types.includes(r.eventType)) return false
     if (search) {
-      const q = search.toLowerCase()
-      const name = r.employee?.fullName?.toLowerCase() ?? ""
-      const code = r.employee?.code?.toLowerCase() ?? ""
-      if (!name.includes(q) && !code.includes(q)) return false
+      if (!matchAny([r.employee?.fullName, r.employee?.code], search)) return false
     }
     return true
   })

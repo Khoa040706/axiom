@@ -1,15 +1,16 @@
 /**
- * auth.ts — NextAuth v5 (Auth.js) configuration
- * Dùng CredentialsProvider + bcrypt verify thủ công với DB
- * Không dùng PrismaAdapter (conflict với @prisma/adapter-pg của Prisma 7)
+ * auth.ts — NextAuth v5 (Auth.js) configuration — Node.js only
+ * Import file này trong Server Components, API routes, Server Actions
+ * KHÔNG import trong middleware.ts (Edge Runtime)
  */
 
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { authConfig } from "@/lib/auth.config"
 import { userService } from "@/lib/services/user.service"
 import bcrypt from "bcryptjs"
 
-// Role → dashboard mapping
+// Role → dashboard mapping (giữ ở đây cho CredentialsProvider)
 const ROLE_DASHBOARD: Record<string, string> = {
   Admin:      "/dashboard",
   HRManager:  "/dashboard-hr",
@@ -20,12 +21,7 @@ const ROLE_DASHBOARD: Record<string, string> = {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET,
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-    error:  "/login",
-  },
+  ...authConfig,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -48,12 +44,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const dashboard = ROLE_DASHBOARD[user.role] ?? "/dashboard-employee"
 
           return {
-            id:          String(user.id),
-            name:        user.employee?.fullName ?? user.username,
-            email:       null,
-            role:        user.role,
-            employeeId:  user.employeeId ?? undefined,
+            id:            String(user.id),
+            name:          user.employee?.fullName ?? user.username,
+            email:         null,
+            role:          user.role,
+            employeeId:    user.employeeId ?? undefined,
             dashboardPath: dashboard,
+            personalEmail: user.personalEmail ?? null,
           }
         } catch (err) {
           console.error("[auth] authorize error:", err)
@@ -62,23 +59,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role          = user.role
-        token.employeeId    = user.employeeId
-        token.dashboardPath = user.dashboardPath
-      }
-      return token
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id            = token.sub ?? ""
-        session.user.role          = typeof token.role === "string" ? token.role : "Employee"
-        session.user.employeeId    = typeof token.employeeId === "number" ? token.employeeId : undefined
-        session.user.dashboardPath = typeof token.dashboardPath === "string" ? token.dashboardPath : "/dashboard-employee"
-      }
-      return session
-    },
-  },
 })
