@@ -2,8 +2,7 @@
 
 > **Nhóm:** 52400017 · 52400133 · 52400004
 > **Môn học:** Đồ án Công nghệ Phần mềm — TDTU
-> **Hạn nộp:** 08/04/2026
-> **Ngày cập nhật:** 07/04/2026
+> **Ngày cập nhật:** 15/04/2026
 
 ---
 
@@ -20,10 +19,12 @@
 | Bảo mật RBAC | Phân quyền chi tiết theo 6 vai trò |
 | Dashboard Real-time | Báo cáo trực quan cho ban lãnh đạo |
 
-### Số liệu codebase (07/04/2026)
+### Số liệu codebase (15/04/2026)
 
 | Metric | Giá trị |
 |---|---|
+| Tổng source files (`.ts` + `.tsx`) | **114 files** |
+| Tổng source code size | **~1015 KB** |
 | Tổng page files (`page.tsx`) | **31** |
 | API route files (`route.ts`) | **8** |
 | Layout files (`layout.tsx`) | **3** |
@@ -33,7 +34,7 @@
 | Server Action files | **11** |
 | Zod Validator schemas | **5** |
 | Custom React Hooks | **5** |
-| Helper / Utility files | **5** (`payroll-calculator`, `format-helpers`, `serialize`, `search`, `utils`) |
+| Helper / Utility files | **6** (`payroll-calculator`, `format-helpers`, `serialize`, `search`, `utils`, `i18n-maps`) |
 | RBAC roles | **6** |
 | Demo employees + accounts | **63 NV + 64 TK** |
 
@@ -131,6 +132,7 @@ PostgreSQL 17 Database (Docker container)
 │   ├── bangmau.md             ← Bảng màu thiết kế (15 màu)
 │   ├── plan.md                ← Kế hoạch phát triển
 │   ├── tai-khoan-demo.md      ← Danh sách 64 tài khoản demo
+│   ├── thuyet-trinh.md        ← Tài liệu thuyết trình
 │   └── project-summary.md     ← File này
 ├── UML/
 │   ├── Activity Diagram/      ← 4 JPG + 4 HTML diagrams
@@ -140,37 +142,38 @@ PostgreSQL 17 Database (Docker container)
 └── axiom/                     ← Next.js 16 Project
     ├── .env / .env.example
     ├── docker-compose.yml     ← PostgreSQL container
+    ├── setup_db.sql           ← SQL khởi tạo DB
     ├── prisma/
     │   ├── schema.prisma      ← 13 models, 282 dòng
     │   └── migrations/        ← 2 migrations (init + avatar_path_to_text)
     ├── prisma.config.ts       ← Prisma 7 connection config
     ├── scripts/               ← 6 utility scripts
-    │   ├── seed-demo-data.ts  ← Tạo 63NV + 64TK (34.6KB)
-    │   ├── generate-payroll.ts
-    │   ├── generate-attendance.ts
-    │   ├── vary-payroll.ts
-    │   ├── check-payroll-months.ts
-    │   └── test-db.mjs
+    │   ├── seed-demo-data.ts  ← Tạo 63NV + 64TK (33.8KB)
+    │   ├── generate-payroll.ts ← Tính lương hàng loạt (8.4KB)
+    │   ├── generate-attendance.ts ← Tạo dữ liệu chấm công (3.1KB)
+    │   ├── vary-payroll.ts    ← Tạo biến động lương (5.0KB)
+    │   ├── check-payroll-months.ts ← Kiểm tra payroll (1.2KB)
+    │   └── test-db.mjs        ← Test kết nối database
     ├── public/
     │   └── images/            ← LogoAXIOM.png, avatarmacdinh.jpg, CoVietNam.png, coanh.png
-    └── src/
-        ├── middleware.ts      ← Edge Runtime auth guard + email setup redirect
+    └── src/                   ← 114 files, ~1015KB
+        ├── middleware.ts      ← Edge Runtime auth guard + email setup redirect (65 dòng)
         ├── app/
         │   ├── layout.tsx     ← Root layout (AuthProvider wrapper)
-        │   ├── globals.css    ← Design tokens + Tailwind + responsive utils (246 dòng)
+        │   ├── globals.css    ← Design tokens + Tailwind + responsive utils
         │   ├── page.tsx       ← redirect → /login
-        │   ├── setup-email/   ← 🆕 Thiết lập Gmail cá nhân (bắt buộc khi login lần đầu)
-        │   ├── (auth)/        ← layout.tsx + login (892 dòng), forgot-password, reset-password
-        │   ├── (dashboard)/   ← layout.tsx (41.8KB) + 18 sub-modules
+        │   ├── setup-email/   ← Thiết lập Gmail cá nhân (11.2KB)
+        │   ├── (auth)/        ← layout.tsx + login (45.6KB), forgot-password (11.6KB), reset-password (16.1KB)
+        │   ├── (dashboard)/   ← layout.tsx (41.0KB) + 18 sub-modules
         │   └── api/           ← 5 thư mục API routes
         │       ├── auth/[...nextauth]/route.ts
         │       ├── departments/route.ts + [id]/route.ts
-        │       ├── forgot-password/route.ts
-        │       ├── upload-avatar/route.ts   ← 🆕 File-based avatar upload
+        │       ├── forgot-password/route.ts (6.7KB)
+        │       ├── upload-avatar/route.ts
         │       └── export/
-        │           ├── excel/route.ts
+        │           ├── excel/route.ts (21.7KB)
         │           ├── payslip-pdf/route.ts
-        │           └── report-excel/route.ts
+        │           └── report-excel/route.ts (22.7KB)
         ├── components/
         │   ├── providers/     ← auth-provider.tsx (SessionProvider)
         │   ├── ui/            ← avatar-img.tsx
@@ -181,31 +184,32 @@ PostgreSQL 17 Database (Docker container)
         │   ├── leave/         ← leave-form, leave-balance, approval-actions
         │   └── payroll/       ← payroll-table, salary-breakdown, payslip-template
         ├── hooks/
-        │   ├── use-current-user.ts   ← NextAuth session + mock fallback
-        │   ├── use-breakpoint.ts
-        │   ├── use-debounce.ts
-        │   ├── use-pagination.ts
-        │   └── use-confirmation.ts
+        │   ├── use-current-user.ts   ← NextAuth session + mock fallback (2.6KB)
+        │   ├── use-breakpoint.ts     ← (1.5KB)
+        │   ├── use-debounce.ts       ← (0.5KB)
+        │   ├── use-pagination.ts     ← (1.6KB)
+        │   └── use-confirmation.ts   ← (1.4KB)
         ├── lib/
-        │   ├── prisma.ts             ← PrismaClient singleton (Prisma 7 adapter)
-        │   ├── auth.ts               ← NextAuth v5 config (CredentialsProvider) — Node.js only
-        │   ├── auth.config.ts        ← 🆕 Edge-safe NextAuth config (callbacks only)
-        │   ├── mock-auth.ts          ← Legacy mock (localStorage) — fallback only
-        │   ├── dashboard-context.tsx  ← Dark/Light + VI/EN context
-        │   ├── constants.ts          ← Rates, tax brackets, enums (71 dòng)
+        │   ├── prisma.ts             ← PrismaClient singleton (Prisma 7 adapter, 27 dòng)
+        │   ├── auth.ts               ← NextAuth v5 config (CredentialsProvider) — Node.js only (63 dòng)
+        │   ├── auth.config.ts        ← Edge-safe NextAuth config (callbacks only, 53 dòng)
+        │   ├── mock-auth.ts          ← Legacy mock (localStorage) — fallback only (13.8KB)
+        │   ├── dashboard-context.tsx  ← Dark/Light + VI/EN context (78 dòng)
+        │   ├── constants.ts          ← Rates, tax brackets, enums, EN translations (113 dòng)
+        │   ├── i18n-maps.ts          ← Central VI→EN mapping: dept, position, career phrases (167 dòng, 8.3KB)
         │   ├── utils.ts              ← cn() (tailwind-merge)
         │   ├── services/             ← 10 service files
         │   ├── actions/              ← 11 server action files
         │   ├── validators/           ← 5 Zod schemas
-        │   ├── helpers/              ← payroll-calculator, format-helpers, serialize
-        │   └── utils/                ← 🆕 search.ts (Vietnamese search — normalizeVN, matchAny)
+        │   ├── helpers/              ← payroll-calculator (97 dòng), format-helpers (121 dòng), serialize (54 dòng)
+        │   └── utils/                ← search.ts (Vietnamese search — normalizeVN, matchAny, 1.8KB)
         ├── styles/
         │   └── print.css
         └── types/
             ├── index.ts
-            ├── employee.types.ts
-            ├── payroll.types.ts
-            └── next-auth.d.ts        ← Session/User/JWT augmentation (incl. personalEmail)
+            ├── employee.types.ts     ← EmployeeWithRelations, DepartmentBasic, etc. (88 dòng)
+            ├── payroll.types.ts      ← PayrollRecord, PayslipRecord, etc. (63 dòng)
+            └── next-auth.d.ts        ← Session/User/JWT augmentation (36 dòng)
 ```
 
 ---
@@ -226,6 +230,11 @@ PostgreSQL 17 Database (Docker container)
 | Lịch sử công tác (timeline) | `/career-history` | ✅ Hoàn chỉnh |
 | Công tác phí | `/business-trips` | ✅ Hoàn chỉnh |
 
+**Employee Deletion Flow (2-step):**
+- **Soft delete** (`deleteEmployee`): Đổi status → "Nghỉ việc" (reversible)
+- **Hard delete** (`hardDeleteEmployee`): Xóa hoàn toàn + tất cả data liên quan (transaction)
+- **Reinstate** (`reinstateEmployee`): Khôi phục NV đã soft-delete → "Đang làm"
+
 ### 🅱️ Phân hệ 2: Quản lý Thời gian & Nghỉ phép (Time & Attendance)
 
 | Chức năng | Route | Trạng thái |
@@ -244,17 +253,19 @@ PostgreSQL 17 Database (Docker container)
 | Danh sách phiếu lương | `/payslips` | ✅ Hoàn chỉnh |
 | Xem + xuất PDF phiếu lương | `/payslips/[id]` | ✅ Hoàn chỉnh |
 
-**Công thức tính lương (payroll-calculator.ts):**
+**Công thức tính lương (payroll-calculator.ts — 97 dòng):**
 ```
 Gross        = (baseSalary × salaryGrade) + allowance + otPay
-BHXH         = Gross × 8%
-BHYT         = Gross × 1.5%
-BHTN         = Gross × 1%
+BHXH         = (baseSalary × salaryGrade) × 8%     ← Đúng quy định: BH tính trên lương cơ bản × hệ số
+BHYT         = (baseSalary × salaryGrade) × 1.5%
+BHTN         = (baseSalary × salaryGrade) × 1%
 Taxable      = Gross − BHXH − BHYT − BHTN − 11.000.000 − (4.400.000 × numDependents)
 Thuế TNCN    = Biểu lũy tiến 7 bậc (5% / 10% / 15% / 20% / 25% / 30% / 35%)
 Net          = Gross − BHXH − BHYT − BHTN − Thuế TNCN − otherDeductions
 OT pay       = (baseSalary × salaryGrade / 26 ngày / 8 giờ) × 1.5 × otHours
 ```
+
+**Thực tập sinh:** `effectiveBaseSalary = baseSalary × 0.85` (85% lương cơ bản, phụ cấp giữ nguyên)
 
 **Biểu thuế TNCN 7 bậc (Điều 22, Luật Thuế TNCN VN):**
 
@@ -280,7 +291,7 @@ OT pay       = (baseSalary × salaryGrade / 26 ngày / 8 giờ) × 1.5 × otHour
 | Dashboard Nhân viên | `/dashboard-employee` | ✅ Hoàn chỉnh |
 | Quản lý tài khoản RBAC | `/settings/users` | ✅ Hoàn chỉnh |
 | Hồ sơ cá nhân + Crop avatar | `/profile` | ✅ Hoàn chỉnh |
-| Thiết lập Gmail cá nhân | `/setup-email` | 🆕 ✅ Hoàn chỉnh |
+| Thiết lập Gmail cá nhân | `/setup-email` | ✅ Hoàn chỉnh |
 | Settings tổng | `/settings` | ✅ Hoàn chỉnh |
 | Export Excel / PDF | API routes | ✅ Hoàn chỉnh |
 
@@ -295,7 +306,7 @@ OT pay       = (baseSalary × salaryGrade / 26 ngày / 8 giờ) × 1.5 × otHour
 | 3 | `Employee` | `employees` | id, code(unique), fullName, gender, dateOfBirth, idNumber, phone, email, address, avatarPath(Text), departmentId, positionId, hireDate, status, taxCode, numDependents | avatarPath: Text (migration #2) |
 | 4 | `Contract` | `contracts` | id, employeeId, contractType, startDate, endDate, baseSalary, salaryGrade(Decimal 5,2), allowance, status, notes | Decimal(18,2) |
 | 5 | `CareerHistory` | `career_history` | id, employeeId, eventType, eventDate, description, decisionNumber, old/newDepartment, old/newPosition, old/newSalary, rewardType, rewardAmount, penaltyType | 17 fields |
-| 6 | `User` | `users` | id, username(unique), passwordHash, employeeId(unique?), role, isActive, lastLogin, createdAt, **personalEmail** | 🆕 personalEmail field |
+| 6 | `User` | `users` | id, username(unique), passwordHash, employeeId(unique?), role, isActive, lastLogin, createdAt, **personalEmail** | personalEmail → forgot password |
 | 7 | `Attendance` | `attendance` | id, employeeId, workDate, checkIn(Time), checkOut(Time), status, otHours, lateMinutes, earlyMinutes, notes | @@unique [employeeId, workDate] |
 | 8 | `LeaveRequest` | `leave_requests` | id, employeeId, leaveType, startDate, endDate, totalDays, reason, status, approvedBy, approvedDate | approvedBy → User |
 | 9 | `LeaveBalance` | `leave_balance` | id, employeeId, year, leaveType, totalDays, usedDays | @@unique [employeeId, year, leaveType] |
@@ -328,7 +339,7 @@ OT pay       = (baseSalary × salaryGrade / 26 ngày / 8 giờ) × 1.5 × otHour
 
 ## 8. Dữ liệu demo (63 nhân viên + 64 tài khoản)
 
-### Cấu trúc tổ chức (seed-demo-data.ts — 34.6KB)
+### Cấu trúc tổ chức (seed-demo-data.ts — 33.8KB)
 
 | Nhóm | Số lượng | Role hệ thống |
 |---|---|---|
@@ -371,16 +382,16 @@ OT pay       = (baseSalary × salaryGrade / 26 ngày / 8 giờ) × 1.5 × otHour
 
 | Service | Chức năng chính |
 |---|---|
-| `employee.service.ts` | findMany (search/filter/pagination), findById, findByCode, create, update, softDelete |
-| `department.service.ts` | findAll, findById, create, update, delete (isActive=false) |
-| `contract.service.ts` | findAll, findByEmployee, findActive, findExpiringSoon (30 ngày), create, update, terminate |
-| `career-history.service.ts` | findAll, findByEmployee, create (transaction → tự cập nhật Employee), delete, getOverviewStats |
-| `attendance.service.ts` | findByMonth, findToday, checkIn (tính lateMinutes), checkOut (tính otHours/earlyMinutes), upsert |
-| `leave.service.ts` | findMany, create, approve (kiểm tra quỹ phép + trừ balance), getBalance, getAllBalances |
-| `payroll.service.ts` | findByPeriod, findById, calculate (lấy HĐ + chấm công → Gross→Net tự động), getSummary |
-| `payslip.service.ts` | create, findByEmployee, findByPeriod, markViewed, updatePdfPath |
-| `dashboard.service.ts` | getEmployeeStats, getHeadcountByDepartment, getPayrollTrend, getAttendanceTrend, getRecentActivity |
-| `user.service.ts` | findByUsername, findById, findAll, createWithEmployee (transaction), toggleActive, deleteWithEmployee, resetPassword, findForPasswordChange, updatePassword, updateLastLogin, updateEmployeeProfile, setTempPassword, getDepartmentsForSelect, countActiveAdmins |
+| `employee.service.ts` (144 dòng) | findMany (search/filter/pagination), findById, findByCode, count, create, update, **softDelete**, **hardDelete** (transaction xóa toàn bộ data liên quan) |
+| `department.service.ts` (41 dòng) | findAll, findById, create, update, delete (isActive=false) |
+| `contract.service.ts` (104 dòng) | findAll, findByEmployee, findActive, findExpiringSoon (30 ngày), create, update, terminate |
+| `career-history.service.ts` (187 dòng) | findAll, findByEmployee, create (**transaction → tự cập nhật Employee position/department**), delete, getStatsByEmployee, getOverviewStats, getEmployeesForSelect, getDepartmentsForSelect, getPositionsForSelect |
+| `attendance.service.ts` (130 dòng) | findByMonth, findToday, checkIn (tính lateMinutes từ 8:00), checkOut (tính otHours/earlyMinutes từ 17:00), upsert |
+| `leave.service.ts` (120 dòng) | findMany, create, approve (**transaction: kiểm tra quỹ phép + trừ balance**), getBalance, getAllBalances |
+| `payroll.service.ts` (149 dòng) | findByPeriod, findById, calculate (**lấy HĐ + chấm công → Gross→Net tự động**, intern 85%), getSummary |
+| `payslip.service.ts` (76 dòng) | create, createOrUpdate (chống duplicate), findByEmployee, findByPeriod, markViewed, updatePdfPath |
+| `dashboard.service.ts` (133 dòng) | getEmployeeStats, getHeadcountByDepartment, getPayrollTrend, getPendingLeaveCount, getExpiringContracts, getAttendanceTrend, getRecentActivity |
+| `user.service.ts` (207 dòng) | findByUsername, findById, findAll, createWithEmployee (**transaction: auto-gen NV code**), create, updateRole, toggleActive, deactivate, deleteWithEmployee, resetPassword, findForPasswordChange, updatePassword, updateLastLogin, updateEmployeeProfile, setTempPassword, getDepartmentsForSelect, countActiveAdmins |
 
 ---
 
@@ -390,17 +401,17 @@ Tất cả đều `"use server"` + pattern `{ success, data?, error? }`:
 
 | Action file | Hàm chính |
 |---|---|
-| `employee.actions.ts` | getEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployee |
-| `contract.actions.ts` | getAllContracts, getContractsByEmployee, getExpiringContracts, createContract, terminateContract |
-| `attendance.actions.ts` | getAttendanceByMonth, getTodayAttendance, checkIn, checkOut, upsertAttendance |
-| `leave.actions.ts` | getLeaveRequests, createLeaveRequest, approveLeave, getLeaveBalance, getAllLeaveBalances |
-| `payroll.actions.ts` | getPayrollByPeriod, calculatePayroll, getPayrollSummary, getPayslipsByEmployee, getEmployeePayroll |
-| `career-history.actions.ts` | getCareerHistories, createCareerHistory, deleteCareerHistory, getCareerOverviewStats |
-| `business-trips.actions.ts` | getBusinessTrips, createBusinessTrip, approveBusinessTrip |
-| `user-admin.actions.ts` | getAllUsersFromDB, createUserInDB, toggleUserActiveInDB, deleteUserFromDB, adminResetPasswordInDB, updateUserRoleInDB, getDepartmentsForSelect, changePasswordInDB, updateProfileInDB, getEmployeeAvatar, setTempPasswordInDB, **savePersonalEmailInDB** 🆕, **getPersonalEmail** 🆕 |
-| `dashboard.actions.ts` | getDashboardStats, getDashboardCharts, getDashboardAttendanceTrend |
-| `department.actions.ts` | getDepartments, getPositions |
-| `auth.actions.ts` | getUsers, updateUserRole, deactivateUser |
+| `employee.actions.ts` (110 dòng) | getEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployee, **hardDeleteEmployee**, **reinstateEmployee**, getEmployeeByCode |
+| `contract.actions.ts` (67 dòng) | getAllContracts, getContractsByEmployee, getExpiringContracts, createContract, terminateContract |
+| `attendance.actions.ts` (67 dòng) | getAttendanceByMonth, getTodayAttendance, checkIn, checkOut, upsertAttendance |
+| `leave.actions.ts` (85 dòng) | getLeaveRequests, createLeaveRequest, approveLeave, getLeaveBalance, getAllLeaveBalances |
+| `payroll.actions.ts` (59 dòng) | getPayrollByPeriod, calculatePayroll, getPayrollSummary, getPayslipsByEmployee, getEmployeePayroll |
+| `career-history.actions.ts` (111 dòng) | getCareerHistories, getCareerHistoryByEmployee, createCareerHistory, deleteCareerHistory, getCareerOverviewStats, getEmployeesForCareerSelect, getDepartmentsForCareerSelect, getPositionsForCareerSelect |
+| `business-trips.actions.ts` (78 dòng) | getBusinessTrips, createBusinessTrip, approveBusinessTrip |
+| `user-admin.actions.ts` (219 dòng) | getAllUsersFromDB, createUserInDB, toggleUserActiveInDB, deleteUserFromDB, adminResetPasswordInDB, updateUserRoleInDB, getDepartmentsForSelect, changePasswordInDB, updateProfileInDB, getEmployeeAvatar, setTempPasswordInDB, **savePersonalEmailInDB**, **getPersonalEmail** |
+| `dashboard.actions.ts` (42 dòng) | getDashboardStats, getDashboardCharts, getDashboardAttendanceTrend |
+| `department.actions.ts` (33 dòng) | getDepartments, getPositions |
+| `auth.actions.ts` (35 dòng) | getUsers, updateUserRole, deactivateUser |
 
 ---
 
@@ -411,11 +422,11 @@ Tất cả đều `"use server"` + pattern `{ success, data?, error? }`:
 | `api/auth/[...nextauth]/route.ts` | GET, POST | NextAuth v5 catch-all handler |
 | `api/departments/route.ts` | GET | Lấy danh sách phòng ban |
 | `api/departments/[id]/route.ts` | GET, PUT, DELETE | CRUD phòng ban theo ID |
-| `api/forgot-password/route.ts` | POST | 🆕 Tìm user theo personalEmail → generate tempPw → bcrypt hash → gửi email qua Gmail SMTP (nodemailer) |
-| `api/upload-avatar/route.ts` | POST | 🆕 Nhận base64 image → decode → lưu file vào `public/uploads/avatars/` → cập nhật DB |
-| `api/export/excel/route.ts` | GET/POST | Export Excel |
+| `api/forgot-password/route.ts` (6.7KB) | POST | Tìm user theo personalEmail → generate tempPw → bcrypt hash → gửi email qua Gmail SMTP (nodemailer) |
+| `api/upload-avatar/route.ts` | POST | Nhận base64 image → decode → lưu file vào `public/uploads/avatars/` → cập nhật DB |
+| `api/export/excel/route.ts` (21.7KB) | GET/POST | Export Excel bảng lương |
 | `api/export/payslip-pdf/route.ts` | GET/POST | Export phiếu lương PDF |
-| `api/export/report-excel/route.ts` | GET/POST | Export báo cáo Excel |
+| `api/export/report-excel/route.ts` (22.7KB) | GET/POST | Export báo cáo Excel tổng hợp |
 
 ---
 
@@ -423,15 +434,15 @@ Tất cả đều `"use server"` + pattern `{ success, data?, error? }`:
 
 | Schema file | Schemas exported |
 |---|---|
-| `employee.schema.ts` | `employeeSchema`, `employeeUpdateSchema` |
-| `contract.schema.ts` | `contractSchema`, `contractUpdateSchema` |
-| `attendance.schema.ts` | `attendanceSchema`, `checkInSchema`, `checkOutSchema` |
-| `leave.schema.ts` | `leaveRequestSchema`, `leaveApprovalSchema`, `leaveBalanceSchema` |
-| `payroll.schema.ts` | `payrollSchema`, `salaryConfigSchema` |
+| `employee.schema.ts` (28 dòng) | `employeeSchema`, `employeeUpdateSchema` |
+| `contract.schema.ts` (23 dòng) | `contractSchema` (CONTRACT_TYPES enum), `contractUpdateSchema` |
+| `attendance.schema.ts` (31 dòng) | `attendanceSchema`, `checkInSchema`, `checkOutSchema` |
+| `leave.schema.ts` (31 dòng) | `leaveRequestSchema`, `leaveApprovalSchema`, `leaveBalanceSchema` |
+| `payroll.schema.ts` (32 dòng) | `payrollSchema`, `salaryConfigSchema` |
 
 ---
 
-## 13. Hằng số hệ thống (constants.ts — 71 dòng)
+## 13. Hằng số hệ thống (constants.ts — 113 dòng)
 
 | Hằng số | Giá trị | Ghi chú |
 |---|---|---|
@@ -447,7 +458,7 @@ Tất cả đều `"use server"` + pattern `{ success, data?, error? }`:
 
 **Enums:**
 - `ROLES`: Admin, HRManager, Accountant, Director, Manager, Employee
-- `CONTRACT_TYPES`: Thử việc, Chính thức, Thời vụ
+- `CONTRACT_TYPES`: Thử việc, Chính thức, Thời vụ, **Thực tập**
 - `EMPLOYEE_STATUS`: Đang làm, Thử việc, Nghỉ việc
 - `LEAVE_TYPES`: Nghỉ năm, Nghỉ ốm, Việc riêng, Khác
 - `CAREER_EVENT_TYPES`: Bổ nhiệm, Miễn nhiệm, Thăng chức, Giáng chức, Điều chuyển, Điều chỉnh lương, Khen thưởng, Kỷ luật, Khác
@@ -455,11 +466,35 @@ Tất cả đều `"use server"` + pattern `{ success, data?, error? }`:
 - `REWARD_TYPES`: Bằng khen, Giấy khen, Tiền thưởng, Thưởng dự án, Khác
 - `PENALTY_TYPES`: Khiển trách, Cảnh cáo, Hạ bậc lương, Chuyển công tác, Sa thải, Khác
 
+**English Translation Maps (constants.ts):**
+- `CAREER_EVENT_TYPE_EN` → 9 event types
+- `REWARD_TYPE_EN` → 5 values
+- `PENALTY_TYPE_EN` → 6 values
+- `CONTRACT_TYPE_EN` → 3 values
+- `EMPLOYEE_STATUS_EN` → 3 values
+
 ---
 
-## 14. Middleware & Auth Flow
+## 14. i18n Architecture (Hệ thống đa ngôn ngữ)
 
-### middleware.ts — Edge Runtime auth guard
+### dashboard-context.tsx (78 dòng)
+- `DashLang`: `"vi" | "en"` — toggle bằng cờ quốc kỳ
+- `DashboardProvider`: Dark/Light + VI/EN + localStorage sync
+- `useDashboard()`: hook cho mọi Client Component
+
+### i18n-maps.ts (167 dòng, 8.3KB)
+Central mapping VI→EN cho tất cả dynamic data từ DB:
+- `DEPT_VI_TO_EN`: 15 phòng ban
+- `POS_VI_TO_EN`: 24 chức vụ
+- `CAREER_PHRASES_VI_TO_EN`: 37 career description phrases (ordered longest-first)
+- `CONTRACT_TYPE_VI_TO_EN`: 6 loại hợp đồng
+- Helper functions: `tDept()`, `tPos()`, `tContractType()`, `tCareerDetail()` (multi-step translation)
+
+---
+
+## 15. Middleware & Auth Flow
+
+### middleware.ts — Edge Runtime auth guard (65 dòng)
 
 ```
 Kiến trúc 2 file:
@@ -474,11 +509,11 @@ Luồng xử lý:
   1. Root / → redirect /login
   2. Public path → next()
   3. Chưa đăng nhập → redirect /login?callbackUrl=<path>
-  4. 🆕 Chưa có personalEmail (trừ Admin) → redirect /setup-email
+  4. Chưa có personalEmail (trừ Admin) → redirect /setup-email
   5. Đã xác thực + có email → next()
 ```
 
-### Auth flow (auth.ts — NextAuth v5)
+### Auth flow (auth.ts — NextAuth v5, 63 dòng)
 
 1. **Login**: CredentialsProvider → `userService.findByUsername()` → `bcrypt.compare()` → `userService.updateLastLogin()`
 2. **JWT callback**: Token ghi thêm `role`, `employeeId`, `dashboardPath`, `personalEmail`
@@ -486,14 +521,14 @@ Luồng xử lý:
 4. **Session update**: Client gọi `session.update({ personalEmail })` → JWT cập nhật runtime
 5. **Redirect sau login**: Client đọc `session.user.dashboardPath` → push router
 
-### Type augmentation (next-auth.d.ts)
+### Type augmentation (next-auth.d.ts — 36 dòng)
 
 ```typescript
 Session.user: { id, name, email, image, role, employeeId, dashboardPath, personalEmail }
 JWT: { role, employeeId, dashboardPath, personalEmail }
 ```
 
-### useCurrentUser hook
+### useCurrentUser hook (2.6KB)
 
 - Ưu tiên: **NextAuth session** (`useSession()`) → trả về MockUser-compatible object
 - Fallback: `mock-auth.ts` → `getCurrentUser()` (localStorage)
@@ -501,42 +536,50 @@ JWT: { role, employeeId, dashboardPath, personalEmail }
 
 ---
 
-## 15. Tính năng mới (so với phiên bản 06/04/2026)
+## 16. Tính năng nổi bật
 
-### 🆕 Thiết lập Gmail cá nhân (setup-email)
+### 🆕 Thiết lập Gmail cá nhân (setup-email — 11.2KB)
 
 - **Route**: `/setup-email` (ngoài dashboard layout)
 - **Bắt buộc**: Middleware redirect tất cả user (trừ Admin) chưa có personalEmail
 - **Flow**: Nhập Gmail → validate `@gmail.com` → `savePersonalEmailInDB()` → `session.update()` → redirect dashboard
 - **UI**: Dark/Light mode, AXIOM branding, shield icon, Gmail indicator
 
-### 🆕 Quên mật khẩu với Email thực (forgot-password)
+### 🆕 Quên mật khẩu với Email thực (forgot-password — 6.7KB API)
 
 - **API**: `POST /api/forgot-password`
 - **Flow**: Nhập Gmail cá nhân → tìm user theo `personalEmail` → generate temp password 10 ký tự → bcrypt hash → cập nhật DB → gửi email qua **Gmail SMTP** (nodemailer)
 - **Email template**: HTML đẹp với AXIOM branding, gradient header, temporary password display, employee info, login CTA
 - **Security**: Trả `success: true` kể cả khi email không tồn tại (tránh lộ thông tin)
-- **Dev mode**: Trả `tempPw` trong response để hiển thị trên UI
 
-### 🆕 Avatar Upload & Crop Modal (profile)
+### 🆕 Avatar Upload & Crop Modal (profile — 46KB)
 
 - **API route**: `POST /api/upload-avatar` — nhận base64 image, decode, lưu file disk, cập nhật DB
-- **Crop Modal** (`AvatarCropModal` component, 300 dòng):
+- **Crop Modal** (`AvatarCropModal` component):
   - Drag-to-pan (pointer events)
   - Scroll/button zoom (0.1x → 5x)
   - Circular clipping mask (260px visual, 400px output)
   - Zoom slider với knob
-  - Reset button
-  - Auto-fit on load
+  - Reset button, Auto-fit on load
   - Canvas-based rendering
-- **Save flow**: Crop → base64 → `/api/upload-avatar` → file saved to `public/uploads/avatars/` → DB updated
 
-### 🆕 Vietnamese Search Utility (search.ts)
+### 🆕 Employee Two-Step Deletion
+
+- **Soft delete**: Đổi status → "Nghỉ việc" (có thể reinstate)
+- **Hard delete**: Transaction xóa toàn bộ: payslips, payroll, contracts, career history, attendance, leave requests, leave balance, business trips, user account, employee record
+- **Reinstate**: Khôi phục NV đã soft-delete về "Đang làm"
+
+### 🆕 Intern Salary Calculation
+
+- Nhận diện qua `contractType === "Thực tập"`
+- `effectiveBaseSalary = baseSalary × 0.85` (85%)
+- Phụ cấp (allowance) giữ nguyên 100%
+
+### 🆕 Vietnamese Search Utility (search.ts — 1.8KB)
 
 - `normalizeVN(str)`: NFD decompose + remove combining diacritics + đ→d → lowercase
 - `matchSearch(text, query)`: Tìm kiếm hỗ trợ có dấu và không dấu
 - `matchAny(fields[], query)`: Search trên nhiều trường cùng lúc
-- Sử dụng trong: contracts, attendance, và các module khác
 
 ### 🆕 Edge-safe Auth Architecture
 
@@ -546,7 +589,29 @@ JWT: { role, employeeId, dashboardPath, personalEmail }
 
 ---
 
-## 16. Trang đăng nhập (login/page.tsx — 892 dòng)
+## 17. Top 15 Files theo kích thước
+
+| # | File | Size |
+|---|---|---|
+| 1 | `contracts/page.tsx` | 59.7 KB |
+| 2 | `payroll/page.tsx` | 57.9 KB |
+| 3 | `employees/page.tsx` | 54.1 KB |
+| 4 | `profile/page.tsx` | 46.0 KB |
+| 5 | `login/page.tsx` | 45.6 KB |
+| 6 | `(dashboard)/layout.tsx` | 41.0 KB |
+| 7 | `settings/users/page.tsx` | 39.5 KB (731 dòng) |
+| 8 | `leave/page.tsx` | 39.2 KB |
+| 9 | `career-history/page.tsx` | 35.6 KB |
+| 10 | `dashboard/page.tsx` | 32.9 KB |
+| 11 | `payroll/config/page.tsx` | 32.7 KB |
+| 12 | `leave/request/page.tsx` | 30.6 KB |
+| 13 | `export/report-excel/route.ts` | 22.7 KB |
+| 14 | `attendance/check-in/page.tsx` | 22.0 KB |
+| 15 | `export/excel/route.ts` | 21.7 KB |
+
+---
+
+## 18. Trang đăng nhập (login/page.tsx — 45.6KB)
 
 | Tính năng | Chi tiết |
 |---|---|
@@ -562,7 +627,7 @@ JWT: { role, employeeId, dashboardPath, personalEmail }
 
 ---
 
-## 17. Profile Module (profile/page.tsx — 951 dòng)
+## 19. Profile Module (profile/page.tsx — 46.0KB)
 
 | Tab | Chức năng |
 |---|---|
@@ -570,17 +635,26 @@ JWT: { role, employeeId, dashboardPath, personalEmail }
 | **Đổi mật khẩu** | Old password + new password với 4 security requirements + strength meter |
 | **Ảnh đại diện** | File picker → Crop modal (pan + zoom + circular mask) → Upload API → Save |
 
-Tính năng nổi bật:
-- Header card gradient đỏ với avatar, role badge, decorative circles
-- Tab sidebar dọc (desktop) / pills ngang (mobile)
-- Password strength meter 4 bậc: Rất yếu → Yếu → Trung bình → Mạnh
-- Avatar crop modal với canvas rendering, pointer events, zoom slider
-- Toast notifications (success/error, auto-dismiss 3.5s)
-- Responsive layout (sidebar → horizontal pills on mobile)
+---
+
+## 20. Settings/Users Module (settings/users/page.tsx — 39.5KB, 731 dòng)
+
+| Tính năng | Chi tiết |
+|---|---|
+| **Auth Guard** | Chỉ Admin mới truy cập được |
+| **CRUD tài khoản** | Tạo user + Employee (transaction), xóa + soft-delete employee liên kết |
+| **Inline Role Change** | RoleDropdown component — đổi role trực tiếp từ bảng, 6 màu phân biệt |
+| **Reset Password** | Modal reset mật khẩu admin (không cần mật khẩu cũ) |
+| **Toggle Active** | Khoá/mở khoá tài khoản |
+| **Sort & Filter** | Sortable columns (name/username A→Z/Z→A), search, role filter dropdown |
+| **Pagination** | 10 rows/page, ellipsis pagination, first/last/prev/next buttons |
+| **Stats Row** | 4 stat cards: Total, Active, Inactive, Admin count |
+| **i18n** | Full bilingual VI/EN |
+| **Avatar** | AvatarImg component cho mỗi user row |
 
 ---
 
-## 18. UML Diagrams
+## 21. UML Diagrams
 
 ### Use Case Diagrams (5 files HTML — UML/Usecase/)
 
@@ -605,7 +679,7 @@ Tính năng nổi bật:
 
 ---
 
-## 19. Thiết kế màu sắc (bangmau.md — globals.css)
+## 22. Thiết kế màu sắc (bangmau.md — globals.css)
 
 | CSS Variable | Giá trị | Vai trò |
 |---|---|---|
@@ -631,7 +705,7 @@ Tính năng nổi bật:
 
 ---
 
-## 20. Responsive Design (globals.css — 246 dòng)
+## 23. Responsive Design (globals.css)
 
 | Breakpoint | Behavior |
 |---|---|
@@ -639,25 +713,15 @@ Tính năng nổi bật:
 | `640–1024px` | Tablet: collapsed sidebar, 2-col grids |
 | `< 640px` | Mobile: bottom nav, 1-col, card layout thay bảng |
 
-CSS utilities:
-- `.rg-4` / `.rg-3` / `.rg-2` — responsive grid (4→2→1 col)
-- `.stat-row` — flex → grid on tablet/mobile
-- `.page-pad` — responsive padding + bottom nav offset
-- `.table-scroll` — horizontal scroll wrapper
-- `.bottom-nav` — fixed bottom navigation (mobile only)
-- `.page-header` — responsive page header (flex → column)
-- `.tabs-row` — scrollable tabs on mobile
-- `.filter-row` — responsive filter layout
-- `.hide-mobile` / `.show-mobile` / `.hide-tablet` — visibility helpers
-
 ---
 
-## 21. Trạng thái phát triển (tính đến 07/04/2026)
+## 24. Trạng thái phát triển (tính đến 15/04/2026)
 
 ### Tổng quan
 
 | Hạng mục | Kết quả |
 |---|---|
+| Tổng source files | **114** |
 | Tổng page files | **31** |
 | API route files | **8** |
 | Pages dùng DB thật | **Tất cả** (đã fix hết mock) |
@@ -666,7 +730,10 @@ CSS utilities:
 | Responsive design | ✅ Hoàn chỉnh |
 | Email integration | ✅ Nodemailer + Gmail SMTP |
 | Avatar upload | ✅ File-based + Crop modal |
-| Bugs đã fix | **9 bugs** |
+| Bilingual (VI/EN) | ✅ Hoàn chỉnh (constants + i18n-maps) |
+| Employee 2-step delete | ✅ Soft delete + Hard delete + Reinstate |
+| Intern salary (85%) | ✅ Thực tập → 85% baseSalary |
+| Bugs đã fix | **12 bugs** |
 
 ### Bugs đã fix
 
@@ -681,33 +748,13 @@ CSS utilities:
 | 7 | Seed roles sai (ketoan/truongphong) | Fix → `Accountant` / `Manager` |
 | 8 | Responsive overflow mobile | Fix bottom nav, card layout |
 | 9 | Edge Runtime crypto error | Tách `auth.config.ts` (Edge-safe) khỏi `auth.ts` (Node.js) |
+| 10 | `dashboard-manager` StatCard precedence bug | `d.cat===vi?"X":"Y"` → `d.cat===(vi?"X":"Y")` — ternary cần ngoặc |
+| 11 | `payroll/config` PIT chỉ 5 bậc | Sửa thành 7 bậc đúng Luật Thuế TNCN VN (Điều 22) |
+| 12 | `payroll/config` PIT brackets sai range/formula | Cập nhật range + quick formula đúng biểu lũy tiến 7 bậc |
 
 ---
 
-## 22. Roadmap nộp bài (→ 08/04/2026)
-
-### Phase 6: Testing & Polish *(đã qua)*
-
-- [x] Test user flow: Login → Setup Email → Check-in → Nghỉ phép → Phiếu lương
-- [x] Test RBAC: 6 roles → sidebar + dashboard khác nhau
-- [x] Test tạo user mới từ admin → đăng nhập được
-- [x] Test dark mode toàn bộ pages
-- [x] Test forgot password flow: login → forgot → nhập Gmail → nhận email → login lại
-- [x] Test avatar upload + crop modal
-- [x] Fix 9 bugs phát sinh
-
-### Phase 7: Build & Deploy *(06/04 → 08/04)*
-
-- [ ] `npm run build` — Production build check
-- [ ] Deploy lên Vercel / Railway
-- [ ] Setup PostgreSQL production (Railway hoặc Supabase)
-- [ ] Chạy seed trên production DB
-- [ ] Chuẩn bị slide / video demo
-- [ ] **Bổ sung Class Diagram + ERD** (UML còn trống)
-
----
-
-## 23. Hướng dẫn chạy nhanh
+## 25. Hướng dẫn chạy nhanh
 
 ```bash
 # 1. Vào thư mục axiom
@@ -753,20 +800,20 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"      # URL hiển thị trong email
 
 ---
 
-## 24. Scripts utility (axiom/scripts/)
+## 26. Scripts utility (axiom/scripts/)
 
-| Script | Lệnh | Chức năng |
+| Script | Lệnh | Size |
 |---|---|---|
-| Seed demo | `npx tsx scripts/seed-demo-data.ts` | Tạo 63 NV + 64 TK (34.6KB) |
-| Generate payroll | `npx tsx scripts/generate-payroll.ts` | Tính lương hàng loạt (8.6KB) |
-| Generate attendance | `npx tsx scripts/generate-attendance.ts` | Tạo dữ liệu chấm công (3.2KB) |
-| Vary payroll | `npx tsx scripts/vary-payroll.ts` | Tạo biến động lương (5.2KB) |
-| Check payroll | `npx tsx scripts/check-payroll-months.ts` | Kiểm tra payroll theo tháng |
-| Test DB | `node scripts/test-db.mjs` | Test kết nối database |
+| Seed demo | `npx tsx scripts/seed-demo-data.ts` | 33.8KB |
+| Generate payroll | `npx tsx scripts/generate-payroll.ts` | 8.4KB |
+| Generate attendance | `npx tsx scripts/generate-attendance.ts` | 3.1KB |
+| Vary payroll | `npx tsx scripts/vary-payroll.ts` | 5.0KB |
+| Check payroll | `npx tsx scripts/check-payroll-months.ts` | 1.2KB |
+| Test DB | `node scripts/test-db.mjs` | 0.4KB |
 
 ---
 
-## 25. Component Architecture (src/components/ — 8 thư mục)
+## 27. Component Architecture (src/components/ — 8 thư mục)
 
 | Thư mục | Files | Chức năng |
 |---|---|---|
@@ -781,44 +828,62 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"      # URL hiển thị trong email
 
 ---
 
-## 26. Tổng hợp phân trang (31 page files)
+## 28. Helper Modules chi tiết
+
+### payroll-calculator.ts (97 dòng)
+- `calculateInsurance(grossSalary)` → `{ bhxh, bhyt, bhtn, total }`
+- `calculateIncomeTax(taxableIncome)` → tax amount (7-bracket progressive)
+- `calculateSalary(input)` → `{ grossSalary, bhxh, bhyt, bhtn, totalInsurance, taxableIncome, taxAmount, netSalary }`
+
+### format-helpers.ts (121 dòng)
+- Tiền tệ: `formatVND()`, `formatCurrencyFull()`, `formatMillions()`
+- Ngày: `toDate()`, `formatDateVN()`, `formatDateISO()`, `formatDateTime()`, `formatTime()`, `formatMonthYear()`
+- Tính toán: `countWorkingDays()`, `countCalendarDays()`, `isExpiringSoon()`, `isExpired()`, `getRecentMonths()`
+
+### serialize.ts (54 dòng)
+- `serialize<T>(data)`: Deep-serialize Prisma objects → plain JSON (Decimal→number, Date→string, BigInt→number)
+
+---
+
+## 29. Tổng hợp phân trang (31 page files)
 
 | # | Route | File | Size |
 |---|---|---|---|
 | 1 | `/` | `page.tsx` | redirect → /login |
-| 2 | `/login` | `(auth)/login/page.tsx` | 46.7KB (892 dòng) |
-| 3 | `/forgot-password` | `(auth)/forgot-password/page.tsx` | — |
-| 4 | `/reset-password` | `(auth)/reset-password/page.tsx` | — |
-| 5 | `/setup-email` | `setup-email/page.tsx` | 11.4KB (296 dòng) |
-| 6 | `/dashboard` | `(dashboard)/dashboard/page.tsx` | 33.5KB |
-| 7 | `/dashboard-hr` | `(dashboard)/dashboard-hr/page.tsx` | 17.1KB |
-| 8 | `/dashboard-accountant` | `(dashboard)/dashboard-accountant/page.tsx` | 12.5KB |
+| 2 | `/login` | `(auth)/login/page.tsx` | 45.6KB |
+| 3 | `/forgot-password` | `(auth)/forgot-password/page.tsx` | 11.6KB |
+| 4 | `/reset-password` | `(auth)/reset-password/page.tsx` | 16.1KB |
+| 5 | `/setup-email` | `setup-email/page.tsx` | 11.2KB |
+| 6 | `/dashboard` | `(dashboard)/dashboard/page.tsx` | 32.9KB |
+| 7 | `/dashboard-hr` | `(dashboard)/dashboard-hr/page.tsx` | 16.7KB |
+| 8 | `/dashboard-accountant` | `(dashboard)/dashboard-accountant/page.tsx` | 12.2KB |
 | 9 | `/dashboard-director` | `(dashboard)/dashboard-director/page.tsx` | 13.6KB |
-| 10 | `/dashboard-manager` | `(dashboard)/dashboard-manager/page.tsx` | 15.8KB |
+| 10 | `/dashboard-manager` | `(dashboard)/dashboard-manager/page.tsx` | 15.5KB |
 | 11 | `/dashboard-employee` | `(dashboard)/dashboard-employee/page.tsx` | 18.7KB |
-| 12 | `/employees` | `(dashboard)/employees/page.tsx` | 44.8KB |
-| 13 | `/employees/new` | `(dashboard)/employees/new/page.tsx` | — |
-| 14 | `/employees/[id]` | `(dashboard)/employees/[id]/page.tsx` | — |
-| 15 | `/departments` | `(dashboard)/departments/page.tsx` | — |
-| 16 | `/positions` | `(dashboard)/positions/page.tsx` | — |
-| 17 | `/contracts` | `(dashboard)/contracts/page.tsx` | 60.4KB (1178 dòng) |
+| 12 | `/employees` | `(dashboard)/employees/page.tsx` | 54.1KB |
+| 13 | `/employees/new` | `(dashboard)/employees/new/page.tsx` | 16.5KB |
+| 14 | `/employees/[id]` | `(dashboard)/employees/[id]/page.tsx` | 20.1KB |
+| 15 | `/departments` | `(dashboard)/departments/page.tsx` | 13.1KB |
+| 16 | `/positions` | `(dashboard)/positions/page.tsx` | 6.5KB |
+| 17 | `/contracts` | `(dashboard)/contracts/page.tsx` | 59.7KB |
 | 18 | `/contracts/[id]` | `(dashboard)/contracts/[id]/page.tsx` | — |
-| 19 | `/career-history` | `(dashboard)/career-history/page.tsx` | — |
-| 20 | `/business-trips` | `(dashboard)/business-trips/page.tsx` | — |
-| 21 | `/attendance` | `(dashboard)/attendance/page.tsx` | 18.5KB (332 dòng) |
-| 22 | `/attendance/check-in` | `(dashboard)/attendance/check-in/page.tsx` | — |
-| 23 | `/leave` | `(dashboard)/leave/page.tsx` | 40.0KB |
-| 24 | `/leave/request` | `(dashboard)/leave/request/page.tsx` | — |
-| 25 | `/payroll` | `(dashboard)/payroll/page.tsx` | 59.1KB |
-| 26 | `/payroll/config` | `(dashboard)/payroll/config/page.tsx` | — |
-| 27 | `/payslips` | `(dashboard)/payslips/page.tsx` | 13.7KB |
-| 28 | `/payslips/[id]` | `(dashboard)/payslips/[id]/page.tsx` | — |
-| 29 | `/profile` | `(dashboard)/profile/page.tsx` | 45.3KB (951 dòng) |
+| 19 | `/career-history` | `(dashboard)/career-history/page.tsx` | 35.6KB |
+| 20 | `/business-trips` | `(dashboard)/business-trips/page.tsx` | 17.2KB |
+| 21 | `/attendance` | `(dashboard)/attendance/page.tsx` | 18.0KB |
+| 22 | `/attendance/check-in` | `(dashboard)/attendance/check-in/page.tsx` | 22.0KB |
+| 23 | `/leave` | `(dashboard)/leave/page.tsx` | 39.2KB |
+| 24 | `/leave/request` | `(dashboard)/leave/request/page.tsx` | 30.6KB |
+| 25 | `/payroll` | `(dashboard)/payroll/page.tsx` | 57.9KB |
+| 26 | `/payroll/config` | `(dashboard)/payroll/config/page.tsx` | 32.7KB |
+| 27 | `/payslips` | `(dashboard)/payslips/page.tsx` | 13.4KB |
+| 28 | `/payslips/[id]` | `(dashboard)/payslips/[id]/page.tsx` | 8.1KB |
+| 29 | `/profile` | `(dashboard)/profile/page.tsx` | 46.0KB |
 | 30 | `/settings` | `(dashboard)/settings/page.tsx` | — |
-| 31 | `/settings/users` | `(dashboard)/settings/users/page.tsx` | — |
+| 31 | `/settings/users` | `(dashboard)/settings/users/page.tsx` | 39.5KB |
 
 ---
 
-> **Ghi chú:** File này được cập nhật ngày 07/04/2026 dựa trên đọc toàn bộ source code thực tế lần thứ hai.
-> Phiên bản Next.js thực tế là **16.2.1** (theo `package.json`), không phải 15.x như README cũ ghi.
-> So với bản 06/04: cập nhật chính xác số file (31 pages thay vì 34), bổ sung 4 tính năng mới (setup-email, upload-avatar, search.ts, auth.config.ts), thêm bug #9, cập nhật schema User, và chi tiết hoá toàn bộ API routes.
+> **Ghi chú:** File này được cập nhật ngày 15/04/2026 dựa trên đọc toàn bộ source code thực tế.
+> Phiên bản: Next.js **16.2.1**, React **19.2.4**, Prisma **7.6.0**, NextAuth **5.0.0-beta.30**.
+> Tất cả 31 pages đều sử dụng DB thật (Prisma + PostgreSQL), không còn mock data.
+> Docs đã cập nhật: SETUP.md, plan.md, project-summary.md, thuyet-trinh.md, tai-khoan-demo.md.

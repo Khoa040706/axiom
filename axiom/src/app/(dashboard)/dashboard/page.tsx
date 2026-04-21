@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -15,6 +15,7 @@ import {
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getDashboardStats, getDashboardCharts } from "@/lib/actions/dashboard.actions"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { tDept } from "@/lib/i18n-maps"
 
 /* ─── Animated counter ─────────────────────────────── */
 function Counter({ to }: { to: string }) {
@@ -338,6 +339,11 @@ export default function HomePage() {
     })
   }, [])
 
+  // Translate dept names for pie chart based on current lang
+  const translatedDeptData = useMemo(() =>
+    deptData.map(d => ({ ...d, name: tDept(d.name, vi) }))
+  , [deptData, vi])
+
   async function handleExport() {
     if (exporting) return
     setExporting(true)
@@ -389,8 +395,8 @@ export default function HomePage() {
     boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
   }
   const secLabel: React.CSSProperties = {
-    fontSize:11, fontWeight:700, color:th.text2, textTransform:"uppercase",
-    letterSpacing:"0.6px", display:"flex", alignItems:"center", gap:6, marginBottom:12,
+    fontSize:12, fontWeight:700, color:th.text2,
+    display:"flex", alignItems:"center", gap:6, marginBottom:12,
   }
 
   return (
@@ -490,16 +496,16 @@ export default function HomePage() {
         {/* Dept pie chart */}
         <div style={card}>
           <div style={secLabel}><Building2 size={12} color="#D0211C"/>{vi?"Phân bổ nhân lực theo phòng ban":"Workforce by Department"}</div>
-          {deptData.length > 0 ? (
+          {translatedDeptData.length > 0 ? (
             <ResponsiveContainer width="100%" height={240}>
               <PieChart margin={{ top:10, right:36, left:36, bottom:10 }}>
                 <Pie
-                  data={deptData} cx="50%" cy="50%" outerRadius={82}
+                  data={translatedDeptData} cx="50%" cy="50%" outerRadius={82}
                   dataKey="value" nameKey="name"
                   label={(p:any) => <PieLabel {...p} textColor={th.text1}/>}
                   labelLine={{ stroke:dark?"rgba(255,255,255,0.2)":"rgba(0,0,0,0.15)", strokeWidth:1 }}
                 >
-                  {deptData.map((d:any,i:number) => <Cell key={i} fill={d.color}/>)}
+                  {translatedDeptData.map((d:any,i:number) => <Cell key={i} fill={d.color}/>)}
                 </Pie>
                 <Tooltip
                   contentStyle={{ background:th.cardBg, border:`1px solid ${th.cardBorder}`, borderRadius:8, fontSize:12, color:th.text1 }}
@@ -514,9 +520,9 @@ export default function HomePage() {
             </div>
           )}
           {/* Legend */}
-          {deptData.length > 0 && (
+          {translatedDeptData.length > 0 && (
             <div style={{ display:"flex", flexWrap:"wrap", gap:"6px 16px", marginTop:4 }}>
-              {deptData.map((d:any) => (
+              {translatedDeptData.map((d:any) => (
                 <div key={d.name} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:th.text2 }}>
                   <div style={{ width:8,height:8,borderRadius:2,background:d.color,flexShrink:0 }}/>
                   {d.name}: <b style={{ color:th.text1 }}>{d.value}</b>

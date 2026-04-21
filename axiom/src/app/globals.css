@@ -34,11 +34,43 @@
 /* ── BASE ──────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { font-family: "Inter", ui-sans-serif, system-ui, sans-serif; }
+html {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Bắt buộc calendar popup + select dropdown luôn sáng (bất kể dark mode) */
+  color-scheme: light;
+}
 
 body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ── PLACEHOLDER COLOR ─────────────────────────────────────────── */
+/* Light mode: xám trung tính */
+input::placeholder,
+textarea::placeholder {
+  color: #9CA3AF;
+  opacity: 1;
+}
+/* Dark mode: khớp native browser placeholder (#94a3b8) */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* ── DATE PICKER ───────────────────────────────────────────────── */
+/* Calendar popup luôn dùng light theme cho dễ đọc */
+input[type="date"] {
+  color-scheme: light;
+}
+/* Dark mode: icon cuốn lịch đen → trắng */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+/* Select dropdown dark */
+.dark select {
+  color-scheme: dark;
 }
 
 /* ── RESPONSIVE GRID UTILITIES ─────────────────────────────────── */

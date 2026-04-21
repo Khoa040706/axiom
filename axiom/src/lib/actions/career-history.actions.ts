@@ -34,7 +34,6 @@ export async function createCareerHistory(data: {
   eventType: string
   eventDate: string
   description?: string
-  decisionNumber?: string
   oldDepartment?: string
   newDepartment?: string
   oldPosition?: string

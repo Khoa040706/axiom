@@ -3,8 +3,7 @@
 import { useState } from "react"
 import { X } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
-
-const LEAVE_TYPES = ["Nghỉ năm", "Nghỉ ốm", "Việc riêng", "Khác"]
+import { LEAVE_TYPES } from "@/lib/constants"
 
 interface LeaveFormData {
   leaveType: string

@@ -5,15 +5,15 @@ import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { matchAny } from "@/lib/utils/search"
 
 const POSITIONS_DATA = [
-  { id:1, code:"GD",   name:"Giám đốc",           dept:"Ban Giám đốc",  level:"C-Level",   headcount:1, salaryRange:"50–80 triệu" },
-  { id:2, code:"PGD",  name:"Phó Giám đốc",       dept:"Ban Giám đốc",  level:"C-Level",   headcount:1, salaryRange:"40–60 triệu" },
-  { id:3, code:"TPNS", name:"Trưởng phòng Nhân sự",dept:"Phòng Nhân sự", level:"Manager",   headcount:1, salaryRange:"30–45 triệu" },
-  { id:4, code:"TPIT", name:"Trưởng phòng IT",     dept:"Phòng Công nghệ",level:"Manager",  headcount:1, salaryRange:"25–40 triệu" },
-  { id:5, code:"TPKT", name:"Kế toán trưởng",      dept:"Phòng Kế toán", level:"Manager",   headcount:1, salaryRange:"25–35 triệu" },
-  { id:6, code:"LTV",  name:"Lập trình viên",      dept:"Phòng Công nghệ",level:"Staff",    headcount:8, salaryRange:"12–25 triệu" },
-  { id:7, code:"NVKD", name:"Nhân viên kinh doanh",dept:"Phòng Kinh doanh",level:"Staff",   headcount:10,salaryRange:"10–20 triệu" },
-  { id:8, code:"NVNS", name:"Nhân viên nhân sự",   dept:"Phòng Nhân sự", level:"Staff",     headcount:4, salaryRange:"8–15 triệu"  },
-  { id:9, code:"NVKT", name:"Nhân viên kế toán",   dept:"Phòng Kế toán", level:"Staff",     headcount:3, salaryRange:"10–18 triệu" },
+  { id:1, code:"GD",   name:"Giám đốc",           dept:"Ban Giám đốc",  level:"C-Level",   headcount:1, salaryRange:"50–80 triệu",  salaryRangeEn:"50–80M VND"  },
+  { id:2, code:"PGD",  name:"Phó Giám đốc",       dept:"Ban Giám đốc",  level:"C-Level",   headcount:1, salaryRange:"40–60 triệu",  salaryRangeEn:"40–60M VND"  },
+  { id:3, code:"TPNS", name:"Trưởng phòng Nhân sự",dept:"Phòng Nhân sự", level:"Manager",   headcount:1, salaryRange:"30–45 triệu",  salaryRangeEn:"30–45M VND"  },
+  { id:4, code:"TPIT", name:"Trưởng phòng IT",     dept:"Phòng Công nghệ",level:"Manager",  headcount:1, salaryRange:"25–40 triệu",  salaryRangeEn:"25–40M VND"  },
+  { id:5, code:"TPKT", name:"Kế toán trưởng",      dept:"Phòng Kế toán", level:"Manager",   headcount:1, salaryRange:"25–35 triệu",  salaryRangeEn:"25–35M VND"  },
+  { id:6, code:"LTV",  name:"Lập trình viên",      dept:"Phòng Công nghệ",level:"Staff",    headcount:8, salaryRange:"12–25 triệu",  salaryRangeEn:"12–25M VND"  },
+  { id:7, code:"NVKD", name:"Nhân viên kinh doanh",dept:"Phòng Kinh doanh",level:"Staff",   headcount:10,salaryRange:"10–20 triệu",  salaryRangeEn:"10–20M VND"  },
+  { id:8, code:"NVNS", name:"Nhân viên nhân sự",   dept:"Phòng Nhân sự", level:"Staff",     headcount:4, salaryRange:"8–15 triệu",   salaryRangeEn:"8–15M VND"   },
+  { id:9, code:"NVKT", name:"Nhân viên kế toán",   dept:"Phòng Kế toán", level:"Staff",     headcount:3, salaryRange:"10–18 triệu",  salaryRangeEn:"10–18M VND"  },
 ]
 
 export default function PositionsPage(){
@@ -64,7 +64,7 @@ export default function PositionsPage(){
                   <td style={td}><span style={{ fontSize:11.5, background:th.tableHead, borderRadius:8, padding:"2px 8px" }}>{p.dept}</span></td>
                   <td style={td}><span style={{ background:lc.bg, color:lc.c, borderRadius:10, padding:"2px 10px", fontSize:11.5, fontWeight:700 }}>{p.level}</span></td>
                   <td style={{ ...td, textAlign:"center", fontWeight:700 }}>{p.headcount}</td>
-                  <td style={{ ...td, color:"#059669", fontWeight:600 }}>{p.salaryRange}</td>
+                  <td style={{ ...td, color:"#059669", fontWeight:600 }}>{vi ? p.salaryRange : p.salaryRangeEn}</td>
                   <td style={td}>
                     <div style={{ display:"flex", gap:6 }}>
                       <button style={{ width:30, height:30, borderRadius:7, border:"none", background:"#EFF6FF", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><Edit size={13} color="#1D4ED8"/></button>

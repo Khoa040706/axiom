@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any , react-hooks/set-state-in-effect */
 "use client"
 import { useState, useEffect, useCallback } from "react"
@@ -112,7 +113,7 @@ export default function ManagerDashboard() {
     setActionLoading(true)
     await approveLeave(id, Number(approverId), approved)
     setPending(p => p.filter(x => x.id !== id))
-    setToast(approved ? "✅ Đã duyệt" : "❌ Đã từ chối")
+    setToast(approved ? (vi ? "✅ Đã duyệt" : "✅ Approved") : (vi ? "❌ Đã từ chối" : "❌ Rejected"))
     setTimeout(() => setToast(null), 3000)
     setActionLoading(false)
   }
@@ -140,8 +141,8 @@ export default function ManagerDashboard() {
       <div className="stat-row" style={{ marginBottom: 18 }}>
         <StatCard label={vi?"Tổng nhân viên":"Total Staff"} value={kpi.deptSize} accent="linear-gradient(135deg,#D0211C,#991414)" icon={<Users size={52}/>} sub={vi?"Đang làm việc":"Active"}/>
         <StatCard label={vi?"Đơn nghỉ chờ duyệt":"Pending Leaves"} value={kpi.pendingLeave} accent="linear-gradient(135deg,#D97706,#B45309)" icon={<CalendarDays size={52}/>} sub={vi?"Cần xử lý":"Need action"}/>
-        <StatCard label={vi?"Đúng giờ tháng này":"On-time This Month"} value={deptAttend.find(d=>d.cat===vi?"Đúng giờ":"On Time")?.count ?? "—"} accent="linear-gradient(135deg,#059669,#047857)" icon={<CheckCircle size={52}/>} sub={vi?"Ngày đúng giờ":"On-time days"}/>
-        <StatCard label={vi?"Đi muộn":"Late Arrivals"} value={deptAttend.find(d=>d.cat===vi?"Đi muộn":"Late")?.count ?? "—"} accent="linear-gradient(135deg,#7C3AED,#6D28D9)" icon={<TrendingUp size={52}/>} sub={vi?"Tháng này":"This month"}/>
+        <StatCard label={vi?"Đúng giờ tháng này":"On-time This Month"} value={deptAttend.find(d=>d.cat===(vi?"Đúng giờ":"On Time"))?.count ?? "—"} accent="linear-gradient(135deg,#059669,#047857)" icon={<CheckCircle size={52}/>} sub={vi?"Ngày đúng giờ":"On-time days"}/>
+        <StatCard label={vi?"Đi muộn":"Late Arrivals"} value={deptAttend.find(d=>d.cat===(vi?"Đi muộn":"Late"))?.count ?? "—"} accent="linear-gradient(135deg,#7C3AED,#6D28D9)" icon={<TrendingUp size={52}/>} sub={vi?"Tháng này":"This month"}/>
       </div>
 
       <div className="rg-2" style={{ marginBottom: 16 }}>
@@ -183,7 +184,7 @@ export default function ManagerDashboard() {
                 <div key={l.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 10px", background:th.tableHead, borderRadius:8 }}>
                   <div>
                     <div style={{ fontWeight:600, fontSize:12.5, color:th.text1 }}>{l.name}</div>
-                    <div style={{ fontSize:11, color:th.text2 }}>{l.type} · {l.from} → {l.to} ({l.days} ngày)</div>
+                    <div style={{ fontSize:11, color:th.text2 }}>{l.type} · {l.from} → {l.to} ({l.days} {vi?"ngày":"days"})</div>
                   </div>
                   <div style={{ display:"flex", gap:4 }}>
                     <button onClick={() => handleApprove(l.id, true)} disabled={actionLoading}

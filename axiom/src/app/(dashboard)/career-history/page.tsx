@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { createPortal } from "react-dom"
 import {
   TrendingUp, TrendingDown, Award, ArrowRightLeft, RefreshCw,
   Plus, X, Check, Search, DollarSign, AlertTriangle, FileText,
   Filter, Users, Star,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { DateInput } from "@/components/ui/date-input"
+import { Modal } from "@/components/ui/modal"
 import {
   getCareerHistories, createCareerHistory, deleteCareerHistory,
   getCareerOverviewStats, getEmployeesForCareerSelect,
@@ -14,9 +17,11 @@ import {
 } from "@/lib/actions/career-history.actions"
 import {
   CAREER_EVENT_TYPES, CAREER_EVENT_CATEGORIES, REWARD_TYPES, PENALTY_TYPES,
+  CAREER_EVENT_TYPE_EN, REWARD_TYPE_EN, PENALTY_TYPE_EN,
 } from "@/lib/constants"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { matchAny } from "@/lib/utils/search"
+import { tDept, tPos, tCareerDetail } from "@/lib/i18n-maps"
 import { useState as useStateImg } from "react"
 
 function EmpAvatar({ name, avatarPath, size = 36 }: { name: string; avatarPath?: string | null; size?: number }) {
@@ -90,7 +95,32 @@ export default function CareerHistoryPage() {
   const [fType,        setFType]        = useState<string>("Nhận việc")
   const [fDate,        setFDate]        = useState(new Date().toISOString().split("T")[0])
   const [fDesc,        setFDesc]        = useState("")
-  const [fDecision,    setFDecision]    = useState("")
+  /* ── Employee combobox search ── */
+  const [empSearch, setEmpSearch] = useState("")
+  const [empOpen,   setEmpOpen]   = useState(false)
+  const empRef      = useRef<HTMLDivElement>(null)
+  const empInputRef  = useRef<HTMLDivElement>(null)   // dùng để getBoundingClientRect
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
+  // Click-outside đóng dropdown
+  useEffect(() => {
+    if (!empOpen) return
+    const handler = (e: MouseEvent) => {
+      if (empRef.current && !empRef.current.contains(e.target as Node)) setEmpOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [empOpen])
+
+  // Tính vị trí dropdown mỗi khi mở
+  useEffect(() => {
+    if (!empOpen || !empInputRef.current) return
+    const rect = empInputRef.current.getBoundingClientRect()
+    setDropdownRect({
+      top:   rect.bottom + window.scrollY + 4,
+      left:  rect.left   + window.scrollX,
+      width: rect.width,
+    })
+  }, [empOpen])
   const [fOldPos,      setFOldPos]      = useState("")
   const [fNewPos,      setFNewPos]      = useState("")
   const [fOldDept,     setFOldDept]     = useState("")
@@ -100,6 +130,7 @@ export default function CareerHistoryPage() {
   const [fRewardType,  setFRewardType]  = useState("")
   const [fRewardAmt,   setFRewardAmt]   = useState("")
   const [fPenaltyType, setFPenaltyType] = useState("")
+  const [fDecision,    setFDecision]    = useState("")
 
   /* ── Computed: which fields to show per event type ── */
   const showPositionFields = ["Bổ nhiệm", "Miễn nhiệm", "Thăng chức", "Giáng chức"].includes(fType)
@@ -140,9 +171,10 @@ export default function CareerHistoryPage() {
   }
 
   const resetForm = () => {
-    setFDesc(""); setFDecision(""); setFOldPos(""); setFNewPos("")
+    setEmpSearch(""); setEmpOpen(false)
+    setFDesc(""); setFOldPos(""); setFNewPos("")
     setFOldDept(""); setFNewDept(""); setFOldSalary(""); setFNewSalary("")
-    setFRewardType(""); setFRewardAmt(""); setFPenaltyType("")
+    setFRewardType(""); setFRewardAmt(""); setFPenaltyType(""); setFDecision("")
   }
 
   const handleSubmit = async () => {
@@ -155,8 +187,7 @@ export default function CareerHistoryPage() {
       employeeId:     Number(fEmpId),
       eventType:      fType,
       eventDate:      fDate,
-      description:    fDesc    || undefined,
-      decisionNumber: fDecision || undefined,
+      description:    fDecision ? `[${fDecision}] ${fDesc}`.trim() : (fDesc || undefined),
       oldPosition:    fOldPos  || undefined,
       newPosition:    fNewPos  || undefined,
       oldDepartment:  fOldDept || undefined,
@@ -255,7 +286,7 @@ export default function CareerHistoryPage() {
             <RefreshCw size={13} style={{ animation: loading ? "spin .7s linear infinite" : "none" }} />
             {vi ? "Tải lại" : "Refresh"}
           </button>
-          <button onClick={() => { setShowForm(p => !p); if (!showForm) loadDropdowns() }}
+          <button onClick={() => { setShowForm(true); loadDropdowns() }}
             style={{ padding: "8px 16px", borderRadius: 9, background: "linear-gradient(135deg,#D0211C,#991414)", color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", boxShadow: "0 2px 8px rgba(208,33,28,0.25)" }}>
             <Plus size={14} />{vi ? "Thêm sự kiện" : "Add Event"}
           </button>
@@ -322,133 +353,216 @@ export default function CareerHistoryPage() {
         </div>
       </div>
 
-      {/* ── Add Form ── */}
-      {showForm && (
-        <div style={{ ...card, marginBottom: 16, padding: 20 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: th.text1, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-            <Plus size={15} color="#D0211C"/>
-            {vi ? "Thêm sự kiện công tác mới" : "New Career Event"}
-          </div>
+      {/* ── Add Event Modal ── */}
+      <Modal
+        open={showForm}
+        onClose={() => { setShowForm(false); resetForm() }}
+        title={vi ? "Thêm sự kiện công tác mới" : "New Career Event"}
+        subtitle={vi ? "Điền đầy đủ thông tin sự kiện bên dưới" : "Fill in the career event details below"}
+        maxWidth={880}
+      >
+        {/* Row 1: Employee + Event Type + Date */}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+          {/* ── Searchable Employee Combobox ── */}
+          <label style={labelStyle}>
+            <span style={labelText}>{vi ? "Nhân viên *" : "Employee *"}</span>
+            <div ref={empRef} style={{ position: "relative" }}>
+              {/* Input wrapper — ref để lấy getBoundingClientRect */}
+              <div ref={empInputRef} style={{ position: "relative" }}>
+                <Search size={13} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: th.text3, pointerEvents: "none" }} />
+                <input
+                  value={empSearch}
+                  onChange={e => { setEmpSearch(e.target.value); setEmpOpen(true); if (!e.target.value) setFEmpId("") }}
+                  onFocus={() => setEmpOpen(true)}
+                  placeholder={
+                    fEmpId
+                      ? (employees.find((e: any) => e.id === fEmpId)?.fullName ?? (vi ? "Tìm nhân viên..." : "Search employee..."))
+                      : (vi ? "Tìm theo tên hoặc mã NV..." : "Search by name or ID...")
+                  }
+                  style={{ ...input, paddingLeft: 28,
+                    borderColor: fEmpId ? "#D0211C" : input.border as string,
+                    background: fEmpId && !empSearch ? (dark ? "rgba(208,33,28,0.08)" : "#FEF2F2") : th.inputBg,
+                  }}
+                />
+                {fEmpId && !empSearch && (
+                  <button
+                    onClick={() => { setFEmpId(""); setEmpSearch(""); setEmpOpen(false) }}
+                    style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: th.text3, display: "flex", padding: 2 }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
 
-          {/* Row 1: Employee + Event Type + Date + Decision */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
-            <label style={labelStyle}>
-              <span style={labelText}>{vi ? "Nhân viên *" : "Employee *"}</span>
-              <select value={fEmpId} onChange={e => setFEmpId(e.target.value ? Number(e.target.value) : "")} style={input}>
-                <option value="">{vi ? "— Chọn nhân viên —" : "— Select employee —"}</option>
-                {employees.map((e: any) => (
-                  <option key={e.id} value={e.id}>{e.code} — {e.fullName}</option>
-                ))}
-              </select>
-            </label>
-            <label style={labelStyle}>
-              <span style={labelText}>{vi ? "Loại sự kiện *" : "Event Type *"}</span>
-              <select value={fType} onChange={e => setFType(e.target.value)} style={input}>
-                {CAREER_EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
-              </select>
-            </label>
-            <label style={labelStyle}>
-              <span style={labelText}>{vi ? "Ngày *" : "Date *"}</span>
-              <input type="date" value={fDate} onChange={e => setFDate(e.target.value)} style={input} />
-            </label>
-            <label style={labelStyle}>
-              <span style={labelText}>{vi ? "Số quyết định" : "Decision No."}</span>
-              <input value={fDecision} onChange={e => setFDecision(e.target.value)} style={input} placeholder="QĐ-2026/..." />
-            </label>
-          </div>
-
-          {/* Row 2: Dynamic fields per event type */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
-            {showPositionFields && (<>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Chức vụ cũ" : "Old Position"}</span>
-                <select value={fOldPos} onChange={e => setFOldPos(e.target.value)} style={input}>
-                  <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                  {positions.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
-                </select>
-              </label>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Chức vụ mới *" : "New Position *"}</span>
-                <select value={fNewPos} onChange={e => setFNewPos(e.target.value)} style={input}>
-                  <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                  {positions.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
-                </select>
-              </label>
-            </>)}
-
-            {showDeptFields && (<>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Phòng ban cũ" : "Old Department"}</span>
-                <select value={fOldDept} onChange={e => setFOldDept(e.target.value)} style={input}>
-                  <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                  {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
-                </select>
-              </label>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Phòng ban mới *" : "New Department *"}</span>
-                <select value={fNewDept} onChange={e => setFNewDept(e.target.value)} style={input}>
-                  <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                  {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
-                </select>
-              </label>
-            </>)}
-
-            {showSalaryFields && (<>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Mức lương cũ (₫)" : "Old Salary (₫)"}</span>
-                <input type="number" value={fOldSalary} onChange={e => setFOldSalary(e.target.value)} style={input} placeholder="0" />
-              </label>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Mức lương mới (₫) *" : "New Salary (₫) *"}</span>
-                <input type="number" value={fNewSalary} onChange={e => setFNewSalary(e.target.value)} style={input} placeholder="0" />
-              </label>
-            </>)}
-
-            {showRewardFields && (<>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Loại khen thưởng *" : "Reward Type *"}</span>
-                <select value={fRewardType} onChange={e => setFRewardType(e.target.value)} style={input}>
-                  <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                  {REWARD_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
-              </label>
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Số tiền thưởng (₫)" : "Reward Amount (₫)"}</span>
-                <input type="number" value={fRewardAmt} onChange={e => setFRewardAmt(e.target.value)} style={input} placeholder="0" />
-              </label>
-            </>)}
-
-            {showPenaltyFields && (
-              <label style={labelStyle}>
-                <span style={labelText}>{vi ? "Hình thức kỷ luật *" : "Penalty Type *"}</span>
-                <select value={fPenaltyType} onChange={e => setFPenaltyType(e.target.value)} style={input}>
-                  <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                  {PENALTY_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
-              </label>
-            )}
-
-            {/* Description — always shown */}
-            <label style={{ ...labelStyle, gridColumn: isMobile ? undefined : showPositionFields || showDeptFields || showSalaryFields || showRewardFields ? undefined : "1 / -1" }}>
-              <span style={labelText}>{vi ? "Mô tả / Ghi chú" : "Description"}</span>
-              <input value={fDesc} onChange={e => setFDesc(e.target.value)} style={input}
-                placeholder={vi ? "Nội dung quyết định, ghi chú..." : "Decision content, notes..."} />
-            </label>
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button onClick={() => { setShowForm(false); resetForm() }}
-              style={{ padding: "7px 16px", borderRadius: 8, border: `1px solid ${th.cardBorder}`, background: th.cardBg, color: th.text2, cursor: "pointer", fontSize: 12.5, fontFamily: "inherit" }}>
-              {vi ? "Huỷ" : "Cancel"}
-            </button>
-            <button onClick={handleSubmit} disabled={submitting}
-              style={{ padding: "7px 18px", borderRadius: 8, background: "#D0211C", color: "#fff", border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, opacity: submitting ? 0.7 : 1 }}>
-              <Check size={13} />{submitting ? (vi ? "Đang lưu..." : "Saving...") : (vi ? "Lưu sự kiện" : "Save Event")}
-            </button>
-          </div>
+              {/* Dropdown Portal — render vào body để thoát khỏi overflow của modal */}
+              {empOpen && dropdownRect && createPortal(
+                <div
+                  ref={empRef}
+                  className="emp-dropdown"
+                  style={{
+                    position: "absolute",
+                    top:   dropdownRect.top,
+                    left:  dropdownRect.left,
+                    width: dropdownRect.width,
+                    zIndex: 99999,
+                    background: dark ? "#162032" : "#fff",
+                    border: `1.5px solid ${dark ? "#3b5279" : "#D0211C"}`,
+                    borderRadius: 10,
+                    boxShadow: "0 16px 40px rgba(0,0,0,0.30)",
+                    maxHeight: 220,
+                    overflowY: "auto",
+                  }}
+                >
+                  {employees
+                    .filter((e: any) => {
+                      const q = empSearch.toLowerCase()
+                      return !q || e.fullName.toLowerCase().includes(q) || e.code.toLowerCase().includes(q)
+                    })
+                    .slice(0, 40)
+                    .map((e: any) => {
+                      const isSelected = fEmpId === e.id
+                      return (
+                        <div
+                          key={e.id}
+                          onMouseDown={() => { setFEmpId(e.id); setEmpSearch(""); setEmpOpen(false) }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 10,
+                            padding: "8px 12px", cursor: "pointer",
+                            background: isSelected ? (dark ? "rgba(208,33,28,0.15)" : "#FEF2F2") : "transparent",
+                            transition: "background .1s",
+                          }}
+                          onMouseEnter={ev => { if (!isSelected) (ev.currentTarget as HTMLDivElement).style.background = dark ? "rgba(255,255,255,0.05)" : "#F9FAFB" }}
+                          onMouseLeave={ev => { if (!isSelected) (ev.currentTarget as HTMLDivElement).style.background = "transparent" }}
+                        >
+                          <div style={{ flexShrink: 0, outline: isSelected ? "2px solid #D0211C" : "none", borderRadius: "50%" }}>
+                            <EmpAvatar name={e.fullName} avatarPath={e.avatarPath} size={28} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12.5, fontWeight: 600, color: isSelected ? "#D0211C" : th.text1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {e.fullName}
+                            </div>
+                            <div style={{ fontSize: 11, color: th.text3 }}>{e.code}</div>
+                          </div>
+                          {isSelected && <Check size={13} color="#D0211C" />}
+                        </div>
+                      )
+                    })}
+                  {employees.filter((e: any) => {
+                    const q = empSearch.toLowerCase()
+                    return !q || e.fullName.toLowerCase().includes(q) || e.code.toLowerCase().includes(q)
+                  }).length === 0 && (
+                    <div style={{ padding: "12px", textAlign: "center", color: th.text3, fontSize: 12 }}>
+                      {vi ? "Kh\u00f4ng t\u00ecm th\u1ea5y nh\u00e2n vi\u00ean" : "No employee found"}
+                    </div>
+                  )}
+                </div>,
+                document.body
+              )}
+            </div>
+          </label>
+          <label style={labelStyle}>
+            <span style={labelText}>{vi ? "Loại sự kiện *" : "Event Type *"}</span>
+            <select value={fType} onChange={e => setFType(e.target.value)} style={input}>
+              {CAREER_EVENT_TYPES.map(t => <option key={t} value={t}>{vi ? t : (CAREER_EVENT_TYPE_EN[t] ?? t)}</option>)}
+            </select>
+          </label>
+          <label style={labelStyle}>
+            <span style={labelText}>{vi ? "Ngày *" : "Date *"}</span>
+            <DateInput value={fDate} onChange={e => setFDate(e.target.value)} style={input} />
+          </label>
         </div>
-      )}
+
+        {/* Row 2: Dynamic fields per event type */}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+          {showPositionFields && (<>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Chức vụ cũ" : "Old Position"}</span>
+              <select value={fOldPos} onChange={e => setFOldPos(e.target.value)} style={input}>
+                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
+                {positions.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Chức vụ mới *" : "New Position *"}</span>
+              <select value={fNewPos} onChange={e => setFNewPos(e.target.value)} style={input}>
+                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
+                {positions.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
+              </select>
+            </label>
+          </>)}
+
+          {showDeptFields && (<>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Phòng ban cũ" : "Old Department"}</span>
+              <select value={fOldDept} onChange={e => setFOldDept(e.target.value)} style={input}>
+                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
+                {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Phòng ban mới *" : "New Department *"}</span>
+              <select value={fNewDept} onChange={e => setFNewDept(e.target.value)} style={input}>
+                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
+                {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
+              </select>
+            </label>
+          </>)}
+
+          {showSalaryFields && (<>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Mức lương cũ (₫)" : "Old Salary (₫)"}</span>
+              <input type="number" value={fOldSalary} onChange={e => setFOldSalary(e.target.value)} style={input} placeholder="0" />
+            </label>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Mức lương mới (₫) *" : "New Salary (₫) *"}</span>
+              <input type="number" value={fNewSalary} onChange={e => setFNewSalary(e.target.value)} style={input} placeholder="0" />
+            </label>
+          </>)}
+
+          {showRewardFields && (<>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Loại khen thưởng *" : "Reward Type *"}</span>
+              <select value={fRewardType} onChange={e => setFRewardType(e.target.value)} style={input}>
+                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
+                {REWARD_TYPES.map(t => <option key={t} value={t}>{vi ? t : (REWARD_TYPE_EN[t] ?? t)}</option>)}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Số tiền thưởng (₫)" : "Reward Amount (₫)"}</span>
+              <input type="number" value={fRewardAmt} onChange={e => setFRewardAmt(e.target.value)} style={input} placeholder="0" />
+            </label>
+          </>)}
+
+          {showPenaltyFields && (
+            <label style={labelStyle}>
+              <span style={labelText}>{vi ? "Hình thức kỷ luật *" : "Penalty Type *"}</span>
+              <select value={fPenaltyType} onChange={e => setFPenaltyType(e.target.value)} style={input}>
+                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
+                {PENALTY_TYPES.map(t => <option key={t} value={t}>{vi ? t : (PENALTY_TYPE_EN[t] ?? t)}</option>)}
+              </select>
+            </label>
+          )}
+
+          {/* Description — always shown */}
+          <label style={{ ...labelStyle, gridColumn: isMobile ? undefined : showPositionFields || showDeptFields || showSalaryFields || showRewardFields ? undefined : "1 / -1" }}>
+            <span style={labelText}>{vi ? "Mô tả / Ghi chú" : "Description"}</span>
+            <input value={fDesc} onChange={e => setFDesc(e.target.value)} style={input}
+              placeholder={vi ? "Nội dung quyết định, ghi chú..." : "Decision content, notes..."} />
+          </label>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}>
+          <button onClick={() => { setShowForm(false); resetForm() }}
+            style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${dark ? "#334155" : "#D1D5DB"}`, background: dark ? "#1e293b" : "#f9fafb", color: dark ? "#cbd5e1" : "#374151", cursor: "pointer", fontSize: 13, fontFamily: "inherit", fontWeight: 500 }}>
+            {vi ? "Huỷ" : "Cancel"}
+          </button>
+          <button onClick={handleSubmit} disabled={submitting}
+            style={{ padding: "8px 20px", borderRadius: 8, background: "linear-gradient(135deg,#D0211C,#991414)", color: "#fff", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, opacity: submitting ? 0.7 : 1, boxShadow: "0 4px 12px rgba(208,33,28,0.3)" }}>
+            <Check size={13} />{submitting ? (vi ? "Đang lưu..." : "Saving...") : (vi ? "Lưu sự kiện" : "Save Event")}
+          </button>
+        </div>
+      </Modal>
 
       {/* ── Table View ── */}
       {loading ? (
@@ -480,7 +594,6 @@ export default function CareerHistoryPage() {
                       vi ? "Nhân viên" : "Employee",
                       vi ? "Loại sự kiện" : "Event Type",
                       vi ? "Ngày" : "Date",
-                      vi ? "Số QĐ" : "Decision No.",
                       vi ? "Chi tiết" : "Details",
                       "",
                     ].map((h, i) => (
@@ -495,14 +608,20 @@ export default function CareerHistoryPage() {
 
                     // Build detail string
                     let detail = ""
-                    if (r.oldPosition && r.newPosition) detail += `${r.oldPosition} → ${r.newPosition}`
-                    else if (r.newPosition) detail += r.newPosition
-                    if (r.oldDepartment && r.newDepartment) detail += `${detail ? " · " : ""}${r.oldDepartment} → ${r.newDepartment}`
+                    if (r.oldPosition && r.newPosition) detail += `${tPos(r.oldPosition, vi)} → ${tPos(r.newPosition, vi)}`
+                    else if (r.newPosition) detail += tPos(r.newPosition, vi)
+                    if (r.oldDepartment && r.newDepartment) detail += `${detail ? " · " : ""}${tDept(r.oldDepartment, vi)} → ${tDept(r.newDepartment, vi)}`
                     if (r.oldSalary != null && r.newSalary != null) detail += `${detail ? " · " : ""}${fmtMoney(r.oldSalary)} → ${fmtMoney(r.newSalary)}`
                     else if (r.newSalary != null) detail += `${detail ? " · " : ""}${fmtMoney(r.newSalary)}`
-                    if (r.rewardType) detail += `${detail ? " · " : ""}${r.rewardType}${r.rewardAmount ? ` (${fmtMoney(r.rewardAmount)})` : ""}`
-                    if (r.penaltyType) detail += `${detail ? " · " : ""}${r.penaltyType}`
-                    if (r.description) detail += `${detail ? " — " : ""}${r.description}`
+                    if (r.rewardType) {
+                      const rLabel = vi ? r.rewardType : (REWARD_TYPE_EN[r.rewardType] ?? r.rewardType)
+                      detail += `${detail ? " · " : ""}${rLabel}${r.rewardAmount ? ` (${fmtMoney(r.rewardAmount)})` : ""}`
+                    }
+                    if (r.penaltyType) {
+                      const pLabel = vi ? r.penaltyType : (PENALTY_TYPE_EN[r.penaltyType] ?? r.penaltyType)
+                      detail += `${detail ? " · " : ""}${pLabel}`
+                    }
+                    if (r.description) detail += `${detail ? " — " : ""}${tCareerDetail(r.description, vi)}`
 
                     return (
                       <tr key={r.id} style={{ borderBottom: `1px solid ${th.tableBorder}`, transition: "background .1s" }}
@@ -524,11 +643,10 @@ export default function CareerHistoryPage() {
                             background: dark ? col.bgDark : col.bg, color: col.text,
                           }}>
                             {EVENT_ICONS[r.eventType] ?? <Star size={11} color={col.text}/>}
-                            {r.eventType}
+                            {vi ? r.eventType : (CAREER_EVENT_TYPE_EN[r.eventType] ?? r.eventType)}
                           </span>
                         </td>
                         <td style={{ padding: "10px 14px", color: th.text2, whiteSpace: "nowrap" }}>{dateStr}</td>
-                        <td style={{ padding: "10px 14px", color: th.text2, fontFamily: "monospace", fontSize: 11.5 }}>{r.decisionNumber ?? "—"}</td>
                         <td style={{ padding: "10px 14px", color: th.text2, maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis" }}>
                           {detail || "—"}
                         </td>
@@ -560,7 +678,7 @@ export default function CareerHistoryPage() {
                     <EmpAvatar name={emp.name} avatarPath={emp.avatarPath} size={36} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 14, color: th.text1 }}>{emp.name}</div>
-                      <div style={{ fontSize: 11.5, color: th.text2 }}>{emp.code} · {emp.pos} · {emp.dept}</div>
+                      <div style={{ fontSize: 11.5, color: th.text2 }}>{emp.code} · {tPos(emp.pos, vi)} · {tDept(emp.dept, vi)}</div>
                     </div>
                   </div>
                   <span style={{ fontSize: 11.5, color: th.text2, background: dark ? "rgba(255,255,255,0.06)" : "#F3F4F6", padding: "3px 10px", borderRadius: 8 }}>
@@ -581,25 +699,20 @@ export default function CareerHistoryPage() {
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 4 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                               {EVENT_ICONS[h.eventType] ?? <Star size={13} color={th.text2}/>}
-                              <span style={{ fontWeight: 700, fontSize: 13, color: th.text1 }}>{h.eventType}</span>
-                              {h.decisionNumber && (
-                                <span style={{ fontSize: 10.5, color: th.text3, fontFamily: "monospace" }}>
-                                  {h.decisionNumber}
-                                </span>
-                              )}
+                              <span style={{ fontWeight: 700, fontSize: 13, color: th.text1 }}>{vi ? h.eventType : (CAREER_EVENT_TYPE_EN[h.eventType] ?? h.eventType)}</span>
                               {h.newPosition && (
                                 <span style={{ background: dark ? col.bgDark : col.bg, color: col.text, borderRadius: 8, padding: "1px 8px", fontSize: 11, fontWeight: 600 }}>
-                                  {h.newPosition}
+                                  {tPos(h.newPosition, vi)}
                                 </span>
                               )}
                               {h.rewardType && (
                                 <span style={{ background: dark ? "rgba(245,158,11,0.12)" : "#FFFBEB", color: "#92400E", borderRadius: 8, padding: "1px 8px", fontSize: 11, fontWeight: 600 }}>
-                                  {h.rewardType}{h.rewardAmount ? ` — ${fmtMoney(h.rewardAmount)}` : ""}
+                                  {vi ? h.rewardType : (REWARD_TYPE_EN[h.rewardType] ?? h.rewardType)}{h.rewardAmount ? ` — ${fmtMoney(h.rewardAmount)}` : ""}
                                 </span>
                               )}
                               {h.penaltyType && (
                                 <span style={{ background: dark ? "rgba(239,68,68,0.12)" : "#FEE2E2", color: "#991B1B", borderRadius: 8, padding: "1px 8px", fontSize: 11, fontWeight: 600 }}>
-                                  {h.penaltyType}
+                                  {vi ? h.penaltyType : (PENALTY_TYPE_EN[h.penaltyType] ?? h.penaltyType)}
                                 </span>
                               )}
                             </div>
@@ -613,10 +726,10 @@ export default function CareerHistoryPage() {
                           </div>
                           {/* Detail row */}
                           <div style={{ fontSize: 12, color: th.text2, marginTop: 3 }}>
-                            {h.oldPosition && h.newPosition && <span>{h.oldPosition} → {h.newPosition} · </span>}
-                            {h.oldDepartment && h.newDepartment && <span>{h.oldDepartment} → {h.newDepartment} · </span>}
+                            {h.oldPosition && h.newPosition && <span>{tPos(h.oldPosition, vi)} → {tPos(h.newPosition, vi)} · </span>}
+                            {h.oldDepartment && h.newDepartment && <span>{tDept(h.oldDepartment, vi)} → {tDept(h.newDepartment, vi)} · </span>}
                             {h.oldSalary != null && h.newSalary != null && <span>{fmtMoney(h.oldSalary)} → {fmtMoney(h.newSalary)} · </span>}
-                            {h.description}
+                            {tCareerDetail(h.description, vi)}
                           </div>
                         </div>
                       </div>
@@ -635,7 +748,18 @@ export default function CareerHistoryPage() {
           {toast}
         </div>
       )}
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        /* Thin scrollbar cho employee dropdown */
+        .emp-dropdown::-webkit-scrollbar { width: 4px; }
+        .emp-dropdown::-webkit-scrollbar-track { background: transparent; }
+        .emp-dropdown::-webkit-scrollbar-thumb {
+          background: rgba(148,163,184,0.4);
+          border-radius: 99px;
+        }
+        .emp-dropdown::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.7); }
+        .emp-dropdown { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.4) transparent; }
+      `}</style>
     </div>
   )
 }

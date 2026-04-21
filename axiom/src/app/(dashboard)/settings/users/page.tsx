@@ -22,6 +22,7 @@ import {
   updateUserRoleInDB,
   getDepartmentsForSelect,
 } from "@/lib/actions/user-admin.actions"
+import { tDept } from "@/lib/i18n-maps"
 
 // Roles available
 const ROLES = [
@@ -54,6 +55,7 @@ function SortTh({
   options?: { label: string; dir: SortDir }[]
   style?: React.CSSProperties
 }) {
+  const { lang } = useDashboard()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLTableCellElement>(null)
   const active = sortField === field
@@ -117,7 +119,7 @@ function SortTh({
               borderBottom: `1px solid ${th.tableBorder}`,
             }}
           >
-            <X size={13} /> Mặc định
+            <X size={13} /> {lang === "vi" ? "Mặc định" : "Default"}
           </button>
           {options.map(opt => {
             const selected = active && sortDir === opt.dir
@@ -240,6 +242,8 @@ export default function UsersAdminPage() {
   const [toast, setToast]           = useState<{ type: "success"|"error"; msg: string } | null>(null)
   const [sortField, setSortField]   = useState<SortField>(null)
   const [sortDir, setSortDir]       = useState<SortDir>("asc")
+  const [page, setPage]             = useState(1)
+  const PAGE_SIZE = 10
 
   // Modals
   const [showCreate, setShowCreate]       = useState(false)
@@ -304,8 +308,16 @@ export default function UsersAdminPage() {
     return result
   })()
 
-  function handleSort(f: SortField, d: SortDir) { setSortField(f); setSortDir(d) }
-  function clearSort() { setSortField(null); setSortDir("asc") }
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  function handleSort(f: SortField, d: SortDir) { setSortField(f); setSortDir(d); setPage(1) }
+  function clearSort() { setSortField(null); setSortDir("asc"); setPage(1) }
+
+  // Reset page when search/filter changes
+  const handleSearch = (v: string) => { setSearch(v); setPage(1) }
+  const handleRoleFilter = (v: string) => { setRoleFilter(v); setPage(1) }
 
   // Toggle active
   const handleToggleActive = async (user: any) => {
@@ -445,10 +457,10 @@ export default function UsersAdminPage() {
         <div style={{ position: "relative", flex: 1 }}>
           <Search size={14} color={th.text2} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}/>
           <input placeholder={vi ? "Tìm kiếm tên hoặc username..." : "Search name or username..."}
-            value={search} onChange={e => setSearch(e.target.value)}
+            value={search} onChange={e => handleSearch(e.target.value)}
             style={{ ...inputStyle, paddingLeft: 32 }}/>
         </div>
-        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
+        <select value={roleFilter} onChange={e => handleRoleFilter(e.target.value)}
           style={{ ...inputStyle, width: "auto", minWidth: 160 }}>
           <option value="all">{vi ? "Tất cả vai trò" : "All Roles"}</option>
           {ROLES.map(r => <option key={r.value} value={r.value}>{vi ? r.vi : r.en}</option>)}
@@ -488,12 +500,12 @@ export default function UsersAdminPage() {
               onSort={handleSort} onClear={clearSort} th={th} style={hd}/>
           </tr></thead>
           <tbody>
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr><td colSpan={6} style={{ ...tdS, textAlign: "center", padding: "40px", color: th.text2 }}>
                 {vi ? "Không tìm thấy tài khoản nào" : "No accounts found"}
               </td></tr>
             )}
-            {filtered.map(u => {
+            {paginated.map(u => {
               const ri = roleInfo(u.role)
               const empName = u.employee?.fullName ?? u.username
               const empCode = u.employee?.code ?? "—"
@@ -502,16 +514,11 @@ export default function UsersAdminPage() {
                 <tr key={u.id} onMouseEnter={e => (e.currentTarget.style.background = dark ? "rgba(255,255,255,0.03)" : "#FAFAFA")} onMouseLeave={e => (e.currentTarget.style.background = "")} style={{ transition: "background .1s" }}>
                   <td style={tdS}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      {/* Avatar: ảnh thật hoặc ảnh mặc định */}
                       <div style={{ width:36, height:36, borderRadius:"50%",
                         overflow:"hidden", flexShrink:0,
                         border:`2px solid ${ri.color}40`,
                         boxShadow:"0 2px 6px rgba(0,0,0,0.15)" }}>
-                        <AvatarImg
-                          src={u.employee?.avatarPath}
-                          alt={empName}
-                          size={36}
-                        />
+                        <AvatarImg src={u.employee?.avatarPath} alt={empName} size={36}/>
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, color: th.text1, fontSize: 13 }}>{empName}</div>
@@ -521,15 +528,9 @@ export default function UsersAdminPage() {
                   </td>
                   <td style={tdS}><span style={{ fontFamily: "monospace", fontSize: 12.5, color: th.text1 }}>{u.username}</span></td>
                   <td style={tdS}>
-                    <RoleDropdown
-                      user={u}
-                      vi={vi}
-                      onRoleChange={handleRoleChange}
-                      actionLoading={actionLoading}
-                      th={th}
-                    />
+                    <RoleDropdown user={u} vi={vi} onRoleChange={handleRoleChange} actionLoading={actionLoading} th={th}/>
                   </td>
-                  <td style={tdS}><span style={{ fontSize: 12.5, color: th.text2 }}>{dept}</span></td>
+                  <td style={tdS}><span style={{ fontSize: 12.5, color: th.text2 }}>{tDept(dept, vi)}</span></td>
                   <td style={tdS}>
                     <span style={{ background: u.isActive ? "#D1FAE5" : "#FEE2E2", color: u.isActive ? "#065F46" : "#991B1B", borderRadius: 10, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>
                       {u.isActive ? (vi ? "Hoạt động" : "Active") : (vi ? "Bị khoá" : "Inactive")}
@@ -559,6 +560,41 @@ export default function UsersAdminPage() {
             })}
           </tbody>
         </table>
+
+        {/* ── Pagination bar ── */}
+        <div style={{ padding: "12px 16px", borderTop: `1px solid ${th.tableBorder}`, background: th.tableHead, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12.5, color: th.text2 }}>
+            {vi
+              ? `Hiển thị ${filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, filtered.length)} / ${filtered.length} tài khoản`
+              : `Showing ${filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, filtered.length)} of ${filtered.length} accounts`}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button onClick={() => setPage(1)} disabled={safePage === 1}
+              style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: safePage === 1 ? th.tableHead : th.cardBg, color: safePage === 1 ? th.text3 : th.text1, cursor: safePage === 1 ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>«</button>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+              style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: safePage === 1 ? th.tableHead : th.cardBg, color: safePage === 1 ? th.text3 : th.text1, cursor: safePage === 1 ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{vi ? "Trước" : "Prev"}</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("...")
+                acc.push(p); return acc
+              }, [])
+              .map((p, i) =>
+                p === "..." ? (
+                  <span key={`ellipsis-${i}`} style={{ padding: "5px 4px", fontSize: 12, color: th.text2 }}>…</span>
+                ) : (
+                  <button key={p} onClick={() => setPage(p as number)}
+                    style={{ padding: "5px 10px", borderRadius: 7, border: `1.5px solid ${p === safePage ? "#D0211C" : th.cardBorder}`, background: p === safePage ? "#D0211C" : th.cardBg, color: p === safePage ? "#fff" : th.text1, cursor: "pointer", fontSize: 12, fontWeight: p === safePage ? 700 : 400, fontFamily: "inherit", minWidth: 32 }}>
+                    {p}
+                  </button>
+                )
+              )}
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+              style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: safePage === totalPages ? th.tableHead : th.cardBg, color: safePage === totalPages ? th.text3 : th.text1, cursor: safePage === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{vi ? "Sau" : "Next"}</button>
+            <button onClick={() => setPage(totalPages)} disabled={safePage === totalPages}
+              style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: safePage === totalPages ? th.tableHead : th.cardBg, color: safePage === totalPages ? th.text3 : th.text1, cursor: safePage === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>»</button>
+          </div>
+        </div>
       </div>
 
       {/* ── Create modal ── */}
@@ -582,7 +618,7 @@ export default function UsersAdminPage() {
               <div>
                 <label style={{ fontSize: 12, fontWeight: 700, color: th.text2, display: "block", marginBottom: 6 }}>{vi?"Mật khẩu":"Password"} *</label>
                 <div style={{ position: "relative" }}>
-                  <input type={showCreatePw ? "text" : "password"} style={{ ...inputStyle, paddingRight: 40 }} value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} placeholder="Tối thiểu 6 ký tự"/>
+                  <input type={showCreatePw ? "text" : "password"} style={{ ...inputStyle, paddingRight: 40 }} value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} placeholder={vi ? "Tối thiểu 6 ký tự" : "Min 6 characters"}/>
                   <button type="button" onClick={() => setShowCreatePw(!showCreatePw)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: th.text2, display: "flex" }}>
                     {showCreatePw ? <EyeOff size={15}/> : <Eye size={15}/>}
                   </button>

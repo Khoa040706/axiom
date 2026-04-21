@@ -37,59 +37,61 @@ export const leaveService = {
     return prisma.leaveRequest.create({ data })
   },
 
-  /** Duyệt / Từ chối đơn */
+  /** Duyệt / Từ chối đơn — sử dụng transaction để tránh race condition */
   async approve(requestId: number, approvedBy: number, status: "Đã duyệt" | "Từ chối") {
-    const leaveRequest = await prisma.leaveRequest.findUnique({ where: { id: requestId } })
-    if (!leaveRequest) throw new Error("Không tìm thấy đơn nghỉ phép")
+    return prisma.$transaction(async (tx) => {
+      const leaveRequest = await tx.leaveRequest.findUnique({ where: { id: requestId } })
+      if (!leaveRequest) throw new Error("Không tìm thấy đơn nghỉ phép")
 
-    // Nếu duyệt → kiểm tra quỹ phép còn đủ không (theo từng loại nghỉ)
-    if (status === "Đã duyệt") {
-      const year = leaveRequest.startDate.getFullYear()
-      const balance = await prisma.leaveBalance.findFirst({
-        where: { employeeId: leaveRequest.employeeId, year, leaveType: leaveRequest.leaveType },
-      })
-      const totalDays   = balance ? Number(balance.totalDays) : 12
-      const usedDays    = balance ? Number(balance.usedDays)  : 0
-      const requestDays = Number(leaveRequest.totalDays)
+      // Nếu duyệt → kiểm tra quỹ phép còn đủ không (theo từng loại nghỉ)
+      if (status === "Đã duyệt") {
+        const year = leaveRequest.startDate.getFullYear()
+        const balance = await tx.leaveBalance.findFirst({
+          where: { employeeId: leaveRequest.employeeId, year, leaveType: leaveRequest.leaveType },
+        })
+        const totalDays   = balance ? Number(balance.totalDays) : 12
+        const usedDays    = balance ? Number(balance.usedDays)  : 0
+        const requestDays = Number(leaveRequest.totalDays)
 
-      if (usedDays + requestDays > totalDays) {
-        throw new Error(
-          `Quỹ phép không đủ. Còn lại: ${totalDays - usedDays} ngày, yêu cầu: ${requestDays} ngày`
-        )
+        if (usedDays + requestDays > totalDays) {
+          throw new Error(
+            `Quỹ phép không đủ. Còn lại: ${totalDays - usedDays} ngày, yêu cầu: ${requestDays} ngày`
+          )
+        }
       }
-    }
 
-    // Cập nhật trạng thái đơn
-    const request = await prisma.leaveRequest.update({
-      where: { id: requestId },
-      data: { status, approvedBy, approvedDate: new Date() },
+      // Cập nhật trạng thái đơn
+      const request = await tx.leaveRequest.update({
+        where: { id: requestId },
+        data: { status, approvedBy, approvedDate: new Date() },
+      })
+
+      // Nếu duyệt → trừ quỹ phép theo loại nghỉ
+      if (status === "Đã duyệt") {
+        const year = request.startDate.getFullYear()
+        const existingBalance = await tx.leaveBalance.findFirst({
+          where: { employeeId: request.employeeId, year, leaveType: request.leaveType },
+        })
+        if (existingBalance) {
+          await tx.leaveBalance.update({
+            where: { id: existingBalance.id },
+            data: { usedDays: { increment: Number(request.totalDays) } },
+          })
+        } else {
+          await tx.leaveBalance.create({
+            data: {
+              employeeId: request.employeeId,
+              year,
+              leaveType: request.leaveType,
+              totalDays: 12,
+              usedDays: Number(request.totalDays),
+            },
+          })
+        }
+      }
+
+      return request
     })
-
-    // Nếu duyệt → trừ quỹ phép theo loại nghỉ
-    if (status === "Đã duyệt") {
-      const year = request.startDate.getFullYear()
-      const existingBalance = await prisma.leaveBalance.findFirst({
-        where: { employeeId: request.employeeId, year, leaveType: request.leaveType },
-      })
-      if (existingBalance) {
-        await prisma.leaveBalance.update({
-          where: { id: existingBalance.id },
-          data: { usedDays: { increment: Number(request.totalDays) } },
-        })
-      } else {
-        await prisma.leaveBalance.create({
-          data: {
-            employeeId: request.employeeId,
-            year,
-            leaveType: request.leaveType,
-            totalDays: 12,
-            usedDays: Number(request.totalDays),
-          },
-        })
-      }
-    }
-
-    return request
   },
 
   /** Lấy quỹ phép của nhân viên (theo loại nghỉ hoặc tất cả) */

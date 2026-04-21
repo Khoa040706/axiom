@@ -3,9 +3,9 @@ export const BHXH_RATE = 0.08   // 8%
 export const BHYT_RATE = 0.015  // 1.5%
 export const BHTN_RATE = 0.01   // 1%
 
-// ── PERSONAL DEDUCTION (Giảm trừ gia cảnh — Nghị quyết 954/2020) ──────────
-export const PERSONAL_DEDUCTION = 11_000_000     // 11 triệu/tháng (bản thân NLĐ)
-export const DEPENDENT_DEDUCTION = 4_400_000     // 4,4 triệu/người phụ thuộc/tháng
+// ── PERSONAL DEDUCTION (Giảm trừ gia cảnh — Nghị quyết 107/2023/QH15, áp dụng từ 2026) ──
+export const PERSONAL_DEDUCTION = 15_500_000     // 15,5 triệu/tháng (bản thân NLĐ)
+export const DEPENDENT_DEDUCTION = 6_200_000     // 6,2 triệu/người phụ thuộc/tháng
 
 // ── INCOME TAX BRACKETS (Biểu lũy tiến 7 bậc — Luật Thuế TNCN VN) ───────
 // Dành cho thu nhập từ tiền lương, tiền công (Điều 22, Luật Thuế TNCN)
@@ -40,13 +40,22 @@ export const ROLES = {
 export type Role = (typeof ROLES)[keyof typeof ROLES]
 
 // ── CONTRACT TYPES ────────────────────────────────────────────
-export const CONTRACT_TYPES = ["Thử việc", "Chính thức", "Thời vụ"] as const
+export const CONTRACT_TYPES = ["Thử việc", "Chính thức", "Thời vụ", "Thực tập"] as const
 
 // ── EMPLOYEE STATUS ───────────────────────────────────────────
 export const EMPLOYEE_STATUS = ["Đang làm", "Thử việc", "Nghỉ việc"] as const
 
 // ── LEAVE TYPES ───────────────────────────────────────────────
-export const LEAVE_TYPES = ["Nghỉ năm", "Nghỉ ốm", "Việc riêng", "Khác"] as const
+export const LEAVE_TYPES = ["Nghỉ năm", "Nghỉ ốm", "Việc riêng", "Nghỉ lễ", "Thai sản", "Không lương"] as const
+
+export const LEAVE_TYPE_EN: Record<string, string> = {
+  "Nghỉ năm":   "Annual Leave",
+  "Nghỉ ốm":    "Sick Leave",
+  "Việc riêng":  "Personal Leave",
+  "Nghỉ lễ":     "Public Holiday",
+  "Thai sản":    "Maternity Leave",
+  "Không lương": "Unpaid Leave",
+}
 
 // ── CAREER EVENT TYPES (Quá trình công tác) ──────────────────
 export const CAREER_EVENT_TYPES = [
@@ -68,3 +77,46 @@ export const CAREER_EVENT_CATEGORIES = {
 
 export const REWARD_TYPES = ["Bằng khen", "Giấy khen", "Tiền thưởng", "Thưởng dự án", "Khác"] as const
 export const PENALTY_TYPES = ["Khiển trách", "Cảnh cáo", "Hạ bậc lương", "Chuyển công tác", "Sa thải", "Khác"] as const
+
+// ── ENGLISH TRANSLATION MAPS (for bilingual UI) ─────────────
+export const CAREER_EVENT_TYPE_EN: Record<string, string> = {
+  "Bổ nhiệm":        "Appointment",
+  "Miễn nhiệm":      "Dismissal",
+  "Thăng chức":       "Promotion",
+  "Giáng chức":       "Demotion",
+  "Điều chuyển":      "Transfer",
+  "Điều chỉnh lương": "Salary Adjustment",
+  "Khen thưởng":      "Reward",
+  "Kỷ luật":          "Discipline",
+  "Khác":             "Other",
+}
+
+export const REWARD_TYPE_EN: Record<string, string> = {
+  "Bằng khen":    "Certificate of Merit",
+  "Giấy khen":    "Commendation",
+  "Tiền thưởng":  "Cash Bonus",
+  "Thưởng dự án": "Project Bonus",
+  "Khác":         "Other",
+}
+
+export const PENALTY_TYPE_EN: Record<string, string> = {
+  "Khiển trách":    "Reprimand",
+  "Cảnh cáo":       "Warning",
+  "Hạ bậc lương":   "Salary Reduction",
+  "Chuyển công tác": "Forced Transfer",
+  "Sa thải":         "Termination",
+  "Khác":            "Other",
+}
+
+export const CONTRACT_TYPE_EN: Record<string, string> = {
+  "Chính thức": "Full-time",
+  "Thử việc":   "Probation",
+  "Thời vụ":    "Seasonal",
+  "Thực tập":   "Internship",
+}
+
+export const EMPLOYEE_STATUS_EN: Record<string, string> = {
+  "Đang làm": "Active",
+  "Thử việc": "Probation",
+  "Nghỉ việc": "Resigned",
+}

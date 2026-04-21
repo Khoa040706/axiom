@@ -22,64 +22,64 @@ import { AvatarImg } from "@/components/ui/avatar-img"
 // UC-04: Đăng ký nghỉ phép, UC-05: Duyệt nghỉ phép, UC-06: QL chấm công
 // UC-07: Công tác phí, UC-08: Thiết lập CT lương, UC-09: Tính lương TĐ
 // UC-10: Xuất phiếu lương, UC-11: Dashboard thống kê, UC-12: RBAC
-type NavItem = { href:string; icon:any; vi:string; en:string }
+type NavItem = { href: string; icon: any; vi: string; en: string }
 function getNav(role: string): NavItem[] {
   // ── ADMIN: UC-01,02,03 (Core HR) + UC-08 (Cấu hình lương) + UC-11,12 (Báo cáo & RBAC) ──
   const admin: NavItem[] = [
-    { href:"/dashboard",            icon:LayoutDashboard, vi:"Trang chủ",           en:"Home"             },
-    { href:"/employees",            icon:Users,           vi:"Quản lý nhân sự",    en:"Employees"        },
-    { href:"/contracts",            icon:FileText,        vi:"Hợp đồng lao động",  en:"Contracts"        },
-    { href:"/career-history",       icon:History,         vi:"Quá trình công tác", en:"Career History"   },
-    { href:"/payroll",              icon:DollarSign,      vi:"Cấu hình lương",     en:"Salary Config"    },
-    { href:"/settings/users",       icon:UserCog,         vi:"Phân quyền (RBAC)",  en:"User Roles"       },
-    { href:"/dashboard-director",   icon:BarChart2,       vi:"Thống kê",           en:"Statistics"       },
+    { href: "/dashboard", icon: LayoutDashboard, vi: "Trang chủ", en: "Home" },
+    { href: "/employees", icon: Users, vi: "Quản lý nhân sự", en: "Employees" },
+    { href: "/contracts", icon: FileText, vi: "Hợp đồng lao động", en: "Contracts" },
+    { href: "/career-history", icon: History, vi: "Quá trình công tác", en: "Career History" },
+    { href: "/payroll", icon: DollarSign, vi: "Cấu hình lương", en: "Salary Config" },
+    { href: "/settings/users", icon: UserCog, vi: "Phân quyền (RBAC)", en: "User Roles" },
+    { href: "/dashboard-director", icon: BarChart2, vi: "Thống kê", en: "Statistics" },
   ]
   // ── DIRECTOR (Ban lãnh đạo): UC-11 (Dashboard thống kê → extends: Xuất báo cáo) ──
   const director: NavItem[] = [
-    { href:"/dashboard-director",   icon:LayoutDashboard, vi:"Dashboard thống kê", en:"Statistics"        },
+    { href: "/dashboard-director", icon: LayoutDashboard, vi: "Dashboard thống kê", en: "Statistics" },
   ]
   // ── HR MANAGER: UC-01,02,03 (Core HR) + UC-05 (Duyệt NP) + UC-06 (Chấm công) + UC-07 (Công tác phí) + UC-11 ──
   const hr: NavItem[] = [
-    { href:"/dashboard-hr",         icon:LayoutDashboard, vi:"Tổng quan",          en:"Overview"         },
-    { href:"/employees",            icon:Users,           vi:"Quản lý nhân sự",    en:"Employees"        },
-    { href:"/contracts",            icon:FileText,        vi:"Hợp đồng",           en:"Contracts"        },
-    { href:"/career-history",       icon:History,         vi:"Quá trình công tác", en:"Career History"   },
-    { href:"/attendance",           icon:Clock,           vi:"Quản lý chấm công",  en:"Attendance"       },
-    { href:"/leave",                icon:CalendarDays,    vi:"Duyệt nghỉ phép",    en:"Leave Approval"   },
-    { href:"/business-trips",       icon:Briefcase,       vi:"Công tác phí",        en:"Business Trips"   },
+    { href: "/dashboard-hr", icon: LayoutDashboard, vi: "Tổng quan", en: "Overview" },
+    { href: "/employees", icon: Users, vi: "Quản lý nhân sự", en: "Employees" },
+    { href: "/contracts", icon: FileText, vi: "Hợp đồng", en: "Contracts" },
+    { href: "/career-history", icon: History, vi: "Quá trình công tác", en: "Career History" },
+    { href: "/attendance", icon: Clock, vi: "Quản lý chấm công", en: "Attendance" },
+    { href: "/leave", icon: CalendarDays, vi: "Duyệt nghỉ phép", en: "Leave Approval" },
+    { href: "/business-trips", icon: Briefcase, vi: "Công tác phí", en: "Business Trips" },
   ]
   // ── ACCOUNTANT (Kế toán): UC-08,09,10 (Payroll) + UC-11 (Dashboard thống kê) ──
   const accountant: NavItem[] = [
-    { href:"/dashboard-accountant", icon:LayoutDashboard, vi:"Tổng quan",          en:"Overview"         },
-    { href:"/payroll",              icon:DollarSign,      vi:"Bảng lương",         en:"Payroll"          },
-    { href:"/payslips",             icon:FileText,        vi:"Phiếu lương",        en:"Payslips"         },
+    { href: "/dashboard-accountant", icon: LayoutDashboard, vi: "Tổng quan", en: "Overview" },
+    { href: "/payroll", icon: DollarSign, vi: "Bảng lương", en: "Payroll" },
+    { href: "/payslips", icon: FileText, vi: "Phiếu lương", en: "Payslips" },
   ]
   // ── MANAGER (Trưởng phòng): UC-05 (Duyệt NP) + UC-06 (Chấm công) + UC-11 (Dashboard thống kê) ──
   const manager: NavItem[] = [
-    { href:"/dashboard-manager",    icon:LayoutDashboard, vi:"Tổng quan",          en:"Overview"         },
-    { href:"/attendance",           icon:Clock,           vi:"Chấm công phòng",    en:"Team Attendance"  },
-    { href:"/leave",                icon:CalendarDays,    vi:"Duyệt nghỉ phép",    en:"Leave Approval"   },
+    { href: "/dashboard-manager", icon: LayoutDashboard, vi: "Tổng quan", en: "Overview" },
+    { href: "/attendance", icon: Clock, vi: "Chấm công phòng", en: "Team Attendance" },
+    { href: "/leave", icon: CalendarDays, vi: "Duyệt nghỉ phép", en: "Leave Approval" },
   ]
   // ── EMPLOYEE (Nhân viên): UC-04 (Đăng ký NP) + UC-06 (Chấm công) + UC-07 (Công tác phí) + UC-10 (Xem phiếu lương) ──
   const employee: NavItem[] = [
-    { href:"/attendance/check-in",  icon:Clock,           vi:"Chấm công",          en:"My Attendance"    },
-    { href:"/leave",                icon:CalendarDays,    vi:"Đơn nghỉ phép",      en:"My Leaves"        },
-    { href:"/payslips",             icon:DollarSign,      vi:"Phiếu lương",        en:"My Payslip"       },
-    { href:"/business-trips",       icon:Briefcase,       vi:"Công tác phí",        en:"Business Trips"   },
-    { href:"/profile",              icon:Settings,        vi:"Hồ sơ cá nhân",      en:"My Profile"       },
+    { href: "/attendance/check-in", icon: Clock, vi: "Chấm công", en: "My Attendance" },
+    { href: "/leave", icon: CalendarDays, vi: "Đơn nghỉ phép", en: "My Leaves" },
+    { href: "/payslips", icon: DollarSign, vi: "Phiếu lương", en: "My Payslip" },
+    { href: "/business-trips", icon: Briefcase, vi: "Công tác phí", en: "Business Trips" },
+    { href: "/profile", icon: Settings, vi: "Hồ sơ cá nhân", en: "My Profile" },
   ]
   switch (role) {
-    case "Director":   case "giamdoc":        return director
-    case "HRManager":  case "truongphong_ns": return hr
-    case "Accountant": case "ketoan":         return accountant
-    case "Manager":    case "truongphong":    return manager
-    case "Employee":   case "nhanvien":       return employee
-    case "Admin":      case "admin":          return admin
-    default:                                  return admin
+    case "Director": case "giamdoc": return director
+    case "HRManager": case "truongphong_ns": return hr
+    case "Accountant": case "ketoan": return accountant
+    case "Manager": case "truongphong": return manager
+    case "Employee": case "nhanvien": return employee
+    case "Admin": case "admin": return admin
+    default: return admin
   }
 }
 
-const W        = 220
+const W = 220
 const W_TABLET = 64
 const HEADER_H = 54
 
@@ -93,24 +93,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function Inner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const router   = useRouter()
+  const router = useRouter()
   const { dark, toggleDark, lang, toggleLang } = useDashboard()
   const { isMobile, isTablet } = useBreakpoint()
 
-  const [hov, setHov]               = useState<string | null>(null)
-  const [user, setUser]             = useState<MockUser | null>(null)
-  const [avatarUrl, setAvatarUrl]   = useState<string>("/images/avatarmacdinh.jpg")
+  const [hov, setHov] = useState<string | null>(null)
+  const [user, setUser] = useState<MockUser | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string>("/images/avatarmacdinh.jpg")
   const [showProfile, setShowProfile] = useState(false)
-  const [showNotif, setShowNotif]   = useState(false)
+  const [showNotif, setShowNotif] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   // TODO: Production — thay bằng dữ liệu thật từ API/WebSocket. Đây là demo data.
   const [notifications, setNotifications] = useState([
-    { id: 1, type: "leave",    read: false, time: "2 phút trước",  title: "Đơn nghỉ phép mới",         body: "Nguyễn Văn A đã gửi đơn xin nghỉ 2 ngày" },
-    { id: 2, type: "payroll",  read: false, time: "15 phút trước", title: "Bảng lương đã tính xong",    body: "Lương tháng 3/2026 đã được duyệt" },
-    { id: 3, type: "attendance",read: false, time: "1 giờ trước",  title: "Cảnh báo chấm công",         body: "3 nhân viên chưa check-in hôm nay" },
-    { id: 4, type: "system",   read: true,  time: "Hôm qua",       title: "Cập nhật hệ thống",          body: "Phiên bản AXIOM HRM v2.1 đã ra mắt" },
-    { id: 5, type: "leave",    read: true,  time: "Hôm qua",       title: "Đơn nghỉ phép đã duyệt",    body: "Trần Thị B - đơn nghỉ 2 ngày được chấp thuận" },
+    { id: 1, type: "leave", read: false, timeVi: "2 phút trước", timeEn: "2 min ago", titleVi: "Đơn nghỉ phép mới", titleEn: "New Leave Request", bodyVi: "Nguyễn Văn A đã gửi đơn xin nghỉ 2 ngày", bodyEn: "Nguyen Van A submitted a 2-day leave request" },
+    { id: 2, type: "payroll", read: false, timeVi: "15 phút trước", timeEn: "15 min ago", titleVi: "Bảng lương đã tính xong", titleEn: "Payroll Completed", bodyVi: "Lương tháng 3/2026 đã được duyệt", bodyEn: "March 2026 payroll has been approved" },
+    { id: 3, type: "attendance", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "Cảnh báo chấm công", titleEn: "Attendance Alert", bodyVi: "3 nhân viên chưa check-in hôm nay", bodyEn: "3 employees have not checked in today" },
+    { id: 4, type: "system", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Cập nhật hệ thống", titleEn: "System Update", bodyVi: "Phiên bản AXIOM HRM v2.1 đã ra mắt", bodyEn: "AXIOM HRM v2.1 has been released" },
+    { id: 5, type: "leave", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Đơn nghỉ phép đã duyệt", titleEn: "Leave Request Approved", bodyVi: "Trần Thị B - đơn nghỉ 2 ngày được chấp thuận", bodyEn: "Tran Thi B - 2-day leave request approved" },
   ])
   const th = getTheme(dark)
 
@@ -222,7 +222,7 @@ function Inner({ children }: { children: React.ReactNode }) {
   const bottomNavItems = navItems.slice(0, 5)
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif" }}>
+    <div className={dark ? "dark" : undefined} style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif" }}>
 
       {/* ── MOBILE SIDEBAR BACKDROP ── */}
       {isMobile && mobileSidebarOpen && (
@@ -263,8 +263,8 @@ function Inner({ children }: { children: React.ReactNode }) {
             cursor: "pointer",
             transition: "background .15s",
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
             <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={44} height={44}
               style={{ objectFit: "contain", filter: "brightness(0) invert(1)", flexShrink: 0, opacity: 0.92 }} />
@@ -310,8 +310,8 @@ function Inner({ children }: { children: React.ReactNode }) {
                   background: active
                     ? "rgba(220,50,50,0.28)"
                     : hov === href
-                    ? "rgba(255,255,255,0.07)"
-                    : "transparent",
+                      ? "rgba(255,255,255,0.07)"
+                      : "transparent",
                   color: active ? "#ffcbcb" : "rgba(255,255,255,0.58)",
                   fontSize: 13.5, fontWeight: active ? 600 : 400,
                   transition: "all .15s",
@@ -338,11 +338,12 @@ function Inner({ children }: { children: React.ReactNode }) {
           justifyContent: isTablet ? "center" : "flex-start",
         }}>
           {/* Avatar + name — click to profile */}
-          <Link href="/profile" style={{ display:"flex", alignItems:"center", gap: isTablet?0:10, textDecoration:"none", flex:1, minWidth:0,
-            borderRadius:9, padding:"4px 6px", transition:"background .15s",
+          <Link href="/profile" style={{
+            display: "flex", alignItems: "center", gap: isTablet ? 0 : 10, textDecoration: "none", flex: 1, minWidth: 0,
+            borderRadius: 9, padding: "4px 6px", transition: "background .15s",
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
             <div style={{
               width: 36, height: 36, borderRadius: "50%",
@@ -359,21 +360,21 @@ function Inner({ children }: { children: React.ReactNode }) {
             {!isTablet && (
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
-                <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 11 }}>{lang==="vi" ? user.roleLabel : user.roleLabelEn}</div>
+                <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 11, whiteSpace: "nowrap" }}>{lang === "vi" ? user.roleLabel : user.roleLabelEn}</div>
               </div>
             )}
           </Link>
           {/* Logout button */}
           {!isTablet && (
-            <button onClick={askLogout} title={lang==="vi"?"Hỏi thoát":"Logout"} style={{
-              background:"none", border:"none", cursor:"pointer", flexShrink:0,
-              padding:5, borderRadius:7, display:"flex", alignItems:"center",
-              transition:"background .15s",
+            <button onClick={askLogout} title={lang === "vi" ? "Hỏi thoát" : "Logout"} style={{
+              background: "none", border: "none", cursor: "pointer", flexShrink: 0,
+              padding: 5, borderRadius: 7, display: "flex", alignItems: "center",
+              transition: "background .15s",
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.2)")}
-            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.2)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <LogOut size={15} color="rgba(255,200,200,0.6)"/>
+              <LogOut size={15} color="rgba(255,200,200,0.6)" />
             </button>
           )}
         </div>
@@ -517,13 +518,13 @@ function Inner({ children }: { children: React.ReactNode }) {
 
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-                              <span style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: th.text1 }}>{n.title}</span>
+                              <span style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: th.text1 }}>{lang === "vi" ? n.titleVi : n.titleEn}</span>
                               {!n.read && (
                                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#EF4444", flexShrink: 0 }} />
                               )}
                             </div>
-                            <div style={{ fontSize: 12, color: th.text2, marginTop: 2, lineHeight: 1.4 }}>{n.body}</div>
-                            <div style={{ fontSize: 11, color: th.text2, marginTop: 4, opacity: 0.6 }}>{n.time}</div>
+                            <div style={{ fontSize: 12, color: th.text2, marginTop: 2, lineHeight: 1.4 }}>{lang === "vi" ? n.bodyVi : n.bodyEn}</div>
+                            <div style={{ fontSize: 11, color: th.text2, marginTop: 4, opacity: 0.6 }}>{lang === "vi" ? n.timeVi : n.timeEn}</div>
                           </div>
 
                           <button
@@ -581,9 +582,9 @@ function Inner({ children }: { children: React.ReactNode }) {
               </div>
               {/* Name — hidden on mobile */}
               {!isMobile && (
-                <div style={{ textAlign: "left" }}>
+                <div style={{ textAlign: "left", minWidth: 70 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: th.text1, whiteSpace: "nowrap" }}>{user.name}</div>
-                  <div style={{ fontSize: 11, color: th.text2 }}>{lang==="vi" ? user.roleLabel : user.roleLabelEn}</div>
+                  <div style={{ fontSize: 11, color: th.text2, whiteSpace: "nowrap" }}>{lang === "vi" ? user.roleLabel : user.roleLabelEn}</div>
                 </div>
               )}
               {/* Chevron — hidden on mobile */}
@@ -619,7 +620,7 @@ function Inner({ children }: { children: React.ReactNode }) {
                     </div>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: th.text1 }}>{user.name}</div>
-                      <div style={{ fontSize: 11, color: th.text2 }}>{lang==="vi" ? user.roleLabel : user.roleLabelEn}</div>
+                      <div style={{ fontSize: 11, color: th.text2 }}>{lang === "vi" ? user.roleLabel : user.roleLabelEn}</div>
                     </div>
                   </div>
 
@@ -759,14 +760,16 @@ function Inner({ children }: { children: React.ReactNode }) {
       {showLogoutConfirm && (
         <>
           <div
-            style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)",
-              backdropFilter:"blur(6px)", zIndex:9999 }}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+              backdropFilter: "blur(6px)", zIndex: 9999
+            }}
             onClick={() => setShowLogoutConfirm(false)}
           />
           <div style={{
-            position:"fixed", inset:0, display:"flex",
-            alignItems:"center", justifyContent:"center",
-            padding:16, zIndex:10000,
+            position: "fixed", inset: 0, display: "flex",
+            alignItems: "center", justifyContent: "center",
+            padding: 16, zIndex: 10000,
           }}>
             <div
               onClick={e => e.stopPropagation()}
@@ -786,67 +789,67 @@ function Inner({ children }: { children: React.ReactNode }) {
                 textAlign: "center",
               }}>
                 <div style={{ fontSize: 40, marginBottom: 6 }}>🚪</div>
-                <div style={{ color:"#fff", fontWeight:800, fontSize:17 }}>
-                  {lang==="vi" ? "Xác nhận đăng xuất" : "Confirm Sign Out"}
+                <div style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>
+                  {lang === "vi" ? "Xác nhận đăng xuất" : "Confirm Sign Out"}
                 </div>
               </div>
 
               {/* Body */}
-              <div style={{ padding:"22px 24px" }}>
+              <div style={{ padding: "22px 24px" }}>
                 {/* User info */}
                 <div style={{
-                  display:"flex", alignItems:"center", gap:12,
-                  padding:"12px 14px", borderRadius:12,
-                  background: dark?"rgba(255,255,255,0.05)":"#F9FAFB",
-                  border:`1px solid ${th.cardBorder}`,
-                  marginBottom:18,
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "12px 14px", borderRadius: 12,
+                  background: dark ? "rgba(255,255,255,0.05)" : "#F9FAFB",
+                  border: `1px solid ${th.cardBorder}`,
+                  marginBottom: 18,
                 }}>
-                  <div style={{ width:44, height:44, borderRadius:"50%", overflow:"hidden", flexShrink:0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
                     <AvatarImg src={avatarUrl} alt={user.name} size={44} />
                   </div>
                   <div>
-                    <div style={{ fontWeight:700, fontSize:14, color:th.text1 }}>{user.name}</div>
-                    <div style={{ fontSize:12, color:th.text2 }}>{lang==="vi" ? user.roleLabel : user.roleLabelEn}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: th.text1 }}>{user.name}</div>
+                    <div style={{ fontSize: 12, color: th.text2 }}>{lang === "vi" ? user.roleLabel : user.roleLabelEn}</div>
                   </div>
                 </div>
 
-                <p style={{ fontSize:13.5, color:th.text2, textAlign:"center", margin:"0 0 20px", lineHeight:1.6 }}>
-                  {lang==="vi"
+                <p style={{ fontSize: 13.5, color: th.text2, textAlign: "center", margin: "0 0 20px", lineHeight: 1.6 }}>
+                  {lang === "vi"
                     ? "Bạn có chắc chắn muốn đăng xuất khỏi AXIOM HRM không?"
                     : "Are you sure you want to sign out of AXIOM HRM?"}
                 </p>
 
                 {/* Buttons */}
-                <div style={{ display:"flex", gap:10 }}>
+                <div style={{ display: "flex", gap: 10 }}>
                   <button
                     onClick={() => setShowLogoutConfirm(false)}
                     style={{
-                      flex:1, padding:"11px 0", borderRadius:11,
-                      border:`1.5px solid ${th.cardBorder}`,
-                      background:"none", cursor:"pointer",
-                      fontSize:14, fontWeight:600, color:th.text1,
-                      fontFamily:"inherit", transition:"background .15s",
+                      flex: 1, padding: "11px 0", borderRadius: 11,
+                      border: `1.5px solid ${th.cardBorder}`,
+                      background: "none", cursor: "pointer",
+                      fontSize: 14, fontWeight: 600, color: th.text1,
+                      fontFamily: "inherit", transition: "background .15s",
                     }}
-                    onMouseEnter={e=>(e.currentTarget.style.background=dark?"rgba(255,255,255,0.07)":"#F3F4F6")}
-                    onMouseLeave={e=>(e.currentTarget.style.background="none")}
+                    onMouseEnter={e => (e.currentTarget.style.background = dark ? "rgba(255,255,255,0.07)" : "#F3F4F6")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "none")}
                   >
-                    {lang==="vi" ? "❌ Hủy" : "❌ Cancel"}
+                    {lang === "vi" ? "❌ Hủy" : "❌ Cancel"}
                   </button>
                   <button
                     onClick={doLogout}
                     style={{
-                      flex:1, padding:"11px 0", borderRadius:11,
-                      background:"linear-gradient(135deg,#D0211C,#991414)",
-                      border:"none", cursor:"pointer",
-                      fontSize:14, fontWeight:700, color:"#fff",
-                      fontFamily:"inherit",
-                      boxShadow:"0 4px 14px rgba(208,33,28,0.35)",
-                      transition:"transform .15s",
+                      flex: 1, padding: "11px 0", borderRadius: 11,
+                      background: "linear-gradient(135deg,#D0211C,#991414)",
+                      border: "none", cursor: "pointer",
+                      fontSize: 14, fontWeight: 700, color: "#fff",
+                      fontFamily: "inherit",
+                      boxShadow: "0 4px 14px rgba(208,33,28,0.35)",
+                      transition: "transform .15s",
                     }}
-                    onMouseEnter={e=>(e.currentTarget.style.transform="translateY(-1px)")}
-                    onMouseLeave={e=>(e.currentTarget.style.transform="none")}
+                    onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-1px)")}
+                    onMouseLeave={e => (e.currentTarget.style.transform = "none")}
                   >
-                    ✓ {lang==="vi" ? "Đăng xuất" : "Sign Out"}
+                    ✓ {lang === "vi" ? "Đăng xuất" : "Sign Out"}
                   </button>
                 </div>
               </div>

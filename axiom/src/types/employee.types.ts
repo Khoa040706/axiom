@@ -66,7 +66,6 @@ export interface CareerHistoryEntry {
   eventType: string
   eventDate: Date | string
   description?: string | null
-  decisionNumber?: string | null
   oldDepartment?: string | null
   newDepartment?: string | null
   oldPosition?: string | null

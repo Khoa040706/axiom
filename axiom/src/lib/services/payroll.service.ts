@@ -72,11 +72,17 @@ export const payrollService = {
     const numDependents = employee?.numDependents ?? 0
 
     // 4. Tính lương
+    // Thực tập sinh: lương cơ bản = 85% so với nhân viên bình thường, phụ cấp giữ nguyên
+    const isIntern = contract.contractType === "Thực tập"
+    const effectiveBaseSalary = isIntern
+      ? Number(contract.baseSalary) * 0.85
+      : Number(contract.baseSalary)
+
     // hourlyRate = (lương cơ bản × hệ số) / 26 ngày / 8 giờ
-    const hourlyRate = (Number(contract.baseSalary) * Number(contract.salaryGrade)) / 26 / 8
+    const hourlyRate = (effectiveBaseSalary * Number(contract.salaryGrade)) / 26 / 8
     const otPay = Math.round(hourlyRate * 1.5 * otHours)
     const result = calculateSalary({
-      baseSalary: Number(contract.baseSalary),
+      baseSalary: effectiveBaseSalary,
       salaryGrade: Number(contract.salaryGrade),
       allowance: Number(contract.allowance),
       otPay,
@@ -92,7 +98,7 @@ export const payrollService = {
         payYear: year,
         workDays,
         otHours,
-        baseSalary: Number(contract.baseSalary) * Number(contract.salaryGrade),
+        baseSalary: effectiveBaseSalary * Number(contract.salaryGrade),
         allowance: Number(contract.allowance),
         otPay,
         grossSalary: result.grossSalary,
@@ -108,7 +114,7 @@ export const payrollService = {
       update: {
         workDays,
         otHours,
-        baseSalary: Number(contract.baseSalary) * Number(contract.salaryGrade),
+        baseSalary: effectiveBaseSalary * Number(contract.salaryGrade),
         allowance: Number(contract.allowance),
         otPay,
         grossSalary: result.grossSalary,

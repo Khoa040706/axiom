@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Calendar, Clock, DollarSign, FileText, CheckCircle, AlertCircle, Briefcase, ChevronRight } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { DateInput } from "@/components/ui/date-input"
 import { useCurrentUser, useEmployeeId } from "@/hooks/use-current-user"
 import { getAttendanceByMonth } from "@/lib/actions/attendance.actions"
 import { getLeaveBalance, getLeaveRequests } from "@/lib/actions/leave.actions"
@@ -26,7 +27,7 @@ export default function EmployeeDashboard() {
 
   // State form nghỉ phép
   const [showLeaveForm, setShowLeaveForm] = useState(false)
-  const [leaveType, setLeaveType] = useState("Nghỉ phép năm")
+  const [leaveType, setLeaveType] = useState("Nghỉ năm")
   const [leaveFrom, setLeaveFrom] = useState("")
   const [leaveTo, setLeaveTo] = useState("")
   const [leaveReason, setLeaveReason] = useState("")
@@ -116,9 +117,9 @@ export default function EmployeeDashboard() {
       {/* Quick summary cards */}
       <div className="stat-row" style={{ marginBottom: 18 }}>
         {[
-          { icon: <Clock size={22} color="#D0211C"/>,      label: vi?"Ngày công tháng này":"Days Worked",   value: `${attendance.length} ngày`, sub: vi?"Hôm nay":"This month", bg:"#FEF2F2", bgd:"rgba(208,33,28,0.08)" },
+          { icon: <Clock size={22} color="#D0211C"/>,      label: vi?"Ngày công tháng này":"Days Worked",   value: `${attendance.length} ${vi?"ngày":"days"}`, sub: vi?"Hôm nay":"This month", bg:"#FEF2F2", bgd:"rgba(208,33,28,0.08)" },
           { icon: <CheckCircle size={22} color="#10B981"/>, label: vi?"Tỷ lệ đúng giờ":"On-time Rate",      value: `${ontimeRate}%`,   sub: vi?"Đúng giờ":"On-time",         bg:"#F0FDF4", bgd:"rgba(16,185,129,0.08)" },
-          { icon: <Calendar size={22} color="#8B5CF6"/>,    label: vi?"Phép còn lại":"Leave Left",          value: `${totalLeaveLeft} ngày`, sub: vi?"Tổng hợp":"Total",     bg:"#EDE9FE", bgd:"rgba(139,92,246,0.08)" },
+          { icon: <Calendar size={22} color="#8B5CF6"/>,    label: vi?"Phép còn lại":"Leave Left",          value: `${totalLeaveLeft} ${vi?"ngày":"days"}`, sub: vi?"Tổng hợp":"Total",     bg:"#EDE9FE", bgd:"rgba(139,92,246,0.08)" },
           { icon: <DollarSign size={22} color="#059669"/>,  label: vi?`Lương Net tháng ${now.getMonth()+1}`:`Month ${now.getMonth()+1} Net`, value: netSalary ? `${(netSalary/1_000_000).toFixed(1)}M` : "—", sub: vi?"Sau khấu trừ":"After deduct", bg:"#F0FDF4", bgd:"rgba(5,150,105,0.08)" },
         ].map(s => (
           <div key={s.label} style={{ flex: 1, background: dark?s.bgd:s.bg, borderRadius: 14, padding: "16px 18px", border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -199,12 +200,15 @@ export default function EmployeeDashboard() {
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${th.tableBorder}`, display: "flex", flexDirection: "column", gap: 10 }}>
               <select value={leaveType} onChange={e => setLeaveType(e.target.value)}
                 style={{ padding: "7px 10px", border: `1px solid ${th.inputBorder}`, borderRadius: 8, fontSize: 12.5, background: th.inputBg, color: th.text1, fontFamily: "inherit", outline: "none" }}>
-                {["Nghỉ phép năm","Nghỉ bệnh","Việc riêng","Không lương"].map(t => <option key={t}>{t}</option>)}
+                {(vi
+                  ? ["Nghỉ năm","Nghỉ ốm","Việc riêng","Không lương"]
+                  : ["Annual Leave","Sick Leave","Personal Leave","Unpaid Leave"]
+                ).map((t,i) => <option key={t} value={["Nghỉ năm","Nghỉ ốm","Việc riêng","Không lương"][i]}>{t}</option>)}
               </select>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <input type="date" min={today} value={leaveFrom} onChange={e => setLeaveFrom(e.target.value)}
+                <DateInput min={today} value={leaveFrom} onChange={e => setLeaveFrom(e.target.value)}
                   style={{ padding: "7px 10px", border: `1px solid ${th.inputBorder}`, borderRadius: 8, fontSize: 12, background: th.inputBg, color: th.text1, fontFamily: "inherit", outline: "none" }}/>
-                <input type="date" min={leaveFrom||today} value={leaveTo} onChange={e => setLeaveTo(e.target.value)}
+                <DateInput min={leaveFrom||today} value={leaveTo} onChange={e => setLeaveTo(e.target.value)}
                   style={{ padding: "7px 10px", border: `1px solid ${th.inputBorder}`, borderRadius: 8, fontSize: 12, background: th.inputBg, color: th.text1, fontFamily: "inherit", outline: "none" }}/>
               </div>
               <input placeholder={vi ? "Lý do nghỉ phép..." : "Reason..."} value={leaveReason} onChange={e => setLeaveReason(e.target.value)}
@@ -279,7 +283,7 @@ export default function EmployeeDashboard() {
                     background: r.status === "Đã duyệt" ? "#D1FAE5" : r.status === "Từ chối" ? "#FEE2E2" : "#FEF3C7",
                     color: r.status === "Đã duyệt" ? "#065F46" : r.status === "Từ chối" ? "#991B1B" : "#92400E",
                   }}>
-                    {r.status}
+                    {vi ? r.status : ({"Đã duyệt":"Approved","Từ chối":"Rejected","Chờ duyệt":"Pending"} as Record<string,string>)[r.status] ?? r.status}
                   </span>
                 </div>
               ))}

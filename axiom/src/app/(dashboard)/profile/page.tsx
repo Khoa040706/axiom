@@ -35,8 +35,10 @@ function AvatarCropModal({
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
+  const isDragging = useRef(false)          // ref: luôn đúng trong event handler
   const dragStart = useRef({ x: 0, y: 0 })
   const imgRef = useRef<HTMLImageElement | null>(null)
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
   const [imgLoaded, setImgLoaded] = useState(false)
 
   const CROP_SIZE = 260 // visual cropbox size
@@ -92,25 +94,35 @@ function AvatarCropModal({
     ctx.stroke()
   }, [scale, offset, imgLoaded])
 
+  // Passive wheel listener — React onWheel is passive by default, cannot preventDefault
+  useEffect(() => {
+    const el = canvasContainerRef.current
+    if (!el) return
+    const handler = (e: WheelEvent) => {
+      e.preventDefault()
+      setScale(s => Math.max(0.1, Math.min(5, s - e.deltaY * 0.001)))
+    }
+    el.addEventListener("wheel", handler, { passive: false })
+    return () => el.removeEventListener("wheel", handler)
+  }, [])
+
   // Mouse/touch drag
   const onPointerDown = (e: React.PointerEvent) => {
+    isDragging.current = true
     setDragging(true)
     dragStart.current = { x: e.clientX - offset.x, y: e.clientY - offset.y }
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging) return
+    if (!isDragging.current) return   // ← ref không bị stale closure
     setOffset({
       x: e.clientX - dragStart.current.x,
       y: e.clientY - dragStart.current.y,
     })
   }
-  const onPointerUp = () => setDragging(false)
-
-  // Scroll to zoom
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-    setScale(s => Math.max(0.1, Math.min(5, s - e.deltaY * 0.001)))
+  const onPointerUp = () => {
+    isDragging.current = false
+    setDragging(false)
   }
 
   // Save cropped result
@@ -194,23 +206,26 @@ function AvatarCropModal({
             background: dark ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.04)",
           }}>
             {/* Checkerboard + canvas */}
-            <div style={{
-              position: "relative", width: CROP_SIZE, height: CROP_SIZE,
-              borderRadius: "50%", overflow: "hidden",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-              cursor: dragging ? "grabbing" : "grab",
-              backgroundImage: `repeating-conic-gradient(${dark?"#333":"#ddd"} 0% 25%, ${dark?"#222":"#eee"} 0% 50%)`,
-              backgroundSize: "20px 20px",
-            }}>
+            <div
+              ref={canvasContainerRef}
+              style={{
+                position: "relative", width: CROP_SIZE, height: CROP_SIZE,
+                borderRadius: "50%", overflow: "hidden",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                cursor: dragging ? "grabbing" : "grab",
+                backgroundImage: `repeating-conic-gradient(${dark?"#333":"#ddd"} 0% 25%, ${dark?"#222":"#eee"} 0% 50%)`,
+                backgroundSize: "20px 20px",
+              }}
+            >
               <canvas
                 ref={canvasRef}
                 width={CROP_SIZE}
                 height={CROP_SIZE}
-                style={{ display: "block", width: CROP_SIZE, height: CROP_SIZE }}
+                style={{ display: "block", width: CROP_SIZE, height: CROP_SIZE, touchAction: "none" }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
-                onWheel={onWheel}
+                onPointerLeave={onPointerUp}
               />
             </div>
 
@@ -363,7 +378,13 @@ export default function ProfilePage() {
 
   // ── Save info ─────────────────────────────────────────────
   const handleSaveInfo = async () => {
-    if (!employeeId) { showToast("error", vi ? "Không xác định được nhân viên" : "Cannot identify employee"); return }
+    // Tài khoản Admin hệ thống không có Employee record
+    if (!employeeId) {
+      showToast("error", vi
+        ? "Tài khoản quản trị hệ thống không thể chỉnh sửa hồ sơ nhân viên."
+        : "System admin account profile is managed by the system.")
+      return
+    }
     if (!infoForm.email.trim()) { showToast("error", vi ? "Email không được để trống" : "Email is required"); return }
     setInfoSaving(true)
     const res = await updateProfileInDB(employeeId, {
@@ -429,7 +450,13 @@ export default function ProfilePage() {
 
   // ── Save avatar via API route ──────────────────────────────
   const handleSaveAvatar = async () => {
-    if (!employeeId || !avatarPreview || !avatarChanged) return
+    if (!avatarPreview || !avatarChanged) return
+    if (!employeeId) {
+      showToast("error", vi
+        ? "Tài khoản quản trị hệ thống không thể lưu ảnh đại diện qua hồ sơ nhân viên."
+        : "System admin avatar cannot be saved via employee profile.")
+      return
+    }
     setAvatarSaving(true)
     try {
       const res = await fetch("/api/upload-avatar", {
@@ -670,16 +697,29 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 8 }}>
-                  <button
-                    onClick={handleSaveInfo}
-                    disabled={infoSaving}
-                    style={{ ...btnPrimary, opacity: infoSaving ? 0.7 : 1 }}
-                    onMouseEnter={e => !infoSaving && ((e.currentTarget as HTMLElement).style.transform = "translateY(-1px)")}
-                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.transform = "none")}
-                  >
-                    <Save size={15} />
-                    {infoSaving ? (vi ? "Đang lưu..." : "Saving...") : (vi ? "Lưu thay đổi" : "Save Changes")}
-                  </button>
+                  {!employeeId ? (
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 8, padding: "10px 16px",
+                      borderRadius: 10, background: dark ? "rgba(59,130,246,0.12)" : "#EFF6FF",
+                      border: "1px solid #BFDBFE", fontSize: 13, color: dark ? "#93C5FD" : "#1D4ED8",
+                    }}>
+                      <Shield size={15}/>
+                      {vi
+                        ? "Tài khoản quản trị — hồ sơ được quản lý bởi hệ thống"
+                        : "System admin account — profile managed by system"}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleSaveInfo}
+                      disabled={infoSaving}
+                      style={{ ...btnPrimary, opacity: infoSaving ? 0.7 : 1 }}
+                      onMouseEnter={e => !infoSaving && ((e.currentTarget as HTMLElement).style.transform = "translateY(-1px)")}
+                      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.transform = "none")}
+                    >
+                      <Save size={15} />
+                      {infoSaving ? (vi ? "Đang lưu..." : "Saving...") : (vi ? "Lưu thay đổi" : "Save Changes")}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

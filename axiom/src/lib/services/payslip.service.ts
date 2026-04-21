@@ -12,6 +12,26 @@ export const payslipService = {
     })
   },
 
+  /** Tạo phiếu lương nếu chưa tồn tại, cập nhật ngày phát nếu đã có (chống duplicate) */
+  async createOrUpdate(payrollId: number, employeeId: number) {
+    const existing = await prisma.payslip.findFirst({
+      where: { payrollId, employeeId },
+    })
+    if (existing) {
+      return prisma.payslip.update({
+        where: { id: existing.id },
+        data: { issuedDate: new Date() },
+      })
+    }
+    return prisma.payslip.create({
+      data: {
+        payrollId,
+        employeeId,
+        issuedDate: new Date(),
+      },
+    })
+  },
+
   /** Lấy phiếu lương theo nhân viên */
   async findByEmployee(employeeId: number, limit = 12) {
     return prisma.payslip.findMany({

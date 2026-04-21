@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, User, Check } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { DateInput } from "@/components/ui/date-input"
 
 const DEPTS = ["Công nghệ thông tin","Nhân sự","Kinh doanh","Kế toán","Marketing"]
 const POSITIONS: Record<string,string[]> = {
@@ -174,7 +175,7 @@ export default function NewEmployeePage() {
                 </select>
               </Field>
               <Field label={vi?"Ngày sinh *":"Date of Birth *"} error={errors.dob}>
-                <input type="date" value={form.dob} onChange={e=>set("dob",e.target.value)} style={inpErr("dob")}/>
+                <DateInput value={form.dob} onChange={e=>set("dob",e.target.value)} style={inpErr("dob")}/>
               </Field>
             </div>
             <Field label={vi?"Số CCCD/CMND":"ID Card Number"}>
@@ -207,11 +208,11 @@ export default function NewEmployeePage() {
                 </select>
               </Field>
               <Field label={vi?"Ngày vào làm *":"Join Date *"} error={errors.joinDate}>
-                <input type="date" value={form.joinDate} onChange={e=>set("joinDate",e.target.value)} style={inpErr("joinDate")}/>
+                <DateInput value={form.joinDate} onChange={e=>set("joinDate",e.target.value)} style={inpErr("joinDate")}/>
               </Field>
             </div>
             <Field label={vi?"Ngày hết hạn hợp đồng":"Contract End Date"}>
-              <input type="date" value={form.contractEnd} onChange={e=>set("contractEnd",e.target.value)} style={inp}/>
+              <DateInput value={form.contractEnd} onChange={e=>set("contractEnd",e.target.value)} style={inp}/>
             </Field>
           </>}
 

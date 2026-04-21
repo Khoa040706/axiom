@@ -1,8 +1,9 @@
-# 🚀 SETUP – Hướng Dẫn Cài Đặt & Chạy App
+# 🚀 SETUP – Hướng Dẫn Cài Đặt & Chạy AXIOM HRM
 
-> **Dự án:** HRM & Payroll System  
-> **Tech Stack:** C# · .NET 6+ · WinForms · SQL Server (LocalDB)  
-> **Nhóm:** 52400017 – 52400133 – 52400004
+> **Dự án:** AXIOM — HRM & Payroll System  
+> **Tech Stack:** Next.js 16 · React 19 · TypeScript · PostgreSQL 17 · Prisma 7 · NextAuth v5  
+> **Nhóm:** 52400017 – 52400133 – 52400004  
+> **Cập nhật:** 11/04/2026
 
 ---
 
@@ -10,27 +11,35 @@
 
 | Công cụ | Phiên bản | Link tải |
 |---------|-----------|----------|
-| **.NET SDK** | 6.0 hoặc mới hơn | https://dotnet.microsoft.com/download |
-| **SQL Server** | LocalDB (kèm VS) hoặc Express | https://www.microsoft.com/sql-server |
-| **Visual Studio** | 2022 (Community) | https://visualstudio.microsoft.com |
+| **Node.js** | 20.x trở lên | https://nodejs.org |
+| **npm** | 10.x+ (kèm Node.js) | — |
+| **Docker Desktop** | Latest | https://www.docker.com/products/docker-desktop |
 | **Git** | Bất kỳ | https://git-scm.com |
 
-> 💡 Nếu dùng Visual Studio 2022, LocalDB đã được cài sẵn. Không cần cài SQL Server riêng.
+> 💡 Docker Desktop bao gồm sẵn Docker Compose. PostgreSQL sẽ chạy trong Docker container, **không cần cài riêng**.
 
 ---
 
 ## ⚙️ Bước 1 – Kiểm tra môi trường
 
-Mở **PowerShell** hoặc **Command Prompt** trên Desktop, gõ từng lệnh:
+Mở **PowerShell** hoặc **Terminal**, gõ từng lệnh:
 
 ```powershell
-# Kiểm tra .NET SDK
-dotnet --version
-# Kết quả mong đợi: 6.0.xxx hoặc cao hơn
+# Kiểm tra Node.js
+node --version
+# Kết quả mong đợi: v20.x.x trở lên
 
-# Kiểm tra SQL Server LocalDB
-sqllocaldb info
-# Kết quả mong đợi: MSSQLLocalDB (hoặc tên instance tương tự)
+# Kiểm tra npm
+npm --version
+# Kết quả mong đợi: 10.x.x trở lên
+
+# Kiểm tra Docker
+docker --version
+# Kết quả mong đợi: Docker version 2x.x.x
+
+# Kiểm tra Docker Compose
+docker compose version
+# Kết quả mong đợi: Docker Compose version v2.x.x
 
 # Kiểm tra Git
 git --version
@@ -38,111 +47,256 @@ git --version
 
 ---
 
-## 📥 Bước 2 – Clone dự án về máy
+## 📥 Bước 2 – Clone dự án & Cài dependencie
 
 ```powershell
-# Di chuyển vào Desktop (hoặc thư mục bạn muốn)
-cd "$env:USERPROFILE\Desktop"
+# Clone repository
+git clone <URL-REPO>
 
-# Clone repository (thay URL bằng link Git nhóm)
-git clone https://github.com/<ten-nhom>/HRMPayroll.git
+# Vào thư mục Next.js project
+cd 52400017_52400133_52400004/axiom
 
-# Vào thư mục dự án
-cd HRMPayroll
+# Cài đặt dependencies
+npm install
 ```
+
+> ⏳ Quá trình `npm install` có thể mất 2–5 phút tùy tốc độ mạng.
 
 ---
 
-## 🗄️ Bước 3 – Tạo CSDL SQL Server
+## 🐘 Bước 3 – Khởi động PostgreSQL (Docker)
 
 ```powershell
-# Tạo instance LocalDB (chỉ cần làm 1 lần)
-sqllocaldb create "HRMPayrollDB"
-sqllocaldb start "HRMPayrollDB"
-
-# Kết nối vào SQL Server LocalDB và chạy script
-sqlcmd -S "(LocalDB)\HRMPayrollDB" -i "Database\01_schema.sql"
-sqlcmd -S "(LocalDB)\HRMPayrollDB" -i "Database\02_seed.sql"
-sqlcmd -S "(LocalDB)\HRMPayrollDB" -i "Database\03_stored_procedures.sql"
+# Đảm bảo đang ở thư mục axiom/
+docker compose up -d
 ```
 
-> ✅ Sau bước này, CSDL đã có đầy đủ bảng và dữ liệu mẫu.
+Docker sẽ khởi chạy 2 container:
+
+| Container | Cổng | Mô tả |
+|-----------|------|-------|
+| `axiom_db` | `5432` | PostgreSQL 17 Alpine |
+| `axiom_pgadmin` | `5050` | pgAdmin 4 (Web GUI quản lý DB) |
+
+**Kiểm tra container đã chạy:**
+```powershell
+docker ps
+# Phải thấy 2 container: axiom_db, axiom_pgadmin
+```
+
+**Truy cập pgAdmin (tùy chọn):**
+- URL: http://localhost:5050
+- Email: `admin@axiom.dev`
+- Password: `admin123`
 
 ---
 
-## 🔧 Bước 4 – Cấu hình Connection String
-
-Mở file `HRMPayroll\App.config`, tìm dòng:
-
-```xml
-<connectionStrings>
-  <add name="HRMPayrollDB"
-       connectionString="Data Source=(LocalDB)\HRMPayrollDB;Initial Catalog=HRMPayrollDB;Integrated Security=True"
-       providerName="System.Data.SqlClient" />
-</connectionStrings>
-```
-
-> ⚠️ Nếu tên instance LocalDB khác (kiểm tra bằng `sqllocaldb info`), hãy thay `HRMPayrollDB` bằng tên đúng.
-
----
-
-## ▶️ Bước 5 – Build & Chạy ứng dụng
-
-### Cách 1: Dùng Terminal (dotnet CLI)
+## 🔧 Bước 4 – Cấu hình biến môi trường
 
 ```powershell
-# Vào thư mục project chính
-cd HRMPayroll
-
-# Restore các packages (NuGet)
-dotnet restore
-
-# Build dự án
-dotnet build
-
-# Chạy ứng dụng
-dotnet run
+# Copy file mẫu
+cp .env.example .env
 ```
 
-### Cách 2: Dùng Visual Studio
+Mở file `.env` và chỉnh sửa (hoặc giữ nguyên nếu dùng Docker mặc định):
 
+```env
+# ── DATABASE ──────────────────────────────────────────────────────
+DATABASE_URL="postgresql://axiom:axiom_password@localhost:5432/axiom_hrm?schema=public"
+
+# ── AUTHENTICATION ────────────────────────────────────────────────
+AUTH_SECRET="your-super-secret-key-change-in-production-min-32-chars"
+AUTH_URL="http://localhost:3000"
+
+# ── APP CONFIG ────────────────────────────────────────────────────
+NEXT_PUBLIC_APP_NAME="AXIOM HRM"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# ── GMAIL SMTP (cho tính năng Quên mật khẩu) ─────────────────────
+# Hướng dẫn lấy App Password:
+#   1. Vào https://myaccount.google.com/security
+#   2. Bật "Xác minh 2 bước" nếu chưa bật
+#   3. Tìm "Mật khẩu ứng dụng" → Tạo mật khẩu mới → Chọn "Thư"
+#   4. Copy dãy 16 ký tự vào GMAIL_APP_PASSWORD bên dưới
+GMAIL_USER="your_email@gmail.com"
+GMAIL_APP_PASSWORD="xxxx xxxx xxxx xxxx"
 ```
-1. Mở file HRMPayroll.sln bằng Visual Studio 2022
-2. Nhấn F5 (hoặc nút ▶ Run) để build và chạy
+
+> ⚠️ `AUTH_SECRET` phải **ít nhất 32 ký tự**. Có thể generate bằng: `openssl rand -base64 32`
+
+> ⚠️ `GMAIL_USER` và `GMAIL_APP_PASSWORD` chỉ cần thiết nếu muốn dùng tính năng **Quên mật khẩu** (gửi email thực qua SMTP).
+
+---
+
+## 🗄️ Bước 5 – Tạo bảng Database (Migration)
+
+```powershell
+# Chạy Prisma migrations — tạo tất cả 13 bảng
+npx prisma migrate dev
+```
+
+> ✅ Sau bước này, database `axiom_hrm` đã có đầy đủ schema (13 bảng).
+
+---
+
+## 🌱 Bước 6 – Seed dữ liệu demo
+
+```powershell
+# Tạo 63 nhân viên + 64 tài khoản + phòng ban + chức vụ + hợp đồng + nghỉ phép...
+npx tsx scripts/seed-demo-data.ts
+
+# Tạo dữ liệu chấm công tháng 3/2026
+npx tsx scripts/generate-attendance.ts
+
+# Tính lương tháng 3/2026 (58 NV, tổng Net ~1.41 tỷ đ)
+npx tsx scripts/generate-payroll.ts --month=3 --year=2026
+```
+
+**Kết quả seed:**
+```
+✅ 5 phòng ban | 19 chức vụ
+✅ 63 nhân viên | 63 hợp đồng
+✅ 1.280 records chấm công T3/2026
+✅ 63 quỹ nghỉ phép | 8 đơn nghỉ | 6 chuyến công tác
+✅ Payroll T3/2026: 58 NV | Tổng Net: ~1.412.561.866 đ
 ```
 
 ---
 
-## 👤 Tài khoản mẫu (sau khi seed DB)
+## ▶️ Bước 7 – Chạy Dev Server
 
-| Vai trò | Tên đăng nhập | Mật khẩu |
-|---------|--------------|----------|
-| Admin | `admin` | `Admin@123` |
-| HR Manager | `hr_manager` | `Hr@123` |
-| Nhân viên | `nv001` | `Nv@123` |
+```powershell
+npm run dev
+```
 
-> 🔐 Nhớ đổi mật khẩu sau lần đăng nhập đầu tiên khi deploy thật.
+Mở trình duyệt tại: **http://localhost:3000** (tự chuyển tới trang đăng nhập)
+
+---
+
+## 👤 Tài khoản demo (sau khi seed)
+
+### Tài khoản chính
+
+| Vai trò | Username | Password | Dashboard |
+|---------|----------|----------|-----------|
+| **Admin** | `admin` | `admin` | `/dashboard` |
+| **Giám đốc** | `giamdoc` | `giamdoc` | `/dashboard-director` |
+| **Nhân sự** | `tp_nhansu` | `123456` | `/dashboard-hr` |
+| **Kế toán** | `tp_ketoan` | `123456` | `/dashboard-accountant` |
+| **Trưởng phòng** | `tp_cntt` | `123456` | `/dashboard-manager` |
+| **Nhân viên** | `nv009` | `123456` | `/dashboard-employee` |
+
+### Tài khoản bổ sung
+
+| Username | Password | Role |
+|----------|----------|------|
+| `pgd1`, `pgd2` | `123456` | Director |
+| `tp_kinhdoanh`, `tp_marketing` | `123456` | Manager |
+| `nv009` – `nv063` | `123456` | Employee |
+
+> 🔐 User (trừ Admin) khi đăng nhập lần đầu sẽ được yêu cầu **thiết lập Gmail cá nhân** để sử dụng tính năng quên mật khẩu.
+
+---
+
+## 📜 Các lệnh hay dùng
+
+```powershell
+# ── Development ──────────────────────────────────────────
+npm run dev                         # Chạy dev server (port 3000)
+npm run build                       # Build production
+npm run start                       # Chạy production server
+npm run lint                        # Kiểm tra code style
+
+# ── Database ─────────────────────────────────────────────
+npx prisma studio                   # Mở GUI quản lý DB (http://localhost:5555)
+npx prisma migrate dev              # Tạo & chạy migration
+npx prisma generate                 # Tạo lại Prisma Client
+
+# ── Docker ───────────────────────────────────────────────
+docker compose up -d                # Khởi động PostgreSQL & pgAdmin
+docker compose down                 # Dừng containers
+docker compose logs -f postgres     # Xem logs PostgreSQL
+
+# ── Seed & Payroll ───────────────────────────────────────
+npx tsx scripts/seed-demo-data.ts           # Seed dữ liệu demo (63 NV + 64 TK)
+npx tsx scripts/generate-attendance.ts      # Tạo chấm công
+npx tsx scripts/generate-payroll.ts         # Tính lương hàng loạt
+npx tsx scripts/vary-payroll.ts             # Tạo biến động lương
+npx tsx scripts/check-payroll-months.ts     # Kiểm tra payroll theo tháng
+node scripts/test-db.mjs                    # Test kết nối database
+```
 
 ---
 
 ## 🐛 Xử lý lỗi thường gặp
 
-### Lỗi: `A network-related error occurred while establishing a connection`
+### Lỗi: `Can't reach database server at localhost:5432`
 ```
-→ SQL Server LocalDB chưa chạy
-→ Chạy: sqllocaldb start "HRMPayrollDB"
-```
-
-### Lỗi: `The type or namespace name could not be found`
-```
-→ Thiếu NuGet packages
-→ Chạy: dotnet restore
+→ PostgreSQL Docker chưa chạy
+→ Chạy: docker compose up -d
+→ Kiểm tra: docker ps (phải thấy axiom_db)
 ```
 
-### Lỗi: `Database HRMPayrollDB does not exist`
+### Lỗi: `Error: P1001 Can't reach database`
 ```
-→ Chưa chạy script SQL
-→ Thực hiện lại Bước 3
+→ DATABASE_URL trong .env sai hoặc Docker chưa khởi động
+→ Kiểm tra lại .env và chạy docker compose up -d
+```
+
+### Lỗi: `EACCES: permission denied` (khi upload avatar)
+```
+→ Thư mục public/uploads/avatars/ chưa tồn tại hoặc không có quyền ghi
+→ Tạo thủ công: mkdir -p public/uploads/avatars
+```
+
+### Lỗi: `Error [ERR_MODULE_NOT_FOUND]` khi chạy seed
+```
+→ Chưa chạy npm install
+→ Chạy: npm install
+```
+
+### Lỗi: `next: command not found`
+```
+→ Chưa cài dependencies
+→ Chạy: npm install
+```
+
+### Lỗi: Edge Runtime crypto (middleware)
+```
+→ Đừng import auth.ts trong middleware.ts
+→ middleware.ts chỉ import auth.config.ts (Edge-safe, không bcrypt)
+```
+
+---
+
+## 📁 Cấu trúc thư mục tổng quan
+
+```
+52400017_52400133_52400004/    ← Root repository
+├── README.md                  ← "Hiến pháp" dự án (đọc trước khi code)
+├── docs/                      ← Tài liệu dự án
+│   ├── SETUP.md               ← File này
+│   ├── project-summary.md     ← Tóm tắt toàn bộ dự án
+│   ├── plan.md                ← Kế hoạch phát triển
+│   ├── mo-ta-de-tai.md        ← Mô tả đề tài
+│   ├── bangmau.md             ← Bảng màu thiết kế
+│   ├── tai-khoan-demo.md      ← Danh sách 64 tài khoản demo
+│   └── thuyet-trinh.md        ← Kế hoạch thuyết trình
+├── UML/                       ← UML Diagrams (Use Case, Activity, Class, ERD)
+└── axiom/                     ← 🔥 NEXT.JS PROJECT
+    ├── .env / .env.example    ← Biến môi trường
+    ├── docker-compose.yml     ← Docker: PostgreSQL + pgAdmin
+    ├── prisma/schema.prisma   ← Database schema (13 models)
+    ├── prisma.config.ts       ← Prisma 7 connection config
+    ├── scripts/               ← Seed & utility scripts
+    ├── public/                ← Static assets (logo, avatar, cờ...)
+    └── src/                   ← Source code chính
+        ├── middleware.ts      ← Auth guard (Edge Runtime)
+        ├── app/               ← 31 pages (App Router)
+        ├── components/        ← Shared UI components
+        ├── hooks/             ← Custom React hooks
+        ├── lib/               ← Services + Actions + Helpers
+        └── types/             ← TypeScript type definitions
 ```
 
 ---
@@ -153,26 +307,19 @@ dotnet run
 # Kéo code mới về
 git pull origin main
 
-# Build lại
-dotnet build
+# Cài lại dependencies (nếu package.json thay đổi)
+npm install
 
-# Chạy lại
-dotnet run
+# Chạy migration (nếu schema thay đổi)
+npx prisma migrate dev
+
+# Chạy dev server
+npm run dev
 ```
 
 ---
 
-## 📁 Cấu trúc thư mục quan trọng
-
-```
-HRMPayroll/
-├── HRMPayroll.sln          ← Mở bằng Visual Studio
-├── HRMPayroll/
-│   ├── App.config          ← Sửa connection string
-│   └── Program.cs          ← Entry point
-├── Database/
-│   ├── 01_schema.sql       ← Chạy trước
-│   ├── 02_seed.sql         ← Chạy sau
-│   └── 03_stored_procedures.sql
-└── SETUP.md                ← File này
-```
+> 📌 **Lưu ý quan trọng:**
+> - Prisma 7 sử dụng **driver adapter pattern** — connection URL được cấu hình trong `prisma.config.ts`, không phải trong `schema.prisma`
+> - Middleware sử dụng `auth.config.ts` (Edge-safe) thay vì `auth.ts` (Node.js only) để tránh lỗi crypto trên Edge Runtime
+> - Mỗi user (trừ Admin) khi đăng nhập lần đầu sẽ phải thiết lập Gmail cá nhân tại `/setup-email`

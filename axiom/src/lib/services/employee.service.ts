@@ -123,4 +123,21 @@ export const employeeService = {
       data: { status: "Nghỉ việc" },
     })
   },
+
+  /** Xóa nhân viên khỏi DB hoàn toàn (hard delete) */
+  async hardDelete(id: number) {
+    // Xóa tất cả dữ liệu liên quan trước
+    await prisma.$transaction([
+      prisma.payslip.deleteMany({ where: { employeeId: id } }),
+      prisma.payroll.deleteMany({ where: { employeeId: id } }),
+      prisma.contract.deleteMany({ where: { employeeId: id } }),
+      prisma.careerHistory.deleteMany({ where: { employeeId: id } }),
+      prisma.attendance.deleteMany({ where: { employeeId: id } }),
+      prisma.leaveRequest.deleteMany({ where: { employeeId: id } }),
+      prisma.leaveBalance.deleteMany({ where: { employeeId: id } }),
+      prisma.businessTrip.deleteMany({ where: { employeeId: id } }),
+      prisma.user.deleteMany({ where: { employeeId: id } }),
+      prisma.employee.delete({ where: { id } }),
+    ])
+  },
 }

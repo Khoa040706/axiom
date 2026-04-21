@@ -77,6 +77,26 @@ export async function deleteEmployee(id: number) {
   }
 }
 
+export async function hardDeleteEmployee(id: number) {
+  try {
+    await employeeService.hardDelete(id)
+    return { success: true }
+  } catch (error) {
+    console.error("[hardDeleteEmployee]", error)
+    return { success: false, error: "Không thể xóa nhân viên khỏi hệ thống" }
+  }
+}
+
+export async function reinstateEmployee(id: number) {
+  try {
+    const employee = await employeeService.update(id, { status: "Đang làm" })
+    return { success: true, data: serialize(employee) }
+  } catch (error) {
+    console.error("[reinstateEmployee]", error)
+    return { success: false, error: "Không thể khôi phục nhân viên" }
+  }
+}
+
 export async function getEmployeeByCode(code: string) {
   try {
     const employee = await employeeService.findByCode(code)

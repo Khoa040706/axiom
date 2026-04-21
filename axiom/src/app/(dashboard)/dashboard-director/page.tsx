@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any , react-hooks/set-state-in-effect */
 "use client"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, Line, ResponsiveContainer, PieChart, Pie, Cell,
@@ -12,6 +12,7 @@ import {
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getDashboardStats, getDashboardCharts, getDashboardAttendanceTrend } from "@/lib/actions/dashboard.actions"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { tDept } from "@/lib/i18n-maps"
 
 function mkTooltip(dark: boolean) {
   return {
@@ -132,6 +133,11 @@ export default function DirectorDashboard() {
   ]
   const attendanceData = attendanceTrend.length > 0 ? attendanceTrend : STATIC_ATTEND
 
+  // Translate dept names based on current lang
+  const translatedHeadcount = useMemo(() =>
+    headcount.map(d => ({ ...d, name: tDept(d.name, vi) }))
+  , [headcount, vi])
+
   return (
     <div className="page-pad">
       <div className="page-header" style={{ marginBottom: 24 }}>
@@ -185,13 +191,13 @@ export default function DirectorDashboard() {
         {/* Headcount by dept */}
         <div style={cardStyle}>
           <div style={titleStyle}>🏢 {vi?"Phân bổ nhân lực theo phòng ban":"Workforce by Department"}</div>
-          {headcount.length > 0 ? (
+          {translatedHeadcount.length > 0 ? (
             <ResponsiveContainer width="100%" height={isMobile ? 160 : 220}>
               <PieChart margin={{ top:10, right:30, left:30, bottom:10 }}>
-                <Pie data={headcount} cx="50%" cy="50%" outerRadius={70} dataKey="value"
+                <Pie data={translatedHeadcount} cx="50%" cy="50%" outerRadius={70} dataKey="value"
                   label={(p:any) => <PieLabel {...p} textColor={th.text1}/>}
                   labelLine={{ stroke: dark?"rgba(255,255,255,0.2)":"rgba(0,0,0,0.15)", strokeWidth:1 }}>
-                  {headcount.map((d: any, i: number) => <Cell key={i} fill={d.color}/>)}
+                  {translatedHeadcount.map((d: any, i: number) => <Cell key={i} fill={d.color}/>)}
                 </Pie>
                 <Tooltip contentStyle={{ ...mkTooltip(dark), color:th.text1 }}/>
               </PieChart>

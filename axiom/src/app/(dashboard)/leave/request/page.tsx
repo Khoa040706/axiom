@@ -7,16 +7,17 @@ import {
   Clock, ChevronLeft, Info, CalendarDays, User, Layers,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { DateInput } from "@/components/ui/date-input"
 import { useCurrentUser, useEmployeeId } from "@/hooks/use-current-user"
 import { createLeaveRequest, getLeaveBalance, getLeaveRequests } from "@/lib/actions/leave.actions"
 
 const LEAVE_TYPES = [
-  { vi: "Nghỉ phép năm",  en: "Annual Leave",    bg: "#DBEAFE", c: "#1E40AF", icon: "🏖️" },
-  { vi: "Nghỉ lễ",        en: "Public Holiday",  bg: "#D1FAE5", c: "#065F46", icon: "🎌" },
-  { vi: "Việc riêng",     en: "Personal Leave",  bg: "#FEF3C7", c: "#92400E", icon: "👤" },
-  { vi: "Nghỉ bệnh",      en: "Sick Leave",      bg: "#FCE7F3", c: "#9D174D", icon: "🏥" },
-  { vi: "Thai sản",       en: "Maternity Leave", bg: "#EDE9FE", c: "#5B21B6", icon: "👶" },
-  { vi: "Không lương",    en: "Unpaid Leave",    bg: "#F3F4F6", c: "#374151", icon: "📋" },
+  { vi: "Nghỉ năm",      en: "Annual Leave",    bg: "#DBEAFE", c: "#1E40AF", icon: "🏖️" },
+  { vi: "Nghỉ lễ",       en: "Public Holiday",  bg: "#D1FAE5", c: "#065F46", icon: "🎌" },
+  { vi: "Việc riêng",    en: "Personal Leave",  bg: "#FEF3C7", c: "#92400E", icon: "👤" },
+  { vi: "Nghỉ ốm",       en: "Sick Leave",      bg: "#FCE7F3", c: "#9D174D", icon: "🏥" },
+  { vi: "Thai sản",      en: "Maternity Leave", bg: "#EDE9FE", c: "#5B21B6", icon: "👶" },
+  { vi: "Không lương",   en: "Unpaid Leave",    bg: "#F3F4F6", c: "#374151", icon: "📋" },
 ]
 
 const STATUS_BADGE: Record<string, { vi: string; en: string; bg: string; c: string }> = {
@@ -294,12 +295,12 @@ export default function LeaveRequestPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
                   <label style={labelStyle}><Calendar size={12}/> {vi?"Từ ngày":"From Date"} <span style={{ color: "#EF4444" }}>*</span></label>
-                  <input type="date" style={inputStyle} value={form.from} min={today}
+                  <DateInput style={inputStyle} value={form.from} min={today}
                     onChange={e => { const v = e.target.value; setForm(f => ({ ...f, from: v, to: f.to < v ? v : f.to })) }}/>
                 </div>
                 <div>
                   <label style={labelStyle}><Calendar size={12}/> {vi?"Đến ngày":"To Date"} <span style={{ color: "#EF4444" }}>*</span></label>
-                  <input type="date" style={inputStyle} value={form.to} min={form.from}
+                  <DateInput style={inputStyle} value={form.to} min={form.from}
                     onChange={e => setForm(f => ({ ...f, to: e.target.value }))}/>
                 </div>
               </div>
@@ -449,7 +450,7 @@ export default function LeaveRequestPage() {
             </div>
             <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: dark ? "#93C5FD" : "#1E40AF", lineHeight: 1.8 }}>
               <li>{vi ? "Đơn phải nộp trước 3 ngày làm việc" : "Submit at least 3 working days prior"}</li>
-              <li>{vi ? "Nghỉ phép năm: tối đa 15 ngày/năm" : "Annual leave: max 15 days/year"}</li>
+              <li>{vi ? "Nghỉ năm: tối đa 15 ngày/năm" : "Annual leave: max 15 days/year"}</li>
               <li>{vi ? "Quản lý duyệt trong vòng 24 giờ" : "Manager approves within 24 hours"}</li>
             </ul>
           </div>

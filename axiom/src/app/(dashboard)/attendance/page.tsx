@@ -271,7 +271,7 @@ export default function AttendancePage() {
                 <td style={td}><span style={{ fontWeight:700, color:s.ngay<20?"#EF4444":"#10B981" }}>{s.ngay}</span></td>
                 <td style={td}>{s.muon>0?<span style={{ background:"#FEF3C7", color:"#92400E", borderRadius:12, padding:"2px 8px", fontSize:12 }}>{s.muon}</span>:<span style={{ color:th.text3 }}>0</span>}</td>
                 <td style={td}><span style={{ color:s.ot===0?th.text3:"#3B82F6", fontWeight:s.ot===0?400:600 }}>{s.ot}h</span></td>
-                <td style={td}><span style={{ color:s.phut===0?th.text3:"#F59E0B" }}>{s.phut}p</span></td>
+                <td style={td}><span style={{ color:s.phut===0?th.text3:"#F59E0B" }}>{s.phut}{vi?"p":"m"}</span></td>
                 <td style={td}><button style={{ fontSize:12.5, color:"#3B82F6", background:"none", border:"none", cursor:"pointer", fontFamily:"inherit" }}>{vi?"Chi tiết":"Details"}</button></td>
               </tr>
             ))}

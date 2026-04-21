@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { Search, Plus, Edit, Trash2, Users, Building2, Loader2, X, Save } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
-import { getDepartments } from "@/lib/actions/department.actions"
 import { matchAny } from "@/lib/utils/search"
 
 // ── Types ──────────────────────────────────────────────────────
@@ -31,13 +30,8 @@ export default function DepartmentsPage() {
   // ── Load data từ DB ────────────────────────────────────────
   const load = useCallback(async () => {
     setLoading(true)
-    const res = await getDepartments()
-    if (res.success && res.data) {
-      // getDepartments trả về {id, name} — cần enriched data
-      // Gọi riêng với count
-      const enriched = await getDepartmentsWithCount()
-      setDepts(enriched)
-    }
+    const enriched = await getDepartmentsWithCount()
+    setDepts(enriched)
     setLoading(false)
   }, [])
 

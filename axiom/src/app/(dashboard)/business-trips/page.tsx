@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Plane, Search, Plus, MapPin, Calendar, DollarSign, Check, X, RefreshCw } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { DateInput } from "@/components/ui/date-input"
 import { getBusinessTrips, createBusinessTrip, approveBusinessTrip } from "@/lib/actions/business-trips.actions"
 import { useEmployeeId } from "@/hooks/use-current-user"
 import { useSession } from "next-auth/react"
@@ -91,7 +92,7 @@ export default function BusinessTripsPage() {
     if (!approverId) return
     const res = await approveBusinessTrip(id, Number(approverId), approved)
     if (res.success) {
-      showToast(approved ? "✅ Đã duyệt" : "❌ Đã từ chối")
+      showToast(approved ? (vi ? "✅ Đã duyệt" : "✅ Approved") : (vi ? "❌ Đã từ chối" : "❌ Rejected"))
       load()
     }
   }
@@ -162,11 +163,11 @@ export default function BusinessTripsPage() {
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ fontSize: 11.5, color: th.text2 }}>{vi ? "Từ ngày *" : "Start Date *"}</span>
-              <input type="date" min={today} value={fFrom} onChange={e => setFFrom(e.target.value)} style={input} />
+              <DateInput min={today} value={fFrom} onChange={e => setFFrom(e.target.value)} style={input} />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ fontSize: 11.5, color: th.text2 }}>{vi ? "Đến ngày *" : "End Date *"}</span>
-              <input type="date" min={fFrom || today} value={fTo} onChange={e => setFTo(e.target.value)} style={input} />
+              <DateInput min={fFrom || today} value={fTo} onChange={e => setFTo(e.target.value)} style={input} />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 4, gridColumn: isMobile ? "auto" : "span 1" }}>
               <span style={{ fontSize: 11.5, color: th.text2 }}>{vi ? "Mục đích" : "Purpose"}</span>
@@ -246,7 +247,7 @@ export default function BusinessTripsPage() {
                       </td>
                       <td style={td}><span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12} color={th.text2} />{t.destination}</span></td>
                       <td style={td}>{fromDate}</td>
-                      <td style={td}>{toDate} <span style={{ color: th.text2, fontSize: 11 }}>({days}n)</span></td>
+                      <td style={td}>{toDate} <span style={{ color: th.text2, fontSize: 11 }}>({days}{vi?"n":"d"})</span></td>
                       <td style={{ ...td, fontWeight: 600, color: "#059669" }}>{Number(t.allowance).toLocaleString("vi-VN")}đ</td>
                       <td style={{ ...td, fontSize: 12, color: th.text2 }}>{t.purpose ?? "—"}</td>
                       <td style={td}>{statusBadge(t.status)}</td>

@@ -6,6 +6,7 @@ import { ArrowLeft, User, Mail, Phone, Building2, Briefcase, Calendar, Edit, Sav
   Clock, DollarSign, CalendarDays, FileText, Loader2 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getEmployeeById, updateEmployee } from "@/lib/actions/employee.actions"
+import { CONTRACT_TYPE_EN } from "@/lib/constants"
 import { getEmployeePayroll } from "@/lib/actions/payroll.actions"
 import { getLeaveBalance } from "@/lib/actions/leave.actions"
 import { getAttendanceByMonth } from "@/lib/actions/attendance.actions"
@@ -133,14 +134,14 @@ export default function EmployeeDetailPage() {
             {emp.position?.name || "—"} · {emp.department?.name || "—"}
           </p>
           <div style={{ display:"flex", gap:12, marginTop:10 }}>
-            <span style={{ background: emp.status==="Đang làm"?"#D1FAE5":"#FEF3C7",
-              color: emp.status==="Đang làm"?"#065F46":"#92400E",
+            <span style={{ background: emp.status==="Đang làm"?"#D1FAE5":emp.status==="Nghỉ việc"?"#FEE2E2":"#FEF3C7",
+              color: emp.status==="Đang làm"?"#065F46":emp.status==="Nghỉ việc"?"#991B1B":"#92400E",
               borderRadius:10, padding:"2px 12px", fontSize:12, fontWeight:700 }}>
-              {vi ? emp.status : (emp.status==="Đang làm"?"Active":"Probation")}
+              {vi ? emp.status : (emp.status==="Đang làm"?"Active":emp.status==="Nghỉ việc"?"Resigned":"Probation")}
             </span>
             {latestContract && (
               <span style={{ background:"#EFF6FF", color:"#1D4ED8", borderRadius:10, padding:"2px 12px", fontSize:12, fontWeight:600 }}>
-                {latestContract.contractType}
+                {vi ? latestContract.contractType : (CONTRACT_TYPE_EN[latestContract.contractType] ?? latestContract.contractType)}
               </span>
             )}
             <span style={{ fontSize:12, color:th.text2 }}>🪪 {emp.code}</span>
@@ -219,10 +220,10 @@ export default function EmployeeDetailPage() {
               { label:vi?"Chức vụ":"Position",            val:emp.position?.name },
               { label:vi?"Mã nhân viên":"Employee Code",  val:emp.code },
               { label:vi?"Ngày vào làm":"Join Date",      val:fmtDate(emp.hireDate) },
-              { label:vi?"Loại hợp đồng":"Contract Type", val:latestContract?.contractType },
+              { label:vi?"Loại hợp đồng":"Contract Type", val: latestContract?.contractType ? (vi ? latestContract.contractType : (CONTRACT_TYPE_EN[latestContract.contractType] ?? latestContract.contractType)) : undefined },
               { label:vi?"Hết hạn HĐ":"Contract Ends",   val:fmtDate(latestContract?.endDate) },
               { label:vi?"Mã số thuế":"Tax Code",         val:emp.taxCode },
-              { label:vi?"Người phụ thuộc":"Dependents",  val:`${emp.numDependents} ${vi?"người":""}` },
+              { label:vi?"Người phụ thuộc":"Dependents",  val:`${emp.numDependents} ${vi?"người":"person(s)"}` },
             ].map(r=>(
               <div key={r.label} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
                 borderBottom:`1px solid ${th.tableBorder}`, fontSize:13 }}>
@@ -272,7 +273,7 @@ export default function EmployeeDetailPage() {
                   { label:vi?"Gross":"Gross",          val:fmt(Number(payroll.grossSalary)) },
                   { label:`BHXH+BHYT+BHTN`,             val:`−${fmt(Number(payroll.bhxh)+Number(payroll.bhyt)+Number(payroll.bhtn))}` },
                   { label:vi?"Thuế TNCN":"Income Tax",  val:`−${fmt(Number(payroll.taxAmount))}` },
-                  { label:vi?"Ngày công":"Work Days",   val:`${payroll.workDays} ngày` },
+                  { label:vi?"Ngày công":"Work Days",   val:`${payroll.workDays} ${vi?"ngày":"days"}` },
                   { label:vi?"OT":"OT Hours",           val:`${payroll.otHours}h` },
                 ].map(r=>(
                   <div key={r.label} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
@@ -329,9 +330,9 @@ export default function EmployeeDetailPage() {
           {balance ? (
             <>
               {[
-                { label:vi?"Tổng ngày phép":"Total Days",  pct:100,                     color:"#94A3B8", val:`${totalDays} ngày` },
-                { label:vi?"Đã sử dụng":"Used",            pct:(usedDays/totalDays)*100, color:"#EF4444", val:`${usedDays} ngày` },
-                { label:vi?"Còn lại":"Remaining",          pct:(leftDays/totalDays)*100, color:"#10B981", val:`${leftDays} ngày` },
+                { label:vi?"Tổng ngày phép":"Total Days",  pct:100,                     color:"#94A3B8", val:`${totalDays} ${vi?"ngày":"days"}` },
+                { label:vi?"Đã sử dụng":"Used",            pct:(usedDays/totalDays)*100, color:"#EF4444", val:`${usedDays} ${vi?"ngày":"days"}` },
+                { label:vi?"Còn lại":"Remaining",          pct:(leftDays/totalDays)*100, color:"#10B981", val:`${leftDays} ${vi?"ngày":"days"}` },
               ].map(l=>(
                 <div key={l.label} style={{ marginBottom:16 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>

@@ -7,11 +7,13 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, Calendar,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { DateInput } from "@/components/ui/date-input"
 import { matchAny } from "@/lib/utils/search"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { getAllContracts, createContract } from "@/lib/actions/contract.actions"
 import { getDepartments } from "@/lib/actions/department.actions"
 import { getEmployees } from "@/lib/actions/employee.actions"
+import { tDept } from "@/lib/i18n-maps"
 
 // ── Types ──────────────────────────────────────────────────────
 type Contract = {
@@ -254,8 +256,7 @@ function DateSortTh({ label, field, sortField, sortDir, onSort, onClear,
               <Calendar size={13}/> {vi ? "Chọn ngày cụ thể" : "Specific date"}
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <input
-                type="date"
+              <DateInput
                 value={dateValue}
                 onChange={e => onDateChange(e.target.value)}
                 style={{ flex:1, padding:"6px 10px", borderRadius:7,
@@ -289,6 +290,8 @@ function SortTh({ label, field, sortField, sortDir, onSort, onClear, th, options
   options?: { label: string; dir: SortDir }[]
   style?: React.CSSProperties
 }) {
+  const { lang } = useDashboard()
+  const vi = lang === "vi"
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLTableCellElement>(null)
   const active = sortField === field
@@ -334,7 +337,7 @@ function SortTh({ label, field, sortField, sortDir, onSort, onClear, th, options
             fontSize:12.5, color:th.text2, fontFamily:"inherit", textAlign:"left",
             borderBottom:`1px solid ${th.tableBorder}`,
           }}>
-            <X size={13}/> Mặc định
+            <X size={13}/> {vi ? "Mặc định" : "Default"}
           </button>
           {options.map(opt => {
             const sel = active && sortDir === opt.dir
@@ -592,10 +595,10 @@ export default function ContractsPage() {
   }
 
   // Sort option sets
-  const sortById   = [{ label:"Nhỏ → Lớn", dir:"asc"  as SortDir },{ label:"Lớn → Nhỏ", dir:"desc" as SortDir }]
-  const sortByName = [{ label:"A → Z",     dir:"asc"  as SortDir },{ label:"Z → A",     dir:"desc" as SortDir }]
-  const sortByDate = [{ label:"Cũ nhất",   dir:"asc"  as SortDir },{ label:"Mới nhất",  dir:"desc" as SortDir }]
-  const sortBySal  = [{ label:"Thấp → Cao",dir:"asc"  as SortDir },{ label:"Cao → Thấp",dir:"desc" as SortDir }]
+  const sortById   = [{ label:vi?"Nhỏ → Lớn":"Smallest first",   dir:"asc"  as SortDir },{ label:vi?"Lớn → Nhỏ":"Largest first",   dir:"desc" as SortDir }]
+  const sortByName = [{ label:"A → Z",                           dir:"asc"  as SortDir },{ label:"Z → A",                           dir:"desc" as SortDir }]
+  const sortByDate = [{ label:vi?"Cũ nhất":"Oldest first",       dir:"asc"  as SortDir },{ label:vi?"Mới nhất":"Newest first",     dir:"desc" as SortDir }]
+  const sortBySal  = [{ label:vi?"Thấp → Cao":"Low → High",     dir:"asc"  as SortDir },{ label:vi?"Cao → Thấp":"High → Low",     dir:"desc" as SortDir }]
 
   // ── Pagination bar ──────────────────────────────────────────
   function PagBar() {
@@ -605,7 +608,9 @@ export default function ContractsPage() {
         borderTop:`1px solid ${th.tableBorder}`,
         display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
         <span style={{ fontSize:12, color:th.text2 }}>
-          {`Hiển thị ${Math.min((page-1)*PAGE_SIZE+1,filtered.length)}–${Math.min(page*PAGE_SIZE,filtered.length)} trong ${filtered.length} hợp đồng`}
+          {vi
+            ? `Hiển thị ${Math.min((page-1)*PAGE_SIZE+1,filtered.length)}–${Math.min(page*PAGE_SIZE,filtered.length)} trong ${filtered.length} hợp đồng`
+            : `Showing ${Math.min((page-1)*PAGE_SIZE+1,filtered.length)}–${Math.min(page*PAGE_SIZE,filtered.length)} of ${filtered.length} contracts`}
         </span>
         <div style={{ display:"flex", alignItems:"center", gap:5 }}>
           <button disabled={page<=1} onClick={() => setPage(p=>p-1)} style={{
@@ -724,6 +729,7 @@ export default function ContractsPage() {
             { value:"Chính thức", label:vi?"Chính thức":"Full-time" },
             { value:"Thử việc",   label:vi?"Thử việc":"Probation" },
             { value:"Thời vụ",    label:vi?"Thời vụ":"Contract" },
+            { value:"Thực tập",   label:vi?"Thực tập":"Internship" },
           ]}
           onChange={setTypeFilter}
           onClear={() => setTypeFilter("")}
@@ -771,12 +777,12 @@ export default function ContractsPage() {
                     <div style={{ fontSize:11.5, color:th.text3 }}>{c.empCode} · {c.dept}</div>
                   </div>
                   <span style={{ fontWeight:700, fontSize:11, color:"#D0211C" }}>
-                    HĐ{String(c.id).padStart(3,"0")}
+                    {vi?"HĐ":"C"}{String(c.id).padStart(3,"0")}
                   </span>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
                   gap:"4px 12px", fontSize:12.5, marginBottom:10 }}>
-                  <div><span style={{ color:th.text2 }}>{vi?"Loại":"Type"}: </span><b>{vi?c.contractType:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"} as Record<string,string>)[c.contractType]??c.contractType}</b></div>
+                  <div><span style={{ color:th.text2 }}>{vi?"Loại":"Type"}: </span><b>{vi?c.contractType:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal","Thực tập":"Internship"} as Record<string,string>)[c.contractType]??c.contractType}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Lương":"Salary"}: </span><b>{fmtSalary(c.baseSalary)}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Bắt đầu":"Start"}: </span><b>{c.startDate}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Kết thúc":"End"}: </span><b>{c.endDate ?? "—"}</b></div>
@@ -850,7 +856,7 @@ export default function ContractsPage() {
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                     style={{ transition:"background .1s" }}>
                     <td style={{ ...td, color:"#D0211C", fontWeight:700, fontSize:12 }}>
-                      HĐ{String(c.id).padStart(3,"0")}
+                      {vi?"HĐ":"C"}{String(c.id).padStart(3,"0")}
                     </td>
                     <td style={td}>
                       <div style={{ fontWeight:600 }}>{c.empName}</div>
@@ -858,17 +864,17 @@ export default function ContractsPage() {
                     </td>
                     <td style={td}>
                       <span style={{ fontSize:11.5, background:th.tableHead,
-                        borderRadius:8, padding:"2px 8px" }}>{c.dept||"—"}</span>
+                        borderRadius:8, padding:"2px 8px" }}>{tDept(c.dept, vi)||"—"}</span>
                     </td>
                     <td style={td}>
                       {(() => {
-                        const typeMap: Record<string,string> = {"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"}
+                        const typeMap: Record<string,string> = {"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal","Thực tập":"Internship"}
                         return (
                           <span style={{
                             background: c.contractType==="Chính thức"?"#D1FAE5"
-                              :c.contractType==="Thử việc"?"#FEF3C7":"#E0E7FF",
+                              :c.contractType==="Thử việc"?"#FEF3C7":c.contractType==="Thực tập"?"#E0E7FF":"#E0E7FF",
                             color: c.contractType==="Chính thức"?"#065F46"
-                              :c.contractType==="Thử việc"?"#92400E":"#3730A3",
+                              :c.contractType==="Thử việc"?"#92400E":c.contractType==="Thực tập"?"#3730A3":"#3730A3",
                             borderRadius:10, padding:"2px 10px", fontSize:11.5, fontWeight:600,
                           }}>{vi ? c.contractType : (typeMap[c.contractType] ?? c.contractType)}</span>
                         )
@@ -902,7 +908,9 @@ export default function ContractsPage() {
             display:"flex", alignItems:"center", justifyContent:"space-between",
             flexWrap:"wrap", gap:8 }}>
             <span style={{ fontSize:12, color:th.text2 }}>
-              {`Hiển thị ${Math.min((page-1)*PAGE_SIZE+1,filtered.length)}–${Math.min(page*PAGE_SIZE,filtered.length)} trong ${filtered.length} hợp đồng`}
+              {vi
+                ? `Hiển thị ${Math.min((page-1)*PAGE_SIZE+1,filtered.length)}–${Math.min(page*PAGE_SIZE,filtered.length)} trong ${filtered.length} hợp đồng`
+                : `Showing ${Math.min((page-1)*PAGE_SIZE+1,filtered.length)}–${Math.min(page*PAGE_SIZE,filtered.length)} of ${filtered.length} contracts`}
             </span>
             {totalPages > 1 && (
               <div style={{ display:"flex", alignItems:"center", gap:5 }}>
@@ -961,7 +969,7 @@ export default function ContractsPage() {
                     <FileText size={15}/>{vi?"Chi tiết hợp đồng":"Contract Detail"}
                   </div>
                   <div style={{ fontSize:12, opacity:0.8, marginTop:2 }}>
-                    HĐ{String(selected.id).padStart(3,"0")} · {selected.empCode}
+                    {vi?"HĐ":"C"}{String(selected.id).padStart(3,"0")} · {selected.empCode}
                   </div>
                 </div>
                 <button onClick={() => setSelected(null)} style={{
@@ -974,8 +982,8 @@ export default function ContractsPage() {
               <div style={{ padding:"20px 22px" }}>
                 {[
                   { l:vi?"Nhân viên":"Employee",    v:`${selected.empName} (${selected.empCode})` },
-                  { l:vi?"Phòng ban":"Department",  v:selected.dept||"—" },
-                  { l:vi?"Loại hợp đồng":"Type",   v:vi?selected.contractType:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal"} as Record<string,string>)[selected.contractType]??selected.contractType },
+                  { l:vi?"Phòng ban":"Department",  v:tDept(selected.dept, vi)||"—" },
+                  { l:vi?"Loại hợp đồng":"Type",   v:vi?selected.contractType:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal","Thực tập":"Internship"} as Record<string,string>)[selected.contractType]??selected.contractType },
                   { l:vi?"Ngày bắt đầu":"Start",   v:selected.startDate },
                   { l:vi?"Ngày kết thúc":"End",     v:selected.endDate??(vi?"Không xác định":"Open-ended") },
                   { l:vi?"Lương cơ bản":"Base",     v:fmtSalary(selected.baseSalary) },
@@ -1084,7 +1092,7 @@ export default function ContractsPage() {
                     <label style={{ fontSize:12, fontWeight:600, color:th.text2 }}>
                       {vi?"Ngày bắt đầu *":"Start Date *"}
                     </label>
-                    <input type="date" value={form.startDate}
+                    <DateInput value={form.startDate}
                       onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
                       style={{ padding:"9px 12px", border:`1px solid ${th.inputBorder}`, borderRadius:8,
                         fontSize:13, background:th.inputBg, color:th.text1, outline:"none",
@@ -1095,7 +1103,7 @@ export default function ContractsPage() {
                       {vi?"Ngày kết thúc":"End Date"}
                       <span style={{ color:th.text3, fontWeight:400 }}> ({vi?"bỏ trống = vô thời hạn":"blank = open-ended"})</span>
                     </label>
-                    <input type="date" value={form.endDate}
+                    <DateInput value={form.endDate}
                       onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
                       style={{ padding:"9px 12px", border:`1px solid ${th.inputBorder}`, borderRadius:8,
                         fontSize:13, background:th.inputBg, color:th.text1, outline:"none",

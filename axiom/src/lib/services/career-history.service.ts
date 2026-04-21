@@ -62,7 +62,6 @@ export const careerHistoryService = {
     eventType: string
     eventDate: Date
     description?: string
-    decisionNumber?: string
     oldDepartment?: string
     newDepartment?: string
     oldPosition?: string
@@ -81,7 +80,6 @@ export const careerHistoryService = {
           eventType:      data.eventType,
           eventDate:      data.eventDate,
           description:    data.description,
-          decisionNumber: data.decisionNumber,
           oldDepartment:  data.oldDepartment,
           newDepartment:  data.newDepartment,
           oldPosition:    data.oldPosition,
@@ -161,7 +159,7 @@ export const careerHistoryService = {
   async getEmployeesForSelect() {
     return prisma.employee.findMany({
       where: { status: "Đang làm" },
-      select: { id: true, code: true, fullName: true },
+      select: { id: true, code: true, fullName: true, avatarPath: true },
       orderBy: { fullName: "asc" },
     })
   },

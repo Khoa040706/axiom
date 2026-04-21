@@ -3,11 +3,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { writeFile, mkdir } from "fs/promises"
 import path from "path"
+import { auth } from "@/lib/auth"
 
 export const runtime = "nodejs"
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check: chỉ user đã đăng nhập mới được upload avatar
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { employeeId, imageData } = body as {
       employeeId: number

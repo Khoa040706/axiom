@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useMemo, useCallback, useEffect, useRef, memo } from "react"
+import { calculateIncomeTax, calculateOTPay } from "@/lib/helpers/payroll-calculator"
 import {
   Eye, Send, RefreshCw, X, Calculator,
   CheckCircle, AlertCircle, Zap,
@@ -10,8 +11,9 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
-import { getPayrollByPeriod } from "@/lib/actions/payroll.actions"
+import { getPayrollByPeriod, calculatePayrollBatch, confirmPayment } from "@/lib/actions/payroll.actions"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { tDept } from "@/lib/i18n-maps"
 
 // ─── Types ─────────────────────────────────────────────────────────────
 interface Employee {
@@ -49,50 +51,55 @@ interface PayrollConfig {
 
 const DEFAULT_CONFIG: PayrollConfig = {
   bhxh: 8, bhyt: 1.5, bhtn: 1,
-  selfDeduction: 15_500_000,
-  depDeduction:   6_200_000,
+  selfDeduction: 15_500_000,   // Nghị quyết 107/2023/QH15 (VN 2026)
+  depDeduction:   6_200_000,   // 6.2 triệu/người phụ thuộc
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 //  CORE CALCULATION ENGINE  (Theo Luật Lao động VN 2026)
+//  ⚡ Dùng calculateIncomeTax + calculateOTPay từ payroll-calculator.ts
+//     (Single source of truth — cùng engine với backend DB)
 // ═══════════════════════════════════════════════════════════════════════
 function calcPayroll(emp: Employee, cfg: PayrollConfig) {
   // ── 1. Lương thực tế theo ngày công ──────────────────────
-  const dailyRate    = emp.grossSalary / emp.standardDays
-  const earnedSalary = dailyRate * emp.workDays   // Gross theo ngày công
+  const earnedSalary = (emp.grossSalary / emp.standardDays) * emp.workDays
 
-  // ── 2. Lương tăng ca (OT) ────────────────────────────────
-  //    Lương giờ = Gross ÷ (Ngày chuẩn × 8h)
-  const hourlyRate   = emp.grossSalary / (emp.standardDays * 8)
-  const otWeekdayPay  = emp.otWeekday  * hourlyRate * 1.50   // 150%
-  const otWeekendPay  = emp.otWeekend  * hourlyRate * 2.00   // 200%
-  const otHolidayPay  = emp.otHoliday  * hourlyRate * 3.00   // 300%
-  const totalOT       = otWeekdayPay + otWeekendPay + otHolidayPay
+  // ── 2. Lương tăng ca OT (3 loại) — shared engine ─────────
+  //    calculateOTPay từ payroll-calculator.ts (×150%/200%/300%)
+  const otResult = calculateOTPay({
+    basePay:         earnedSalary,
+    standardDays:    emp.standardDays,
+    otWeekdayHours:  emp.otWeekday,
+    otWeekendHours:  emp.otWeekend,
+    otHolidayHours:  emp.otHoliday,
+  })
+  const { otWeekdayPay, otWeekendPay, otHolidayPay } = otResult
+  const totalOT = otResult.total
 
-  // ── 3. Tổng thu nhập Gross (có OT + thưởng) ─────────────
+  // ── 3. Tổng Gross (ngày công + OT + thưởng) ─────────────
   const totalGross = earnedSalary + totalOT + emp.bonus
 
-  // ── 4. Bảo hiểm bắt buộc (10.5% trên Gross theo ngày công) ──
-  //    Chỉ tính trên EARNED salary, không tính OT/thưởng (theo TT 59/2015/TT-BLĐTBXH)
-  const totalInsuranceRate = cfg.bhxh + cfg.bhyt + cfg.bhtn           // 10.5%
-  const bhxhAmt  = earnedSalary * cfg.bhxh / 100
-  const bhytAmt  = earnedSalary * cfg.bhyt / 100
-  const bhtnAmt  = earnedSalary * cfg.bhtn / 100
-  const insurance = bhxhAmt + bhytAmt + bhtnAmt                       // tổng 10.5%
+  // ── 4. Bảo hiểm bắt buộc (NLĐ đóng) theo cfg ────────────
+  //    Tính trên earned salary (TT 59/2015 — không tính OT/thưởng)
+  const totalInsuranceRate = cfg.bhxh + cfg.bhyt + cfg.bhtn   // mặc định 10.5%
+  const bhxhAmt  = Math.round(earnedSalary * cfg.bhxh / 100)
+  const bhytAmt  = Math.round(earnedSalary * cfg.bhyt / 100)
+  const bhtnAmt  = Math.round(earnedSalary * cfg.bhtn / 100)
+  const insurance = bhxhAmt + bhytAmt + bhtnAmt
 
-  // ── 5. Thu nhập tính thuế TNCN (TNTT) ───────────────────
-  //    TNTT = (Gross + Phụ cấp chịu thuế) - Bảo hiểm - Giảm trừ gia cảnh
-  //    Phụ cấp miễn thuế KHÔNG tính vào TNTT
+  // ── 5. Thu nhập tính thuế (TNTT) ─────────────────────────
+  //    TNTT = (Gross + Phụ cấp chịu thuế) − BH − Giảm trừ gia cảnh
   const totalTaxableIncome = totalGross + emp.taxableAllowance - insurance
   const familyDeduction    = cfg.selfDeduction + emp.dependents * cfg.depDeduction
   const taxableIncome      = Math.max(0, totalTaxableIncome - familyDeduction)
 
-  // ── 6. Thuế TNCN lũy tiến 5 bậc (Biểu thuế 2026) ───────
-  const pit = calcPIT5(taxableIncome)
+  // ── 6. Thuế TNCN — calculateIncomeTax (shared, 5 bậc VN 2026) ───
+  //    ✅ Cùng engine với backend — không còn 2 hàm riêng biệt
+  const pit = calculateIncomeTax(taxableIncome)
 
-  // ── 7. Lương Net = (Gross + Tổng phụ cấp) - BH - Thuế ──
+  // ── 7. Net = (Gross + Tổng phụ cấp) − BH − Thuế ─────────
   const totalAllowance = emp.taxableAllowance + emp.taxExemptAllowance
-  const net = (totalGross + totalAllowance) - insurance - pit
+  const net = Math.round((totalGross + totalAllowance) - insurance - pit)
 
   return {
     earnedSalary, totalOT, otWeekdayPay, otWeekendPay, otHolidayPay,
@@ -103,23 +110,12 @@ function calcPayroll(emp: Employee, cfg: PayrollConfig) {
   }
 }
 
-// ── Biểu thuế TNCN 5 bậc lũy tiến (VN 2026) ─────────────────────────
-//  Dùng công thức nhanh để tính chính xác
-function calcPIT5(tntt: number): number {
-  if (tntt <= 0)              return 0
-  if (tntt <= 10_000_000)     return tntt * 0.05
-  if (tntt <= 30_000_000)     return tntt * 0.10 -   500_000
-  if (tntt <= 60_000_000)     return tntt * 0.20 - 3_500_000
-  if (tntt <= 100_000_000)    return tntt * 0.30 - 9_500_000
-  return                             tntt * 0.35 - 14_500_000
-}
-
 // ─── Formatters ─────────────────────────────────────────────────────────
 function fmt(v: number): string {
   return Math.round(Math.abs(v)).toLocaleString("vi-VN") + " đ"
 }
-function fmtShort(v: number): string {
-  if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + "tr"
+function fmtShort(v: number, vi = true): string {
+  if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + (vi ? "tr" : "M")
   return v.toLocaleString("vi-VN")
 }
 
@@ -199,7 +195,7 @@ function SortTh({
           background: "none", border: "none", cursor: "pointer",
           color: active ? "#D0211C" : th.tableHeadText,
           fontWeight: 700, fontSize: 11, fontFamily: "inherit", padding: 0,
-          textTransform: "uppercase", letterSpacing: "0.04em",
+          letterSpacing: "0.02em",
         }}
       >
         {label}
@@ -354,13 +350,26 @@ export default function PayrollPage() {
   const [config, setConfig]       = useState<PayrollConfig>(DEFAULT_CONFIG)
   const [configDraft, setConfigDraft] = useState<PayrollConfig>(DEFAULT_CONFIG)
 
-  // 3 tháng gần nhất (mới nhất = 3/2026)
-  const MONTHS = [
-    { month: 1, year: 2026, vi: "Tháng 1/2026", en: "Jan 2026" },
-    { month: 2, year: 2026, vi: "Tháng 2/2026", en: "Feb 2026" },
-    { month: 3, year: 2026, vi: "Tháng 3/2026", en: "Mar 2026" },
-  ]
-  const [activeMonth, setActiveMonth] = useState(MONTHS[2])   // mặc định tháng 3
+  // ── 12 tháng gần nhất (tự động theo thời gian thực) ─────────────────
+  const MONTHS = useMemo(() => {
+    const now = new Date()
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const m = d.getMonth() + 1
+      const y = d.getFullYear()
+      return {
+        month: m, year: y,
+        vi: `Tháng ${m}/${y}`,
+        en: d.toLocaleString("en-US", { month: "short" }) + " " + y,
+      }
+    }).reverse()  // từ cũ → mới
+  }, [])
+  const [activeMonth, setActiveMonth] = useState(() => {
+    const now = new Date()
+    return { month: now.getMonth() + 1, year: now.getFullYear(),
+      vi: `Tháng ${now.getMonth() + 1}/${now.getFullYear()}`,
+      en: now.toLocaleString("en-US", { month: "short" }) + " " + now.getFullYear() }
+  })
   const [selected, setSelected] = useState<Employee | null>(null)
   const [calculating, setCalculating] = useState(false)
   const [toast, setToast] = useState<{type:"success"|"error"|"info"; msg:string}|null>(null)
@@ -466,20 +475,39 @@ export default function PayrollPage() {
   const totalPages = Math.max(1, Math.ceil(filteredPayroll.length / PAGE_SIZE))
   const pageRows   = filteredPayroll.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  // ── Nút Tính lương tự động ──────────────────────────────
+  // ── Nút Tính lương tự động — gọi Server Action thật ────────────────
   const handleAutoCalc = async () => {
     setCalculating(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setEmployees(prev => prev.map(e => ({ ...e, status: e.status === "paid" ? "paid" : "pending" })))
-    showToast("success", vi
-      ? `Đã tính lương tự động theo công thức VN 2026 cho ${employees.length} nhân viên!`
-      : `Auto-calculated payroll (VN 2026 rules) for ${employees.length} employees!`)
+    const res = await calculatePayrollBatch(activeMonth.month, activeMonth.year)
+    if (res.success) {
+      showToast("success", vi
+        ? ((res as any).message ?? `Đã tính lương cho ${activeMonth.vi}!`)
+        : ((res as any).message ?? `Payroll calculated for ${activeMonth.en}!`))
+      await loadDB()   // reload từ DB — hiển thị số chính xác
+    } else {
+      showToast("error", vi
+        ? (res.error ?? "Lỗi khi tính lương")
+        : (res.error ?? "Payroll calculation failed"))
+    }
     setCalculating(false)
   }
 
-  const handleConfirmPay = (id: string) => {
-    setEmployees(prev => prev.map(e => e.id===id ? { ...e, status:"paid" } : e))
-    showToast("success", vi?"Đã xác nhận chi lương!":"Payment confirmed!")
+  const handleConfirmPay = async (id: string) => {
+    // Tìm payroll record trong dbPayrolls theo employee code
+    const dbRecord = dbPayrolls.find((p: any) =>
+      (p.employee?.code ?? String(p.employeeId)) === id
+    )
+    if (!dbRecord) {
+      showToast("error", vi ? "Không tìm thấy bản lương" : "Payroll record not found")
+      return
+    }
+    const res = await confirmPayment(dbRecord.id)
+    if (res.success) {
+      showToast("success", vi ? "Đã xác nhận chi lương!" : "Payment confirmed!")
+      await loadDB()   // reload — cập nhật trạng thái từ DB
+    } else {
+      showToast("error", vi ? (res.error ?? "Lỗi xác nhận") : (res.error ?? "Confirmation failed"))
+    }
   }
 
   const handleSaveConfig = () => {
@@ -499,7 +527,7 @@ export default function PayrollPage() {
     padding:"10px 11px", fontSize:11, fontWeight:700,
     color:th.tableHeadText, background:th.tableHead,
     borderBottom:`1px solid ${th.tableBorder}`, textAlign:"left",
-    whiteSpace:"nowrap", textTransform:"uppercase", letterSpacing:"0.04em",
+    whiteSpace:"nowrap", letterSpacing:"0.03em",
   }
 
   const sortName  = [{ label: vi ? "A → Z" : "A → Z",          dir: "asc" as SortDir }, { label: vi ? "Z → A" : "Z → A",      dir: "desc" as SortDir }]
@@ -521,9 +549,9 @@ export default function PayrollPage() {
   const selectedCalc = selected ? calcPayroll(selected, config) : null
 
   const statCards = [
-    { icon:<Banknote size={20} color="#D0211C"/>,   label:vi?"Tổng Gross":"Total Gross",   value:fmtShort(totals.gross)+"đ", accent:"#D0211C" },
-    { icon:<TrendingUp size={20} color="#059669"/>, label:vi?"Tổng Net về tay":"Total Net", value:fmtShort(totals.net)+"đ",   accent:"#059669" },
-    { icon:<Shield size={20} color="#D97706"/>,     label:vi?"Thuế TNCN":"PIT",                    value:fmtShort(totals.pit)+"đ",   accent:"#D97706" },
+    { icon:<Banknote size={20} color="#D0211C"/>,   label:vi?"Tổng Gross":"Total Gross",   value:fmtShort(totals.gross, vi)+(vi?"đ":" VND"), accent:"#D0211C" },
+    { icon:<TrendingUp size={20} color="#059669"/>, label:vi?"Tổng Net về tay":"Total Net", value:fmtShort(totals.net, vi)+(vi?"đ":" VND"),   accent:"#059669" },
+    { icon:<Shield size={20} color="#D97706"/>,     label:vi?"Thuế TNCN":"PIT",                    value:fmtShort(totals.pit, vi)+(vi?"đ":" VND"),   accent:"#D97706" },
     { icon:<Users size={20} color="#3B82F6"/>,      label:vi?"Đã thanh toán":"Paid",        value:`${paidCount}/${employees.length}`, accent:"#3B82F6" },
   ]
 
@@ -687,7 +715,7 @@ export default function PayrollPage() {
               onSort={handleSort} onClear={clearSort} th={th} options={sortDays} hdStyle={hd} vi={vi}/>
             <SortTh label={vi?"Gross (HĐ)":"Gross"} field="gross" sortField={sortField} sortDir={sortDir}
               onSort={handleSort} onClear={clearSort} th={th} options={sortMoney} hdStyle={hd} vi={vi}/>
-            <SortTh label={vi?"OT pay":"OT"} field={null} sortField={sortField} sortDir={sortDir}
+            <SortTh label={vi?"Lương OT":"OT"} field={null} sortField={sortField} sortDir={sortDir}
               onSort={handleSort} onClear={clearSort} th={th} hdStyle={hd}/>
             <SortTh label={vi?"Thưởng":"Bonus"} field={null} sortField={sortField} sortDir={sortDir}
               onSort={handleSort} onClear={clearSort} th={th} hdStyle={hd}/>
@@ -716,7 +744,7 @@ export default function PayrollPage() {
                     <EmpAvatar name={emp.name} avatarPath={(emp as any).avatarPath} size={32} />
                     <div>
                       <div style={{ fontWeight:700, fontSize:13 }}>{emp.name}</div>
-                      <div style={{ fontSize:10.5, color:th.text2 }}>{emp.dept}</div>
+                      <div style={{ fontSize:10.5, color:th.text2 }}>{tDept(emp.dept, vi)}</div>
                     </div>
                   </div>
                 </td>
@@ -744,7 +772,7 @@ export default function PayrollPage() {
                         value={editBonus.val}
                         onChange={e => setEditBonus({ id:emp.id, val:e.target.value })}
                         onKeyDown={e => { if(e.key==="Enter") handleSaveBonus(emp.id, editBonus.val); if(e.key==="Escape") setEditBonus(null) }}
-                        placeholder="triệu"
+                        placeholder={vi ? "triệu" : "million"}
                       />
                       <button onClick={() => handleSaveBonus(emp.id, editBonus.val)} style={{ padding:"3px 8px", background:"#D0211C", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:11 }}>✓</button>
                     </div>
@@ -931,7 +959,7 @@ export default function PayrollPage() {
               <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${th.tableBorder}`, fontSize:11.5, color:"#3B82F6" }}>
                 <div style={{ display:"flex", gap:4, alignItems:"flex-start" }}>
                   <Info size={11} style={{ flexShrink:0, marginTop:1 }}/>
-                  <span>{vi?`Giảm trừ bản thân: ${fmtShort(config.selfDeduction)}đ/tháng · Người phụ thuộc: ${fmtShort(config.depDeduction)}đ/người`:`Self: ${fmtShort(config.selfDeduction)}đ/mo · Dependent: ${fmtShort(config.depDeduction)}đ/person`}</span>
+                  <span>{vi?`Giảm trừ bản thân: ${fmtShort(config.selfDeduction, vi)}đ/tháng · Người phụ thuộc: ${fmtShort(config.depDeduction, vi)}đ/người`:`Self: ${fmtShort(config.selfDeduction, vi)} VND/mo · Dependent: ${fmtShort(config.depDeduction, vi)} VND/person`}</span>
                 </div>
               </div>
             </div>

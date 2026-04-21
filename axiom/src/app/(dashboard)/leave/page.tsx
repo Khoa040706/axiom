@@ -8,9 +8,12 @@ import {
   User, AlignLeft, CalendarDays, AlertCircle, Loader2,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { DateInput } from "@/components/ui/date-input"
 import { getLeaveRequests, approveLeave, createLeaveRequest, getAllLeaveBalances } from "@/lib/actions/leave.actions"
 import { getDepartments } from "@/lib/actions/department.actions"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { useCurrentUser, useEmployeeId, useUserId } from "@/hooks/use-current-user"
+import { useSession } from "next-auth/react"
 
 // ─── Types ────────────────────────────────────────────────
 type LeaveStatus = "pending" | "approved" | "rejected"
@@ -32,12 +35,12 @@ interface LeaveRequest {
 }
 
 const LEAVE_TYPES = [
-  { vi: "Nghỉ phép năm",  en: "Annual Leave",    bg: "#DBEAFE", c: "#1E40AF" },
-  { vi: "Nghỉ lễ",        en: "Public Holiday",  bg: "#D1FAE5", c: "#065F46" },
-  { vi: "Việc riêng",     en: "Personal Leave",  bg: "#FEF3C7", c: "#92400E" },
-  { vi: "Nghỉ bệnh",      en: "Sick Leave",      bg: "#FCE7F3", c: "#9D174D" },
-  { vi: "Thai sản",       en: "Maternity Leave", bg: "#EDE9FE", c: "#5B21B6" },
-  { vi: "Không lương",    en: "Unpaid Leave",    bg: "#F3F4F6", c: "#374151" },
+  { vi: "Nghỉ năm",      en: "Annual Leave",    bg: "#DBEAFE", c: "#1E40AF" },
+  { vi: "Nghỉ lễ",       en: "Public Holiday",  bg: "#D1FAE5", c: "#065F46" },
+  { vi: "Việc riêng",    en: "Personal Leave",  bg: "#FEF3C7", c: "#92400E" },
+  { vi: "Nghỉ ốm",       en: "Sick Leave",      bg: "#FCE7F3", c: "#9D174D" },
+  { vi: "Thai sản",      en: "Maternity Leave", bg: "#EDE9FE", c: "#5B21B6" },
+  { vi: "Không lương",   en: "Unpaid Leave",    bg: "#F3F4F6", c: "#374151" },
 ]
 
 // QUOTA loaded from DB
@@ -100,8 +103,12 @@ export default function LeavePage() {
   const th = getTheme(dark)
   const vi = lang === "vi"
   const { isMobile } = useBreakpoint()
-  // Admin/Manager role hardcoded true for demo (RBAC sẽ bật sau)
-  const isManager = true
+  const { data: session } = useSession()
+  const currentUser = useCurrentUser()
+  const sessionEmployeeId = useEmployeeId()
+  const sessionUserId = useUserId()
+  const userRole = session?.user?.role ?? "Employee"
+  const isManager = ["Admin", "HRManager", "Manager", "Director"].includes(userRole)
 
   const [leaves, setLeaves]       = useState<LeaveRequest[]>([])
   const [quota, setQuota]         = useState<any[]>([])
@@ -125,9 +132,10 @@ export default function LeavePage() {
   // ── Load từ DB ─────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true)
+    const currentYear = new Date().getFullYear()
     const [leavesRes, quotaRes] = await Promise.all([
-      getLeaveRequests({ year: 2026 }),
-      getAllLeaveBalances(2026),
+      getLeaveRequests({ year: currentYear }),
+      getAllLeaveBalances(currentYear),
     ])
     if (leavesRes.success && leavesRes.data) {
       setLeaves((leavesRes.data as any[]).map(l => ({
@@ -188,9 +196,10 @@ export default function LeavePage() {
     if (!form.reason.trim())   { showToast("error", vi?"Nhập lý do nghỉ phép":"Enter leave reason"); return }
 
     setSubmitting(true)
-    // Gọi server action tạo đơn — dùng employeeId=1 (NV001 demo)
+    // Gọi server action tạo đơn — dùng employeeId từ session
+    const empId = sessionEmployeeId ?? 1
     const res = await createLeaveRequest({
-      employeeId: 1,
+      employeeId: empId,
       leaveType:  form.type,
       startDate:  form.from,
       endDate:    form.to,
@@ -210,15 +219,19 @@ export default function LeavePage() {
   }
 
   const handleApprove = async (id: number) => {
-    await approveLeave(id, 1, true)  // approvedBy=1 (admin demo)
-    setLeaves(prev => prev.map(l => l.id===id ? { ...l, status:"approved" as const, approver:"Admin", approvedAt: nowStr() } : l))
+    const approverId = sessionUserId ?? 1
+    const approverName = currentUser?.name ?? "Admin"
+    await approveLeave(id, approverId, true)
+    setLeaves(prev => prev.map(l => l.id===id ? { ...l, status:"approved" as const, approver: approverName, approvedAt: nowStr() } : l))
     showToast("success", vi?"Đã duyệt đơn nghỉ phép":"Leave request approved")
     if (viewItem?.id===id) setViewItem(v => v ? { ...v, status:"approved" as const } : v)
   }
 
   const handleReject = async (id: number) => {
-    await approveLeave(id, 1, false) // approvedBy=1 (admin demo)
-    setLeaves(prev => prev.map(l => l.id===id ? { ...l, status:"rejected" as const, approver:"Admin", approvedAt: nowStr() } : l))
+    const approverId = sessionUserId ?? 1
+    const approverName = currentUser?.name ?? "Admin"
+    await approveLeave(id, approverId, false)
+    setLeaves(prev => prev.map(l => l.id===id ? { ...l, status:"rejected" as const, approver: approverName, approvedAt: nowStr() } : l))
     showToast("success", vi?"Đã từ chối đơn nghỉ phép":"Leave request rejected")
     if (viewItem?.id===id) setViewItem(v => v ? { ...v, status:"rejected" as const } : v)
   }
@@ -241,7 +254,7 @@ export default function LeavePage() {
   }
   const labelStyle: React.CSSProperties = {
     fontSize:11.5, fontWeight:700, color:th.text2,
-    textTransform:"uppercase", letterSpacing:"0.05em",
+    letterSpacing:"0.02em",
     marginBottom:6, display:"block",
   }
 
@@ -505,27 +518,27 @@ export default function LeavePage() {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
                   <div>
                     <label style={labelStyle}><CalendarDays size={12} style={{ display:"inline", marginRight:4 }}/>{vi?"Từ ngày":"From Date"} <span style={{ color:"#EF4444" }}>*</span></label>
-                    <input
-                      type="date" style={inputStyle}
+                    <DateInput
+                      style={inputStyle}
                       value={form.from}
                       min={today}
                       onChange={e => {
                         const v = e.target.value
                         setForm(f => ({ ...f, from:v, to: f.to < v ? v : f.to }))
                       }}
-                      onFocus={e => (e.target.style.borderColor="#D0211C")}
-                      onBlur={e => (e.target.style.borderColor=th.inputBorder)}
+                      onFocus={e => ((e.target as HTMLInputElement).style.borderColor="#D0211C")}
+                      onBlur={e => ((e.target as HTMLInputElement).style.borderColor=th.inputBorder)}
                     />
                   </div>
                   <div>
                     <label style={labelStyle}><CalendarDays size={12} style={{ display:"inline", marginRight:4 }}/>{vi?"Đến ngày":"To Date"} <span style={{ color:"#EF4444" }}>*</span></label>
-                    <input
-                      type="date" style={inputStyle}
+                    <DateInput
+                      style={inputStyle}
                       value={form.to}
                       min={form.from}
                       onChange={e => setForm(f => ({ ...f, to:e.target.value }))}
-                      onFocus={e => (e.target.style.borderColor="#D0211C")}
-                      onBlur={e => (e.target.style.borderColor=th.inputBorder)}
+                      onFocus={e => ((e.target as HTMLInputElement).style.borderColor="#D0211C")}
+                      onBlur={e => ((e.target as HTMLInputElement).style.borderColor=th.inputBorder)}
                     />
                   </div>
                 </div>
