@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any , react-hooks/set-state-in-effect */
 "use client"
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { Users, CheckCircle, CalendarDays, TrendingUp, Check, X, RefreshCw, Star, ArrowRight, Clock, LayoutDashboard } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
@@ -12,6 +11,7 @@ import { getAttendanceByMonth } from "@/lib/actions/attendance.actions"
 import { useSession } from "next-auth/react"
 import { useEmployeeId } from "@/hooks/use-current-user"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { CompanyEventsWidget } from "@/components/dashboard/CompanyEvents"
 
 function StatCard({ label, value, accent, icon, sub }: any) {
   return (
@@ -25,32 +25,44 @@ function StatCard({ label, value, accent, icon, sub }: any) {
   )
 }
 
-function QuickAction({ icon, label, sub, href, accent, dark }: any) {
+function QuickFeatureCard({ icon, label, desc, href, accent, dark }: any) {
   const th = getTheme(dark)
   return (
-    <Link href={href} style={{ textDecoration: "none" }}>
-      <div style={{
-        background: th.cardBg, borderRadius: 12, padding: "14px 16px",
-        border: `1.5px solid ${th.cardBorder}`,
-        display: "flex", alignItems: "center", gap: 14,
-        cursor: "pointer", transition: "all .2s",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-      }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 4px 16px ${accent}22` }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = th.cardBorder; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.04)" }}
+    <a href={href} style={{ textDecoration: "none" }}>
+      <div
+        style={{
+          background: th.cardBg, borderRadius: 14, padding: "16px",
+          border: `1.5px solid ${th.cardBorder}`,
+          display: "flex", flexDirection: "column", gap: 10,
+          cursor: "pointer", transition: "all .22s", height: "100%",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = accent
+          e.currentTarget.style.transform = "translateY(-3px)"
+          e.currentTarget.style.boxShadow = `0 8px 24px ${accent}20`
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = th.cardBorder
+          e.currentTarget.style.transform = "translateY(0)"
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"
+        }}
       >
         <div style={{
-          width: 42, height: 42, borderRadius: 10,
-          background: `${accent}15`, border: `1.5px solid ${accent}30`,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          width: 44, height: 44, borderRadius: 12,
+          background: `${accent}15`, border: `1.5px solid ${accent}28`,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>{icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: th.text1 }}>{label}</div>
-          <div style={{ fontSize: 11.5, color: th.text2 }}>{sub}</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: th.text1, marginBottom: 4, lineHeight: 1.3 }}>{label}</div>
+          <div style={{ fontSize: 11.5, color: th.text2, lineHeight: 1.45 }}>{desc}</div>
         </div>
-        <ArrowRight size={14} color={th.text2} style={{ flexShrink: 0 }} />
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: accent }}>{"Truy cập"}</span>
+          <ArrowRight size={12} color={accent}/>
+        </div>
       </div>
-    </Link>
+    </a>
   )
 }
 
@@ -243,14 +255,39 @@ export default function ManagerDashboard() {
         </div>
       )}
 
-      {/* Quick Actions — UC linked */}
-      <div style={{ ...card, padding:"18px", marginTop: 16 }}>
-        <div style={{ fontWeight:700, fontSize:14, color:th.text1, marginBottom:14 }}>⚡ {vi?"Chức năng theo Use Case":"Use Case Actions"}</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <QuickAction icon={<CalendarDays size={18} color="#D97706"/>} label={vi?"Duyệt yêu cầu nghỉ phép":"Approve Leave Requests"} sub="UC-05" href="/leave" accent="#D97706" dark={dark}/>
-          <QuickAction icon={<Clock size={18} color="#059669"/>} label={vi?"Quản lý chấm công":"Attendance Management"} sub="UC-06" href="/attendance" accent="#059669" dark={dark}/>
-          <QuickAction icon={<LayoutDashboard size={18} color="#7C3AED"/>} label={vi?"Xem Dashboard thống kê":"Statistics Dashboard"} sub="UC-11" href="/dashboard-manager" accent="#7C3AED" dark={dark}/>
+      {/* Quick Actions — feature card grid */}
+      <div style={{ ...card, padding: "20px", marginTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+          <div style={{ width: 4, height: 18, borderRadius: 2, background: "#D0211C" }}/>
+          <span style={{ fontWeight: 700, fontSize: 15, color: th.text1 }}>
+            {vi ? "Thao tác nhanh" : "Quick Actions"}
+          </span>
         </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <QuickFeatureCard
+            icon={<CalendarDays size={20} color="#D97706"/>}
+            label={vi ? "Duyệt nghỉ phép" : "Leave Approvals"}
+            desc={vi ? "Xem xét và phê duyệt đơn xin nghỉ của nhân viên" : "Review and approve leave requests"}
+            href="/leave" accent="#D97706" dark={dark}
+          />
+          <QuickFeatureCard
+            icon={<Clock size={20} color="#059669"/>}
+            label={vi ? "Chấm công" : "Attendance"}
+            desc={vi ? "Theo dõi giờ làm việc và tình trạng đi làm" : "Monitor working hours and attendance"}
+            href="/attendance" accent="#059669" dark={dark}
+          />
+          <QuickFeatureCard
+            icon={<LayoutDashboard size={20} color="#7C3AED"/>}
+            label={vi ? "Thống kê" : "Statistics"}
+            desc={vi ? "Xem biểu đồ và báo cáo hoạt động phòng" : "View department performance charts"}
+            href="/dashboard-manager" accent="#7C3AED" dark={dark}
+          />
+        </div>
+      </div>
+
+      {/* Company Events */}
+      <div style={{ marginTop: 16 }}>
+        <CompanyEventsWidget dark={dark} vi={vi} maxHeight={380}/>
       </div>
 
       {toast && (

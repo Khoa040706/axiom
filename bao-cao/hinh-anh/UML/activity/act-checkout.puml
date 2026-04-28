@@ -1,0 +1,20 @@
+@startuml
+title Hình 6.4 — Activity Diagram: Check-out
+start
+if (Đã check-in hôm nay?) then (Chưa)
+  :Hiển thị lỗi;
+  stop
+else (Rồi)
+endif
+:Nhấn nút Check-out;
+:Ghi checkOut timestamp;
+:Tính netHours = (checkOut - checkIn) - 90 phút nghỉ trưa;
+if (netHours > 8 giờ?) then (Có)
+  :otHours = netHours - 8;
+else (Không)
+  :otHours = 0;
+endif
+:Cập nhật bản ghi Attendance;
+:Hiển thị tổng thời gian làm việc;
+stop
+@enduml

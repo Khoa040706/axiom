@@ -1,0 +1,52 @@
+@startuml
+title Hình 4.2 — Sơ đồ Use Case UC-01\nPhân hệ Xác thực
+skinparam usecase {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #D0211C
+  ActorBorderColor #991414
+  ActorFontStyle Bold
+}
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Tất cả\nngười dùng" as User
+actor "Hệ thống\n(NextAuth)" as System <<system>>
+
+rectangle "UC-01 — Phân hệ Xác thực" {
+  usecase "UC-01.1\nĐăng nhập" as UC1
+  usecase "UC-01.2\nĐăng xuất" as UC2
+  usecase "UC-01.3\nQuên mật khẩu" as UC3
+  usecase "UC-01.4\nThiết lập Gmail\n(lần đầu)" as UC4
+
+  usecase "Xác thực\nbcrypt" as INC1
+  usecase "Tạo\nJWT session" as INC2
+  usecase "Gửi email\nmật khẩu tạm" as INC3
+  usecase "Redirect theo\nrole" as INC4
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+
+UC1 ..> INC1 : <<include>>
+UC1 ..> INC2 : <<include>>
+UC1 ..> INC4 : <<include>>
+UC3 ..> INC3 : <<include>>
+
+INC1 --> System
+INC2 --> System
+INC3 --> System
+
+note right of UC1
+  Sai thông tin → báo lỗi
+  Tài khoản khóa → từ chối
+end note
+
+note right of UC4
+  Chỉ xảy ra khi
+  chưa có personalEmail
+end note
+
+@enduml

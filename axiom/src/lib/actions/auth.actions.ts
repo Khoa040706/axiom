@@ -15,6 +15,18 @@ export async function getUsers() {
 
 export async function updateUserRole(id: number, role: string) {
   try {
+    // Ràng buộc chuyển vai trò — đồng bộ với user-admin.actions.ts
+    const { prisma } = await import("@/lib/prisma")
+    const current = await prisma.user.findUnique({ where: { id }, select: { role: true } })
+    if (!current) return { success: false, error: "Không tìm thấy tài khoản" }
+
+    if (current.role === "Employee" && role !== "Manager" && role !== "Employee") {
+      return { success: false, error: "Nhân viên chỉ có thể được thăng lên chức vụ Trưởng phòng" }
+    }
+    if (current.role === "Manager" && role !== "Manager" && role !== "Employee") {
+      return { success: false, error: "Trưởng phòng chỉ có thể được giữ nguyên hoặc hạ xuống Nhân viên" }
+    }
+
     const data = await userService.updateRole(id, role)
     return { success: true, data: serialize(data) }
   } catch (error) {

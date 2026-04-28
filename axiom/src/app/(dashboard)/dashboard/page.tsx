@@ -70,28 +70,28 @@ function KpiCard({ label, value, icon, color, bg, note, href, dark }: {
         background: dark ? "rgba(255,255,255,0.04)" : "#fff",
         border: `1.5px solid ${hov ? color : (dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)")}`,
         borderRadius: 14,
-        padding: "18px 20px",
+        padding: "14px 16px",
         cursor: "pointer",
         transition: "all .2s cubic-bezier(.4,0,.2,1)",
         boxShadow: hov ? `0 6px 24px ${color}25` : "0 1px 4px rgba(0,0,0,0.05)",
-        display: "flex", alignItems: "center", gap: 14,
+        display: "flex", alignItems: "center", gap: 12,
         transform: hov ? "translateY(-2px)" : "none",
         outline: "none",
-        flex: "1 1 0",
         minWidth: 0,
+        width: "100%",
       }}
     >
       <div style={{
-        width: 46, height: 46, borderRadius: 12,
+        width: 44, height: 44, borderRadius: 12,
         background: bg, flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>{icon}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: th.text2, fontWeight: 500, marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1.1 }}><Counter to={value}/></div>
-        <div style={{ fontSize: 10.5, color: th.text3, marginTop: 2 }}>{note}</div>
+      <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+        <div style={{ fontSize: 10.5, color: th.text2, fontWeight: 500, marginBottom: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color, lineHeight: 1.15 }}><Counter to={value}/></div>
+        <div style={{ fontSize: 10, color: th.text3, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{note}</div>
       </div>
-      <ChevronRight size={14} color={hov ? color : th.text3} style={{ flexShrink: 0, transition: "color .2s" }}/>
+      <ChevronRight size={13} color={hov ? color : th.text3} style={{ flexShrink: 0, transition: "color .2s" }}/>
     </div>
   )
 }
@@ -314,7 +314,7 @@ export default function HomePage() {
   const { dark, lang } = useDashboard()
   const th = getTheme(dark)
   const vi = lang === "vi"
-  const { isMobile } = useBreakpoint()
+  const { isMobile, isTablet } = useBreakpoint()
 
   const [kpi, setKpi]        = useState({ total:"—", pending:"—", expiring:"—", trial:"—" })
   const [deptData, setDept]  = useState<any[]>([])
@@ -351,10 +351,16 @@ export default function HomePage() {
       const m = new Date().getMonth()+1, y = new Date().getFullYear()
       const res = await fetch(`/api/export/excel?type=dashboard&month=${m}&year=${y}`)
       if (!res.ok) throw new Error()
-      const blob = await res.blob(), url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href=url; a.download=`AXIOM_BaoCao_${y}-${String(m).padStart(2,"0")}.xlsx`
-      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
+      const buffer = await res.arrayBuffer()
+      const blob   = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const url = URL.createObjectURL(blob)
+      const a   = document.createElement("a")
+      a.style.display = "none"
+      a.href     = url
+      a.download = `AXIOM_BaoCao_${y}-${String(m).padStart(2,"0")}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url) }, 10_000)
     } catch { alert(vi?"Không thể xuất báo cáo.":"Export failed.") }
     finally { setExporting(false) }
   }
@@ -371,19 +377,19 @@ export default function HomePage() {
 
   /* Company events */
   const events = vi ? [
-    { emoji:"🏖️", title:"Nghỉ lễ Giỗ Tổ Hùng Vương",    desc:"Toàn thể nhân viên được nghỉ theo lịch nhà nước",          date:"18/04/2026",        status:"upcoming" as EventStatus },
     { emoji:"🎆", title:"Nghỉ lễ 30/4 – Giải phóng miền Nam", desc:"Nghỉ lễ Ngày Giải phóng miền Nam, thống nhất đất nước", date:"30/04/2026",        status:"upcoming" as EventStatus },
     { emoji:"🌸", title:"Nghỉ lễ Quốc tế Lao động 1/5",   desc:"Nghỉ lễ Ngày Quốc tế Lao động – toàn công ty nghỉ",       date:"01/05/2026",        status:"upcoming" as EventStatus },
     { emoji:"🎉", title:"Ngày thành lập công ty",           desc:"Kỷ niệm 5 năm thành lập AXIOM Corporation",               date:"20/06/2026",        status:"upcoming" as EventStatus },
-    { emoji:"📊", title:"Họp tổng kết Q1 2026",             desc:"Báo cáo kết quả kinh doanh quý 1 tại hội trường",         date:"15/04/2026",        status:"upcoming" as EventStatus },
+    { emoji:"🏖️", title:"Nghỉ lễ Giỗ Tổ Hùng Vương",    desc:"Ngày nghỉ lễ 10/3 Âm lịch – đã nghỉ bù",                  date:"26/04/2026",        status:"past"     as EventStatus },
+    { emoji:"📊", title:"Họp tổng kết Q1 2026",             desc:"Báo cáo kết quả kinh doanh quý 1 tại hội trường",         date:"15/04/2026",        status:"past"     as EventStatus },
     { emoji:"🎓", title:"Đào tạo kỹ năng mềm",              desc:"Khóa đào tạo cho nhân viên mới Q1",                       date:"20/03 – 25/03/2026",status:"past"     as EventStatus },
     { emoji:"💼", title:"Đánh giá hiệu suất Q4 2025",       desc:"Kỳ đánh giá KPI toàn công ty đã hoàn tất",               date:"15/01/2026",        status:"past"     as EventStatus },
   ] : [
-    { emoji:"🏖️", title:"Hung Kings Commemoration",        desc:"Public holiday – Hung Kings Commemoration Day",           date:"Apr 18, 2026",      status:"upcoming" as EventStatus },
     { emoji:"🎆", title:"Liberation Day – Apr 30",          desc:"National holiday – Reunification of Vietnam",             date:"Apr 30, 2026",      status:"upcoming" as EventStatus },
     { emoji:"🌸", title:"International Labour Day – May 1", desc:"Public holiday – International Workers' Day",             date:"May 01, 2026",      status:"upcoming" as EventStatus },
     { emoji:"🎉", title:"Company Anniversary",               desc:"5th anniversary of AXIOM Corporation",                   date:"Jun 20, 2026",      status:"upcoming" as EventStatus },
-    { emoji:"📊", title:"Q1 2026 Review Meeting",            desc:"Quarterly business review at conference room",            date:"Apr 15, 2026",      status:"upcoming" as EventStatus },
+    { emoji:"🏖️", title:"Hung Kings Commemoration",        desc:"Public holiday – Apr 26 (comp. day off taken)",           date:"Apr 26, 2026",      status:"past"     as EventStatus },
+    { emoji:"📊", title:"Q1 2026 Review Meeting",            desc:"Quarterly business review at conference room",            date:"Apr 15, 2026",      status:"past"     as EventStatus },
     { emoji:"🎓", title:"Soft Skills Training",              desc:"Training program for new Q1 employees",                   date:"Mar 20–25, 2026",   status:"past"     as EventStatus },
     { emoji:"💼", title:"Q4 2025 Performance Review",        desc:"Company-wide KPI evaluation completed",                   date:"Jan 15, 2026",      status:"past"     as EventStatus },
   ]
@@ -405,6 +411,33 @@ export default function HomePage() {
         @keyframes spin { to { transform:rotate(360deg) } }
         @keyframes up   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         .fade-up { animation: up .35s both ease }
+
+        /* KPI row: 4 col → 2 col on tablet/mobile */
+        .kpi-row {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+        }
+        @media (max-width: 1024px) {
+          .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        }
+        @media (max-width: 640px) {
+          .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        }
+
+        /* Nav tiles: 3 col → 2 col on tablet/small-laptop → 2 col on mobile */
+        .nav-tiles-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: 1fr 1fr;
+          gap: 10px;
+        }
+        @media (max-width: 1100px) {
+          .nav-tiles-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: unset; gap: 8px; }
+        }
+        @media (max-width: 640px) {
+          .nav-tiles-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: unset; gap: 8px; }
+        }
       `}</style>
 
 
@@ -447,11 +480,8 @@ export default function HomePage() {
         )
       })()}
 
-      {/* ── KPI ROW: 4 equal cards ────────────────────── */}
-      <div style={{
-        display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12,
-        marginBottom:20, animation:"up .38s ease",
-      }} className={isMobile ? "stat-row" : ""}>
+      {/* ── KPI ROW: 4 equal cards — responsive (4→2 col) ─ */}
+      <div className="kpi-row" style={{ marginBottom:20, animation:"up .38s ease" }}>
         <KpiCard label={vi?"Tổng nhân sự":"Total Staff"}          value={kpi.total}    icon={<Users size={20} color="#D0211C"/>}       color="#D0211C" bg="#FEE2E2" note={vi?"Đang làm việc":"Active"}          href="/employees"   dark={dark}/>
         <KpiCard label={vi?"Đơn nghỉ chờ duyệt":"Pending Leaves"} value={kpi.pending}  icon={<Bell size={20} color="#7C3AED"/>}        color="#7C3AED" bg="#EDE9FE" note={vi?"Cần xử lý":"Need action"}         href="/leave"       dark={dark}/>
         <KpiCard label={vi?"HĐ sắp hết hạn":"Expiring Contracts"} value={kpi.expiring} icon={<AlertTriangle size={20} color="#D97706"/>} color="#D97706" bg="#FEF3C7" note={vi?"Trong 30 ngày":"Within 30d"}    href="/contracts"   dark={dark}/>
@@ -460,14 +490,14 @@ export default function HomePage() {
 
       {/* ── ROW 2: Quick access (left) + Events (right) ─ */}
       <div style={{
-        display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 320px",
+        display:"grid", gridTemplateColumns: (isMobile || isTablet) ? "1fr" : "1fr minmax(280px, 320px)",
         gap:16, marginBottom:16, animation:"up .42s ease",
       }}>
 
         {/* Nav tiles: fill height of row via grid-template-rows */}
         <div style={{ display:"flex", flexDirection:"column" }}>
           <div style={secLabel}><Sparkles size={12} color="#D0211C"/>{vi?"Truy cập nhanh":"Quick Access"}</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr", gap:10, flex:1 }}>
+          <div className="nav-tiles-grid" style={{ flex:1 }}>
             {tiles.map((t,i) => (
               <div key={t.href} className="fade-up" style={{ animationDelay:`${i*50}ms`, display:"flex" }}>
                 <NavTile {...t} dark={dark} fill/>
@@ -494,13 +524,13 @@ export default function HomePage() {
       }}>
 
         {/* Dept pie chart */}
-        <div style={card}>
+        <div style={{ ...card, overflow:"visible" }}>
           <div style={secLabel}><Building2 size={12} color="#D0211C"/>{vi?"Phân bổ nhân lực theo phòng ban":"Workforce by Department"}</div>
           {translatedDeptData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart margin={{ top:10, right:36, left:36, bottom:10 }}>
+            <ResponsiveContainer width="100%" height={isMobile ? 220 : 240}>
+              <PieChart margin={{ top:10, right: isMobile ? 30 : 50, left: isMobile ? 30 : 50, bottom:10 }}>
                 <Pie
-                  data={translatedDeptData} cx="50%" cy="50%" outerRadius={82}
+                  data={translatedDeptData} cx="50%" cy="50%" outerRadius={isMobile ? 65 : (isTablet ? 72 : 82)}
                   dataKey="value" nameKey="name"
                   label={(p:any) => <PieLabel {...p} textColor={th.text1}/>}
                   labelLine={{ stroke:dark?"rgba(255,255,255,0.2)":"rgba(0,0,0,0.15)", strokeWidth:1 }}

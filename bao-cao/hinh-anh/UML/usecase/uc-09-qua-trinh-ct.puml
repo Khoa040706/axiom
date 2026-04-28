@@ -1,0 +1,49 @@
+@startuml
+title Hình 4.10 — Sơ đồ Use Case UC-09\nPhân hệ Quá trình công tác
+skinparam usecase {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #D0211C
+  ActorBorderColor #991414
+  ActorFontStyle Bold
+}
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Admin" as Admin
+actor "HRManager" as HR
+
+rectangle "UC-09 — Phân hệ Quá trình công tác" {
+  usecase "UC-09.1\nTạo sự kiện\nnhân sự" as UC1
+  usecase "UC-09.2\nXem lịch sử\ncông tác" as UC2
+  usecase "UC-09.3\nXóa sự kiện\ncông tác" as UC3
+
+  usecase "Cập nhật Employee\n(Bổ nhiệm/\nĐiều chuyển)" as EXT1
+}
+
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+HR --> UC1
+HR --> UC2
+HR --> UC3
+
+UC1 ..> EXT1 : <<extend>>
+
+note right of UC1
+  Các loại sự kiện:
+  - Bổ nhiệm
+  - Điều chuyển
+  - Khen thưởng
+  - Kỷ luật
+  - Tăng lương
+end note
+
+note right of EXT1
+  Nếu là Bổ nhiệm/Điều chuyển
+  → tự động cập nhật
+  Employee.departmentId
+  hoặc positionId
+end note
+
+@enduml

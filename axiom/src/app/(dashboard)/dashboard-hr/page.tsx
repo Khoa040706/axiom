@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any , react-hooks/set-state-in-effect */
 "use client"
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import {
   Users, UserPlus, Clock, CalendarDays, ClipboardCheck, Check, X, RefreshCw,
@@ -12,6 +11,8 @@ import { getDashboardStats, getDashboardCharts, getDashboardAttendanceTrend } fr
 import { getLeaveRequests, approveLeave } from "@/lib/actions/leave.actions"
 import { useSession } from "next-auth/react"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { CompanyEventsWidget } from "@/components/dashboard/CompanyEvents"
+import { tDept, tLeaveType } from "@/lib/i18n-maps"
 
 /* ── Reusable Components ─────────────────────────────── */
 function StatCard({ label, value, accent, icon, sub }: any) {
@@ -26,32 +27,44 @@ function StatCard({ label, value, accent, icon, sub }: any) {
   )
 }
 
-function QuickAction({ icon, label, sub, href, accent, dark }: any) {
+function QuickFeatureCard({ icon, label, desc, href, accent, dark, vi }: any) {
   const th = getTheme(dark)
   return (
-    <Link href={href} style={{ textDecoration: "none" }}>
-      <div style={{
-        background: th.cardBg, borderRadius: 12, padding: "14px 16px",
-        border: `1.5px solid ${th.cardBorder}`,
-        display: "flex", alignItems: "center", gap: 14,
-        cursor: "pointer", transition: "all .2s",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-      }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 4px 16px ${accent}22` }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = th.cardBorder; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.04)" }}
+    <a href={href} style={{ textDecoration: "none" }}>
+      <div
+        style={{
+          background: th.cardBg, borderRadius: 14, padding: "16px",
+          border: `1.5px solid ${th.cardBorder}`,
+          display: "flex", flexDirection: "column", gap: 10,
+          cursor: "pointer", transition: "all .22s", height: "100%",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = accent
+          e.currentTarget.style.transform = "translateY(-3px)"
+          e.currentTarget.style.boxShadow = `0 8px 24px ${accent}20`
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = th.cardBorder
+          e.currentTarget.style.transform = "translateY(0)"
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"
+        }}
       >
         <div style={{
-          width: 42, height: 42, borderRadius: 10,
-          background: `${accent}15`, border: `1.5px solid ${accent}30`,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          width: 44, height: 44, borderRadius: 12,
+          background: `${accent}15`, border: `1.5px solid ${accent}28`,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>{icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: th.text1 }}>{label}</div>
-          <div style={{ fontSize: 11.5, color: th.text2 }}>{sub}</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: th.text1, marginBottom: 4, lineHeight: 1.3 }}>{label}</div>
+          <div style={{ fontSize: 11.5, color: th.text2, lineHeight: 1.45 }}>{desc}</div>
         </div>
-        <ArrowRight size={14} color={th.text2} style={{ flexShrink: 0 }} />
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: accent }}>{vi ? "Truy cập" : "Access"}</span>
+          <ArrowRight size={12} color={accent}/>
+        </div>
       </div>
-    </Link>
+    </a>
   )
 }
 
@@ -120,15 +133,18 @@ export default function HRDashboard() {
     try {
       const res = await fetch("/api/export/excel?type=employees")
       if (!res.ok) throw new Error("Export failed")
-      const blob = await res.blob()
+      const buffer = await res.arrayBuffer()
+      const blob   = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const today  = new Date()
+      const dateTag = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
       const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `AXIOM_NhanSu_${new Date().toISOString().slice(0,10)}.xlsx`
+      const a   = document.createElement("a")
+      a.style.display = "none"
+      a.href     = url
+      a.download = `AXIOM_NhanSu_${dateTag}.xlsx`
       document.body.appendChild(a)
       a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url) }, 10_000)
     } catch { alert(vi ? "Không thể xuất Excel." : "Excel export failed.") }
   }
 
@@ -171,33 +187,93 @@ export default function HRDashboard() {
         {/* Headcount chart */}
         <div style={{ ...card, padding:"18px" }}>
           <div style={{ fontWeight:700, fontSize:14, color:th.text1, marginBottom:14 }}>👥 {vi?"Nhân lực theo phòng ban":"Headcount by Department"}</div>
-          {headcount.length > 0 ? (
-            <ResponsiveContainer width="100%" height={isMobile ? 160 : 200}>
-              <BarChart data={headcount} barSize={24} margin={{ left:-10, right:10 }}>
+          {headcount.length > 0 ? (() => {
+            // Nhãn viết tắt cho chart khi tiếng Anh — tránh bị cắt
+            const DEPT_ABBR: Record<string, string> = {
+              "Information Technology": "IT",
+              "Accounting & Finance":   "Accounting",
+              "Sales & Business":       "Sales",
+              "Marketing":              "Marketing",
+              "Human Resources":        "HR",
+            }
+            const chartData = headcount.map(d => {
+              const fullName = tDept(d.name, vi)
+              return { ...d, name: vi ? d.name : (DEPT_ABBR[fullName] ?? fullName) }
+            })
+            return (
+            <ResponsiveContainer width="100%" height={isMobile ? 160 : 220}>
+              <BarChart data={chartData} barSize={28} margin={{ left:-10, right:10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={th.tableBorder} vertical={false}/>
-                <XAxis dataKey="name" tick={{ fontSize:10, fill:th.text2 }} axisLine={false} tickLine={false}/>
+                <XAxis dataKey="name" tick={{ fontSize:10, fill:th.text2 }} axisLine={false} tickLine={false} interval={0}/>
                 <YAxis tick={{ fontSize:10, fill:th.text2 }} axisLine={false} tickLine={false}/>
-                <Tooltip contentStyle={{ background:dark?"#1e293b":"#fff", border:`1px solid ${th.cardBorder}`, borderRadius:8, fontSize:12 }}/>
+                <Tooltip
+                  contentStyle={{ background:dark?"#1e293b":"#fff", border:`1px solid ${th.cardBorder}`, borderRadius:8, fontSize:12 }}
+                  formatter={(val: any) => [val, vi?"Nhân viên":"Employees"]}
+                  labelFormatter={(label) => {
+                    // Tooltip dùng tên đầy đủ
+                    const full = headcount.find(d => {
+                      const abbr = DEPT_ABBR[tDept(d.name, vi)] ?? tDept(d.name, vi)
+                      return abbr === label || d.name === label
+                    })
+                    return full ? tDept(full.name, vi) : label
+                  }}
+                />
                 <Bar dataKey="value" name={vi?"Nhân viên":"Employees"} fill="#D0211C" radius={[5,5,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
-          ) : (
+            )
+          })() : (
             <div style={{ height:200, display:"flex", alignItems:"center", justifyContent:"center", color:th.text2, fontSize:13 }}>
               {loading ? <span style={{ animation:"spin .7s linear infinite", display:"inline-block" }}>⟳</span> : vi?"Chưa có dữ liệu":"No data yet"}
             </div>
           )}
         </div>
 
-        {/* Quick Actions — UC linked */}
-        <div style={{ ...card, padding:"18px" }}>
-          <div style={{ fontWeight:700, fontSize:14, color:th.text1, marginBottom:14 }}>⚡ {vi?"Chức năng theo Use Case":"Use Case Actions"}</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <QuickAction icon={<Users size={18} color="#D0211C"/>} label={vi?"Quản lý thông tin nhân viên":"Employee Management"} sub="UC-01" href="/employees" accent="#D0211C" dark={dark}/>
-            <QuickAction icon={<FileText size={18} color="#7C3AED"/>} label={vi?"Quản lý hợp đồng lao động":"Contract Management"} sub="UC-02" href="/contracts" accent="#7C3AED" dark={dark}/>
-            <QuickAction icon={<Clock size={18} color="#059669"/>} label={vi?"Quản lý chấm công":"Attendance Management"} sub="UC-06" href="/attendance" accent="#059669" dark={dark}/>
-            <QuickAction icon={<CalendarDays size={18} color="#D97706"/>} label={vi?"Duyệt yêu cầu nghỉ phép":"Approve Leave Requests"} sub="UC-05" href="/leave" accent="#D97706" dark={dark}/>
-            <QuickAction icon={<History size={18} color="#F59E0B"/>} label={vi?"Quản lý quá trình công tác":"Career History"} sub="UC-03" href="/career-history" accent="#F59E0B" dark={dark}/>
-            <QuickAction icon={<Briefcase size={18} color="#3B82F6"/>} label={vi?"Quản lý công tác phí":"Business Trip Expenses"} sub="UC-07" href="/business-trips" accent="#3B82F6" dark={dark}/>
+        {/* Quick Actions — feature card grid */}
+        <div style={{ ...card, padding: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+            <div style={{ width: 4, height: 18, borderRadius: 2, background: "#D0211C" }}/>
+            <span style={{ fontWeight: 700, fontSize: 15, color: th.text1 }}>
+              {vi ? "Thao tác nhanh" : "Quick Actions"}
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            <QuickFeatureCard
+              icon={<Users size={20} color="#D0211C"/>}
+              label={vi ? "Quản lý nhân sự" : "Employee Management"}
+              desc={vi ? "Xem, thêm và cập nhật hồ sơ nhân viên" : "View, add and update employee profiles"}
+              href="/employees" accent="#D0211C" dark={dark} vi={vi}
+            />
+            <QuickFeatureCard
+              icon={<FileText size={20} color="#7C3AED"/>}
+              label={vi ? "Hợp đồng lao động" : "Labor Contracts"}
+              desc={vi ? "Ký kết, gia hạn và theo dõi trạng thái hợp đồng" : "Sign, renew and track contract status"}
+              href="/contracts" accent="#7C3AED" dark={dark} vi={vi}
+            />
+            <QuickFeatureCard
+              icon={<Clock size={20} color="#059669"/>}
+              label={vi ? "Chấm công" : "Attendance"}
+              desc={vi ? "Theo dõi giờ làm việc và tình trạng chấm công" : "Track working hours and attendance records"}
+              href="/attendance" accent="#059669" dark={dark} vi={vi}
+            />
+            <QuickFeatureCard
+              icon={<CalendarDays size={20} color="#D97706"/>}
+              label={vi ? "Duyệt nghỉ phép" : "Leave Approvals"}
+              desc={vi ? "Xem xét và phê duyệt đơn xin nghỉ phép của nhân viên" : "Review and approve employee leave requests"}
+              href="/leave" accent="#D97706" dark={dark} vi={vi}
+            />
+            <QuickFeatureCard
+              icon={<History size={20} color="#F59E0B"/>}
+              label={vi ? "Quá trình công tác" : "Career History"}
+              desc={vi ? "Ghi nhận thăng chức, điều chuyển và khen thưởng" : "Record promotions, transfers and rewards"}
+              href="/career-history" accent="#F59E0B" dark={dark} vi={vi}
+            />
+            <QuickFeatureCard
+              icon={<Briefcase size={20} color="#3B82F6"/>}
+              label={vi ? "Công tác phí" : "Business Trips"}
+              desc={vi ? "Quản lý chi phí và thanh toán công tác ngoài" : "Manage and reimburse business trip expenses"}
+              href="/business-trips" accent="#3B82F6" dark={dark} vi={vi}
+            />
           </div>
         </div>
       </div>
@@ -245,8 +321,8 @@ export default function HRDashboard() {
                   onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background=dark?"rgba(255,255,255,0.03)":"#FAFAFA"}
                   onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background=""}>
                   <td style={{ ...td, fontWeight:600 }}>{l.name}</td>
-                  <td style={td}><span style={{ fontSize:11, background:th.tableHead, borderRadius:8, padding:"2px 8px" }}>{l.dept}</span></td>
-                  <td style={td}><span style={{ background:"#DBEAFE", color:"#1E40AF", borderRadius:10, padding:"2px 8px", fontSize:11.5, fontWeight:600 }}>{l.type}</span></td>
+                  <td style={td}><span style={{ fontSize:11, background:th.tableHead, borderRadius:8, padding:"2px 8px" }}>{tDept(l.dept, vi)}</span></td>
+                  <td style={td}><span style={{ background:"#DBEAFE", color:"#1E40AF", borderRadius:10, padding:"2px 8px", fontSize:11.5, fontWeight:600 }}>{tLeaveType(l.type, vi)}</span></td>
                   <td style={td}>{l.from}</td>
                   <td style={td}>{l.to}</td>
                   <td style={td}><b style={{ color:"#D0211C" }}>{l.days}</b></td>
@@ -269,12 +345,18 @@ export default function HRDashboard() {
         )}
       </div>
 
+      {/* Company Events */}
+      <div style={{ marginTop: 16 }}>
+        <CompanyEventsWidget dark={dark} vi={vi} maxHeight={380}/>
+      </div>
+
       {toast && (
         <div style={{ position:"fixed", bottom:32, right:32, zIndex:9999, background:"#111827", color:"#fff", padding:"12px 18px", borderRadius:12, fontSize:14, boxShadow:"0 8px 24px rgba(0,0,0,0.25)", fontWeight:600 }}>
           {toast}
         </div>
       )}
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
     </div>
   )
 }

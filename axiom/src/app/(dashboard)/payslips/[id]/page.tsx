@@ -2,12 +2,15 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { ArrowLeft, Download, Printer } from "lucide-react"
+import { ArrowLeft, Download } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getPayslipsByEmployee } from "@/lib/actions/payroll.actions"
 import { useEmployeeId } from "@/hooks/use-current-user"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
+import { tDept } from "@/lib/i18n-maps"
 
-function fmt(v: number) { return Math.round(Math.abs(v)).toLocaleString("vi-VN") + " đ" }
+
+function fmt(v: number, vi = true) { return Math.round(Math.abs(v)).toLocaleString("vi-VN") + (vi ? " đ" : " VND") }
 
 export default function PayslipDetailPage() {
   const { dark, lang } = useDashboard()
@@ -16,10 +19,31 @@ export default function PayslipDetailPage() {
   const { id } = useParams()
   const router = useRouter()
   const employeeId = useEmployeeId()
+  const { isMobile } = useBreakpoint()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [slip, setSlip] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      const res = await fetch(`/api/export/payslip-pdf/${id}?lang=${lang}`)
+      if (!res.ok) throw new Error("PDF export failed")
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement("a")
+      a.href = url
+      a.download = `PhieuLuong_${id}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url) }, 8_000)
+    } catch (e) {
+      console.error(e)
+      alert(vi ? "Không thể xuất PDF." : "PDF export failed.")
+    }
+    setDownloading(false)
+  }
 
   useEffect(() => {
     if (!employeeId) return
@@ -69,8 +93,14 @@ export default function PayslipDetailPage() {
   const pr       = slip.payroll   // Payroll record
   const empName  = pr?.employee?.fullName ?? (vi ? "Nhân viên" : "Employee")
   const empCode  = pr?.employee?.code ?? "—"
-  const deptName = pr?.employee?.department?.name ?? "—"
-  const month    = pr ? `Tháng ${pr.payMonth}/${pr.payYear}` : "—"
+  const deptRaw  = pr?.employee?.department?.name ?? "—"
+  const deptName = tDept(deptRaw, vi)
+  const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+  const month    = pr
+    ? vi
+      ? `Tháng ${pr.payMonth}/${pr.payYear}`
+      : `${MONTHS_EN[(pr.payMonth - 1) % 12]} ${pr.payYear}`
+    : "—"
 
   // Salary fields — tên đúng theo Prisma schema
   const gross     = Number(pr?.baseSalary   ?? 0)  // baseSalary = salary * grade
@@ -89,21 +119,21 @@ export default function PayslipDetailPage() {
     { l: vi?"Lương cơ bản (Gross)":"Gross Salary",          v: gross,     t: "+" },
     { l: vi?"Phụ cấp":"Allowance",                          v: allowance, t: "+" },
     { l: vi?"Lương tăng ca":"Overtime Pay",                  v: otPay,     t: "+" },
-    { l: `BHXH (8%)`,                                        v: bhxh,      t: "-" },
-    { l: `BHYT (1.5%)`,                                      v: bhyt,      t: "-" },
-    { l: `BHTN (1%)`,                                        v: bhtn,      t: "-" },
+    { l: vi?`BHXH (8%)`:`Social Ins. (8%)`,                     v: bhxh,      t: "-" },
+    { l: vi?`BHYT (1.5%)`:`Health Ins. (1.5%)`,                 v: bhyt,      t: "-" },
+    { l: vi?`BHTN (1%)`:`Unemp. Ins. (1%)`,                     v: bhtn,      t: "-" },
     { l: vi?"Giảm trừ bản thân (15.5M)":"Self deduction",   v: selfDed,   t: "i" },
     ...(deps > 0 ? [{ l: vi?`Giảm trừ ${deps} người phụ thuộc`:`${deps} dependents`, v: depDed, t: "i" as const }] : []),
     { l: vi?"Thuế Thu nhập cá nhân":"Income Tax",           v: pit,       t: "-" },
   ]
 
   return (
-    <div style={{ padding: "28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
       <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: `1px solid ${th.cardBorder}`, background: "none", cursor: "pointer", color: th.text2, fontSize: 13, fontFamily: "inherit", marginBottom: 16 }}>
         <ArrowLeft size={14}/>{vi ? "Quay lại" : "Back"}
       </button>
 
-      <div style={{ background: th.cardBg, borderRadius: 16, border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", maxWidth: 560, margin: "0 auto" }}>
+      <div style={{ background: th.cardBg, borderRadius: 16, border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", maxWidth: isMobile ? "100%" : 560, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: "2px solid #D0211C", background: "linear-gradient(135deg,rgba(208,33,28,0.06),rgba(153,20,20,0.02))" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -111,12 +141,26 @@ export default function PayslipDetailPage() {
               <h2 style={{ fontSize: 18, fontWeight: 800, color: th.text1, margin: 0 }}>📄 {vi ? "PHIẾU LƯƠNG" : "PAYSLIP"}</h2>
               <p style={{ fontSize: 13, color: th.text2, margin: "4px 0 0" }}>{month} · #{slip.id}</p>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => window.print()} style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${th.cardBorder}`, background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Printer size={14} color={th.text2}/></button>
-              <button style={{ width: 34, height: 34, borderRadius: 8, border: "none", background: "#D0211C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Download size={14} color="#fff"/></button>
-            </div>
+              <div style={{ display: "flex", gap: 8 }}>
+              <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  title={vi ? "Tải phiếu lương PDF" : "Download PDF"}
+                  style={{
+                    width: 34, height: 34, borderRadius: 8, border: "none",
+                    background: downloading ? "#9CA3AF" : "#D0211C",
+                    cursor: downloading ? "not-allowed" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background .15s",
+                  }}
+                >
+                  {downloading
+                    ? <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }}/>
+                    : <Download size={14} color="#fff"/>}
+                </button>
+              </div>
           </div>
-          <div style={{ marginTop: 12, display: "flex", gap: 20, fontSize: 12.5 }}>
+          <div style={{ marginTop: 12, display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 20, fontSize: 12.5 }}>
             <span style={{ color: th.text2 }}>{vi?"Nhân viên:":"Employee:"} <b style={{ color: th.text1 }}>{empName} ({empCode})</b></span>
             <span style={{ color: th.text2 }}>{vi?"Phòng:":"Dept:"} <b style={{ color: th.text1 }}>{deptName}</b></span>
           </div>
@@ -128,13 +172,13 @@ export default function PayslipDetailPage() {
             <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${th.tableBorder}` }}>
               <span style={{ fontSize: 13, color: r.t === "i" ? "#3B82F6" : th.text2 }}>{r.l}</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: r.t === "+" ? "#10B981" : r.t === "-" ? "#EF4444" : "#3B82F6" }}>
-                {r.t === "-" ? `−${fmt(r.v)}` : r.t === "+" ? `+${fmt(r.v)}` : fmt(r.v)}
+                {r.t === "-" ? `−${fmt(r.v, vi)}` : r.t === "+" ? `+${fmt(r.v, vi)}` : fmt(r.v, vi)}
               </span>
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 14, marginTop: 8, borderTop: `2px double ${th.tableBorder}` }}>
             <span style={{ fontSize: 16, fontWeight: 800, color: th.text1 }}>💰 {vi ? "LƯƠNG NET" : "NET SALARY"}</span>
-            <span style={{ fontSize: 20, fontWeight: 900, color: "#059669" }}>{fmt(net)}</span>
+            <span style={{ fontSize: 20, fontWeight: 900, color: "#059669" }}>{fmt(net, vi)}</span>
           </div>
         </div>
       </div>

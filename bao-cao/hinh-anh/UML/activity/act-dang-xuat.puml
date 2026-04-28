@@ -1,0 +1,16 @@
+@startuml
+title Hình 6.2 — Activity Diagram: Đăng xuất
+start
+:Click avatar;
+:Chọn "Đăng xuất";
+:Hiện modal xác nhận;
+if (Xác nhận?) then (Hủy)
+  :Đóng modal;
+  stop
+else (Xác nhận)
+  :NextAuth signOut();
+  :Xóa localStorage;
+  :Redirect /login;
+  stop
+endif
+@enduml

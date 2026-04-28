@@ -2,6 +2,7 @@
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 export default function ContractDetailPage(){
   const { dark, lang } = useDashboard()
@@ -9,6 +10,7 @@ export default function ContractDetailPage(){
   const vi = lang === "vi"
   const { id } = useParams()
   const router = useRouter()
+  const { isMobile } = useBreakpoint()
 
   const contract = {
     id: id as string, empName:"Nguyễn Văn An", empId:"NV001", dept:"Công nghệ thông tin",
@@ -19,12 +21,12 @@ export default function ContractDetailPage(){
   }
 
   return (
-    <div style={{ padding:"28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
       <button onClick={() => router.back()} style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:8, border:`1px solid ${th.cardBorder}`, background:"none", cursor:"pointer", color:th.text2, fontSize:13, fontFamily:"inherit", marginBottom:16 }}>
         <ArrowLeft size={14}/>{vi?"Quay lại":"Back"}
       </button>
 
-      <div style={{ background:th.cardBg, borderRadius:16, border:`1px solid ${th.cardBorder}`, boxShadow:"0 2px 12px rgba(0,0,0,0.06)", maxWidth:560, margin:"0 auto" }}>
+      <div style={{ background:th.cardBg, borderRadius:16, border:`1px solid ${th.cardBorder}`, boxShadow:"0 2px 12px rgba(0,0,0,0.06)", maxWidth: isMobile ? "100%" : 560, margin:"0 auto" }}>
         <div style={{ padding:"20px 24px", borderBottom:`2px solid #D0211C`, background:"linear-gradient(135deg,rgba(208,33,28,0.06),rgba(153,20,20,0.02))" }}>
           <h2 style={{ fontSize:18, fontWeight:800, color:th.text1, margin:0 }}>📋 {vi?"HỢP ĐỒNG LAO ĐỘNG":"LABOR CONTRACT"}</h2>
           <p style={{ fontSize:13, color:th.text2, margin:"4px 0 0" }}>{contract.id}</p>

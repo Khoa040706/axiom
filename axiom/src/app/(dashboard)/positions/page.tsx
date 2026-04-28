@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Search, Plus, Edit, Trash2, Shield } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { matchAny } from "@/lib/utils/search"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 const POSITIONS_DATA = [
   { id:1, code:"GD",   name:"Giám đốc",           dept:"Ban Giám đốc",  level:"C-Level",   headcount:1, salaryRange:"50–80 triệu",  salaryRangeEn:"50–80M VND"  },
@@ -20,6 +21,7 @@ export default function PositionsPage(){
   const { dark, lang } = useDashboard()
   const th = getTheme(dark)
   const vi = lang === "vi"
+  const { isMobile } = useBreakpoint()
   const [search, setSearch] = useState("")
 
   const filtered = POSITIONS_DATA.filter(p => matchAny([p.name, p.dept, p.code, p.level], search))
@@ -28,8 +30,8 @@ export default function PositionsPage(){
   const levelColor = (l:string) => l==="C-Level" ? { bg:"#FEF2F2", c:"#D0211C" } : l==="Manager" ? { bg:"#EFF6FF", c:"#1D4ED8" } : { bg:"#F3F4F6", c:"#374151" }
 
   return (
-    <div style={{ padding:"28px 28px 40px" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
+      <div style={{ display:"flex", flexDirection: isMobile ? "column" : "row", justifyContent:"space-between", alignItems: isMobile ? "flex-start" : "flex-start", gap: isMobile ? 12 : 0, marginBottom:20 }}>
         <div>
           <h1 style={{ fontSize:22, fontWeight:800, color:th.text1, margin:0 }}>{vi?"Quản lý chức vụ":"Position Management"}</h1>
           <p style={{ fontSize:13, color:th.text2, margin:"4px 0 0" }}>{vi?"Danh sách các vị trí trong tổ chức":"Organization position catalog"}</p>
@@ -47,8 +49,9 @@ export default function PositionsPage(){
       </div>
 
       {/* Table */}
-      <div style={{ background:th.cardBg, borderRadius:14, overflow:"hidden", border:`1px solid ${th.cardBorder}`, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+      <div style={{ background:th.cardBg, borderRadius:14, border:`1px solid ${th.cardBorder}`, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+        <div className="table-scroll">
+        <table style={{ width:"100%", minWidth: 600, borderCollapse:"collapse" }}>
           <thead><tr>
             {[vi?"Mã":"Code",vi?"Chức vụ":"Position",vi?"Phòng ban":"Department",vi?"Cấp bậc":"Level",vi?"Biên chế":"Headcount",vi?"Khung lương":"Salary Range",vi?"Thao tác":"Actions"].map(c=><th key={c} style={hd}>{c}</th>)}
           </tr></thead>
@@ -76,6 +79,7 @@ export default function PositionsPage(){
             })}
           </tbody>
         </table>
+        </div>
         <div style={{ padding:"10px 14px", background:th.tableHead, borderTop:`1px solid ${th.tableBorder}`, fontSize:12, color:th.text2 }}>
           {filtered.length} {vi?"chức vụ":"positions"}
         </div>

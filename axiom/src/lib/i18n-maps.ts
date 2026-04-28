@@ -111,9 +111,41 @@ export const CONTRACT_TYPE_VI_TO_EN: Record<string, string> = {
   "Chính thức":    "Full-time",
   "Thử việc":      "Probation",
   "Thời vụ":       "Contract",
-  "Thực tập":      "Internship Agreement",
+  "Thực tập":      "Internship",
   "Toàn thời gian":"Full-time",
   "Bán thời gian": "Part-time",
+}
+
+// ── Employee status ───────────────────────────────────────────────────
+export const EMP_STATUS_VI_TO_EN: Record<string, string> = {
+  "Đang làm":    "Active",
+  "Thử việc":    "Probation",
+  "Nghỉ phép":   "On Leave",
+  "Nghỉ thai sản":"Maternity Leave",
+  "Đã nghỉ việc":"Resigned",
+  "Sa thải":     "Terminated",
+}
+
+// ── Leave types ────────────────────────────────────────────────────────
+export const LEAVE_TYPE_VI_TO_EN: Record<string, string> = {
+  "Nghỉ phép năm": "Annual Leave",
+  "Nghỉ bệnh":     "Sick Leave",
+  "Việc riêng":    "Personal Leave",
+  "Nghỉ thai sản": "Maternity Leave",
+  "Nghỉ không lương":"Unpaid Leave",
+  "Nghỉ lễ":       "Public Holiday",
+  "Nghỉ cưới":     "Wedding Leave",
+  "Nghỉ tang":     "Bereavement Leave",
+}
+
+// ── Leave/contract status ─────────────────────────────────────────────
+export const STATUS_VI_TO_EN: Record<string, string> = {
+  "Chờ duyệt": "Pending",
+  "Đã duyệt":  "Approved",
+  "Từ chối":   "Rejected",
+  "Hiệu lực":  "Active",
+  "Hết hạn":   "Expired",
+  "Hủy":       "Cancelled",
 }
 
 // ── Helper: translate a value, fallback to original if not found ──────
@@ -130,6 +162,21 @@ export function tPos(name: string, vi: boolean): string {
 export function tContractType(type: string, vi: boolean): string {
   if (vi || !type) return type
   return CONTRACT_TYPE_VI_TO_EN[type] ?? type
+}
+
+export function tEmpStatus(status: string, vi: boolean): string {
+  if (vi || !status) return status
+  return EMP_STATUS_VI_TO_EN[status] ?? status
+}
+
+export function tLeaveType(type: string, vi: boolean): string {
+  if (vi || !type) return type
+  return LEAVE_TYPE_VI_TO_EN[type] ?? type
+}
+
+export function tStatus(status: string, vi: boolean): string {
+  if (vi || !status) return status
+  return STATUS_VI_TO_EN[status] ?? status
 }
 
 /**
@@ -162,5 +209,90 @@ export function tCareerDetail(text: string | null | undefined, vi: boolean): str
     out = out.replace(new RegExp(esc(vn), "gi"), en)
   }
 
+  return out
+}
+
+// ── Business trip purposes ─────────────────────────────────────────────
+const BUSINESS_PURPOSE_PHRASES: Array<[string, string]> = [
+  ["Chiến dịch quảng cáo Q1",   "Q1 Marketing Campaign"],
+  ["Chiến dịch quảng cáo Q2",   "Q2 Marketing Campaign"],
+  ["Chiến dịch quảng cáo Q3",   "Q3 Marketing Campaign"],
+  ["Chiến dịch quảng cáo Q4",   "Q4 Marketing Campaign"],
+  ["Chiến dịch quảng cáo",      "Marketing Campaign"],
+  ["Khảo sát thị trường",       "Market Research"],
+  ["Triển khai hệ thống",       "System Deployment"],
+  ["Hội thảo công nghệ",        "Technology Conference"],
+  ["Hội nghị công nghệ",        "Technology Conference"],
+  ["Hop hội đồng quản trị",     "Board Meeting"],
+  ["Họp hội đồng quản trị",     "Board of Directors Meeting"],
+  ["Họp đối tác",               "Partner Meeting"],
+  ["Họp khách hàng",            "Client Meeting"],
+  ["Ký kết hợp đồng",           "Contract Signing"],
+  ["Họp triển khai",            "Implementation Meeting"],
+  ["Đào tạo nhân viên",         "Staff Training"],
+  ["Đào tạo",                   "Training"],
+  ["Họp nội bộ",                "Internal Meeting"],
+  ["Kiểm tra chất lượng",       "Quality Audit"],
+  ["Tham quan khách hàng",      "Client Visit"],
+  ["Triển lãm sản phẩm",        "Product Exhibition"],
+  ["Xúc tiến thương mại",       "Trade Promotion"],
+  ["Team building",             "Team Building"],
+]
+
+export function tPurpose(text: string | null | undefined, vi: boolean): string {
+  if (vi || !text) return text ?? ""
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  let out = text
+  for (const [vn, en] of BUSINESS_PURPOSE_PHRASES) {
+    out = out.replace(new RegExp(esc(vn), "gi"), en)
+  }
+  return out
+}
+
+// ── Leave Reason translations ──────────────────────────────────────────
+// Map các lý do mẫu + cụm từ phổ biến trong đơn nghỉ phép
+export const LEAVE_REASON_EXACT: Record<string, string> = {
+  "Đi du lịch cùng gia đình dịp cuối năm":         "Family year-end vacation trip",
+  "Bị cúm, cần nghỉ ngơi theo chỉ định bác sĩ":    "Flu illness, rest as advised by doctor",
+  "Có việc cá nhân cần giải quyết gấp":             "Urgent personal matter to attend to",
+  "Nghỉ phép năm theo kế hoạch đã đăng ký":         "Scheduled annual leave as planned",
+  "Khám sức khỏe định kỳ theo lịch bệnh viện":      "Routine health check-up per hospital schedule",
+  "Tham dự đám cưới người thân trong gia đình":     "Attending a family member's wedding",
+  "Dưỡng bệnh sau điều trị, cần nghỉ hồi phục":    "Post-treatment recovery rest",
+  "Đưa con nhỏ đi khám và theo dõi sức khỏe":      "Taking child to medical appointment",
+}
+
+// Các cụm từ con (thứ tự quan trọng: dài → ngắn)
+const LEAVE_REASON_PHRASES: Array<[string, string]> = [
+  ["đi du lịch cùng gia đình",   "family vacation trip"],
+  ["theo chỉ định bác sĩ",        "as advised by doctor"],
+  ["việc cá nhân cần giải quyết gấp", "urgent personal matter"],
+  ["nghỉ phép năm",               "annual leave"],
+  ["theo kế hoạch đã đăng ký",   "as scheduled"],
+  ["khám sức khỏe định kỳ",      "routine health check-up"],
+  ["đám cưới người thân",        "family wedding"],
+  ["dưỡng bệnh",                  "recovery rest"],
+  ["hồi phục",                    "recovery"],
+  ["đưa con nhỏ đi khám",        "child medical appointment"],
+  ["cuối năm",                    "year-end"],
+  ["gia đình",                    "family"],
+  ["bác sĩ",                      "doctor"],
+  ["bệnh viện",                   "hospital"],
+  ["ốm",                          "sick"],
+  ["cúm",                         "flu"],
+]
+
+export function tLeaveReason(text: string, vi: boolean): string {
+  if (vi || !text) return text
+  // Thử exact match trước
+  const exact = LEAVE_REASON_EXACT[text.trim()]
+  if (exact) return exact
+  // Dịch theo cụm từ
+  let out = text
+  for (const [vn, en] of LEAVE_REASON_PHRASES) {
+    out = out.replace(new RegExp(vn, "gi"), en)
+  }
+  // Dịch "Đơn nghỉ phép mẫu #"
+  out = out.replace(/Đơn nghỉ phép mẫu #/gi, "Sample Leave Request #")
   return out
 }

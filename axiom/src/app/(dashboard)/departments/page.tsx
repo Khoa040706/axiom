@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Search, Plus, Edit, Trash2, Users, Building2, Loader2, X, Save } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { matchAny } from "@/lib/utils/search"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 // ── Types ──────────────────────────────────────────────────────
 type Dept = {
@@ -17,6 +18,7 @@ export default function DepartmentsPage() {
   const { dark, lang } = useDashboard()
   const th = getTheme(dark)
   const vi = lang === "vi"
+  const { isMobile } = useBreakpoint()
 
   const [depts, setDepts]   = useState<Dept[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,11 +82,11 @@ export default function DepartmentsPage() {
   }
 
   return (
-    <div style={{ padding: "28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-start", gap: isMobile ? 12 : 0, marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: th.text1, margin: 0 }}>
+          <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: th.text1, margin: 0 }}>
             {vi ? "Quản lý phòng ban" : "Department Management"}
           </h1>
           <p style={{ fontSize: 13, color: th.text2, margin: "4px 0 0" }}>
@@ -137,8 +139,9 @@ export default function DepartmentsPage() {
       </div>
 
       {/* Table */}
-      <div style={{ background: th.cardBg, borderRadius: 14, overflow: "hidden", border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ background: th.cardBg, borderRadius: 14, border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+        <div className="table-scroll">
+        <table style={{ width: "100%", minWidth: 480, borderCollapse: "collapse" }}>
           <thead><tr>
             {[vi ? "Phòng ban" : "Department", vi ? "Mô tả" : "Description", vi ? "Nhân sự" : "Staff", vi ? "Thao tác" : "Actions"].map(c => <th key={c} style={hd}>{c}</th>)}
           </tr></thead>
@@ -181,6 +184,7 @@ export default function DepartmentsPage() {
             ))}
           </tbody>
         </table>
+        </div>
         <div style={{ padding: "10px 14px", background: th.tableHead, borderTop: `1px solid ${th.tableBorder}`, fontSize: 12, color: th.text2 }}>
           {filtered.length} {vi ? "phòng ban" : "departments"}
         </div>

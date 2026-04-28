@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
                 />
                 <input
                   type="email" required
-                  placeholder="example@axiom.vn"
+                  placeholder="example@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={{

@@ -1,0 +1,160 @@
+@startuml
+title Hình 4.1 — Sơ đồ Use Case Tổng quát\nHệ thống Axiom HRM
+skinparam usecase {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #D0211C
+  ActorBorderColor #991414
+  ActorFontStyle Bold
+}
+skinparam packageStyle rectangle
+skinparam linetype ortho
+left to right direction
+
+actor "Admin" as Admin
+actor "Director" as Director
+actor "HRManager" as HR
+actor "Manager" as MGR
+actor "Accountant" as ACC
+actor "Employee" as EMP
+
+rectangle "Axiom HRM System" {
+  package "Xác thực" {
+    usecase "Đăng nhập" as UC_LOGIN
+    usecase "Đăng xuất" as UC_LOGOUT
+    usecase "Quên mật khẩu" as UC_FORGOT
+  }
+
+  package "Quản lý nhân viên" {
+    usecase "Xem danh sách NV" as UC_EMP_LIST
+    usecase "Thêm/Sửa/Xóa NV" as UC_EMP_CRUD
+  }
+
+  package "Quản lý hợp đồng" {
+    usecase "Tạo hợp đồng" as UC_CONTRACT
+    usecase "Thanh lý HĐ" as UC_CONTRACT_END
+  }
+
+  package "Chấm công" {
+    usecase "Check-in GPS" as UC_CHECKIN
+    usecase "Check-out" as UC_CHECKOUT
+    usecase "Xem bảng chấm công" as UC_ATT_VIEW
+  }
+
+  package "Nghỉ phép" {
+    usecase "Đăng ký nghỉ phép" as UC_LEAVE_REQ
+    usecase "Duyệt nghỉ phép" as UC_LEAVE_APR
+    usecase "Xem quỹ phép" as UC_LEAVE_BAL
+  }
+
+  package "Tính lương" {
+    usecase "Tính lương tự động" as UC_PAY_CALC
+    usecase "Cấu hình tham số" as UC_PAY_CFG
+    usecase "Xác nhận chi lương" as UC_PAY_CON
+  }
+
+  package "Phiếu lương" {
+    usecase "Xem phiếu lương" as UC_SLIP_VIEW
+    usecase "Tải PDF" as UC_SLIP_PDF
+  }
+
+  package "Công tác phí" {
+    usecase "Đăng ký công tác" as UC_TRIP_REQ
+    usecase "Duyệt công tác" as UC_TRIP_APR
+  }
+
+  package "Quá trình công tác" {
+    usecase "Tạo sự kiện nhân sự" as UC_CAREER
+    usecase "Xem lịch sử" as UC_CAREER_VIEW
+  }
+
+  package "Quản lý tài khoản" {
+    usecase "Tạo / Xóa tài khoản" as UC_USER_MGMT
+    usecase "Đổi role / Phân quyền" as UC_ROLE
+    usecase "Reset mật khẩu" as UC_RESET
+  }
+
+  package "Dashboard & Báo cáo" {
+    usecase "Dashboard Director" as UC_DASH_DIR
+    usecase "Dashboard HR" as UC_DASH_HR
+    usecase "Dashboard Accountant" as UC_DASH_ACC
+    usecase "Xuất PDF/Excel" as UC_EXPORT
+  }
+}
+
+' Auth - all actors
+Admin --> UC_LOGIN
+Director --> UC_LOGIN
+HR --> UC_LOGIN
+MGR --> UC_LOGIN
+ACC --> UC_LOGIN
+EMP --> UC_LOGIN
+Admin --> UC_LOGOUT
+Director --> UC_LOGOUT
+HR --> UC_LOGOUT
+MGR --> UC_LOGOUT
+ACC --> UC_LOGOUT
+EMP --> UC_LOGOUT
+
+' Employee management
+Admin --> UC_EMP_LIST
+HR --> UC_EMP_LIST
+Admin --> UC_EMP_CRUD
+HR --> UC_EMP_CRUD
+
+' Contracts
+Admin --> UC_CONTRACT
+HR --> UC_CONTRACT
+Admin --> UC_CONTRACT_END
+HR --> UC_CONTRACT_END
+
+' Attendance
+EMP --> UC_CHECKIN
+EMP --> UC_CHECKOUT
+HR --> UC_ATT_VIEW
+MGR --> UC_ATT_VIEW
+EMP --> UC_ATT_VIEW
+
+' Leave
+EMP --> UC_LEAVE_REQ
+HR --> UC_LEAVE_APR
+MGR --> UC_LEAVE_APR
+EMP --> UC_LEAVE_BAL
+HR --> UC_LEAVE_BAL
+
+' Payroll
+ACC --> UC_PAY_CALC
+ACC --> UC_PAY_CFG
+Admin --> UC_PAY_CFG
+ACC --> UC_PAY_CON
+
+' Payslip
+EMP --> UC_SLIP_VIEW
+ACC --> UC_SLIP_VIEW
+EMP --> UC_SLIP_PDF
+ACC --> UC_SLIP_PDF
+
+' Business trip
+EMP --> UC_TRIP_REQ
+HR --> UC_TRIP_APR
+
+' Career
+Admin --> UC_CAREER
+HR --> UC_CAREER
+Admin --> UC_CAREER_VIEW
+HR --> UC_CAREER_VIEW
+
+' Account management
+Admin --> UC_USER_MGMT
+Admin --> UC_ROLE
+Admin --> UC_RESET
+
+' Dashboard
+Director --> UC_DASH_DIR
+HR --> UC_DASH_HR
+ACC --> UC_DASH_ACC
+Director --> UC_EXPORT
+HR --> UC_EXPORT
+ACC --> UC_EXPORT
+
+@enduml

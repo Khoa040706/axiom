@@ -1,0 +1,36 @@
+@startuml
+title Hình 6.1 — Activity Diagram: Đăng nhập
+start
+:Truy cập /login;
+:Nhập username & password;
+:NextAuth xác thực (bcrypt compare);
+if (Thông tin hợp lệ?) then (Sai)
+  :Hiển thị thông báo lỗi;
+  stop
+elseif (Tài khoản bị khóa?) then (Khóa)
+  :Báo lỗi: Tài khoản bị khóa;
+  stop
+else (OK)
+  :Tạo JWT session;
+endif
+if (Có personalEmail?) then (Chưa)
+  :Redirect /setup-email;
+  :Nhập Gmail @gmail.com;
+  :Lưu personalEmail;
+else (Có rồi)
+endif
+switch (Role?)
+case (Admin / Director)
+  :Redirect /dashboard;
+case (HRManager)
+  :Redirect /dashboard-hr;
+case (Manager)
+  :Redirect /dashboard-manager;
+case (Accountant)
+  :Redirect /dashboard-accountant;
+case (Employee)
+  :Redirect /dashboard-employee;
+endswitch
+:Hiển thị Dashboard;
+stop
+@enduml

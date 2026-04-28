@@ -49,11 +49,37 @@ async function generateAttendance(month: number, year: number) {
     for (const workDate of workdays) {
       // Random: 92% đi làm, 5% vắng, 3% nghỉ phép
       const rand = Math.random()
-      const status = rand < 0.92 ? "Đi làm" : rand < 0.97 ? "Vắng" : "Nghỉ phép"
+      const baseStatus = rand < 0.92 ? "Đi làm" : rand < 0.97 ? "Vắng" : "Nghỉ phép"
       // OT ngẫu nhiên: 15% ngày có OT 1-3 giờ
-      const otHours = (status === "Đi làm" && Math.random() < 0.15)
+      const otHours = (baseStatus === "Đi làm" && Math.random() < 0.15)
         ? Math.floor(Math.random() * 3) + 1
         : 0
+
+      // Giờ hành chính: 7:30 - 11:30 và 13:00 - 17:00
+      // 80% đúng giờ (±5 phút), 20% đi muộn (5-30 phút)
+      let lateMinutes = 0
+      let checkInHour = 7, checkInMin = 30
+      if (baseStatus === "Đi làm") {
+        if (Math.random() < 0.20) {
+          // Đi muộn: 5-30 phút
+          lateMinutes = Math.floor(Math.random() * 26) + 5
+        } else {
+          // Đúng giờ: ±5 phút
+          lateMinutes = 0
+          const delta = Math.floor(Math.random() * 11) - 5  // -5 to +5
+          checkInMin = 30 + delta
+          if (checkInMin < 0)  { checkInHour = 6; checkInMin += 60 }
+          if (checkInMin >= 60) { checkInHour = 8; checkInMin -= 60 }
+        }
+        if (lateMinutes > 0) {
+          checkInMin = 30 + lateMinutes
+          checkInHour = 7 + Math.floor(checkInMin / 60)
+          checkInMin  = checkInMin % 60
+        }
+      }
+
+      // Status cuối: "Đi muộn" nếu lateMinutes > 0
+      const status = baseStatus === "Đi làm" && lateMinutes > 0 ? "Đi muộn" : baseStatus
 
       try {
         await prisma.attendance.upsert({
@@ -62,13 +88,17 @@ async function generateAttendance(month: number, year: number) {
             employeeId: emp.id,
             workDate,
             status,
-            checkIn:  status === "Đi làm" ? new Date(1970, 0, 1, 8, 0, 0) : null,
-            checkOut: status === "Đi làm" ? new Date(1970, 0, 1, 17, 0, 0) : null,
+            checkIn:      status === "Đi làm" ? new Date(1970, 0, 1, checkInHour, checkInMin, 0) : null,
+            checkOut:     status === "Đi làm" ? new Date(1970, 0, 1, 17, 0, 0) : null,
+            lateMinutes,
             otHours,
             notes: null,
           },
           update: {
             status,
+            checkIn:      status === "Đi làm" ? new Date(1970, 0, 1, checkInHour, checkInMin, 0) : null,
+            checkOut:     status === "Đi làm" ? new Date(1970, 0, 1, 17, 0, 0) : null,
+            lateMinutes,
             otHours,
           },
         })

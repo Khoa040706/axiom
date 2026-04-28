@@ -61,7 +61,8 @@ export const payrollService = {
           gte: new Date(year, month - 1, 1),
           lt: new Date(year, month, 1),
         },
-        status: "Đi làm",
+        // "Đi muộn" vẫn là ngày có đi làm → tính ngày công
+        status: { in: ["Đi làm", "Đi muộn"] },
       },
     })
     const workDays = attendance.length

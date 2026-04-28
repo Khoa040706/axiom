@@ -1,0 +1,41 @@
+@startuml
+title Hình 4.9 — Sơ đồ Use Case UC-08\nPhân hệ Công tác phí
+skinparam usecase {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #D0211C
+  ActorBorderColor #991414
+  ActorFontStyle Bold
+}
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Employee" as EMP
+actor "HRManager" as HR
+
+rectangle "UC-08 — Phân hệ Công tác phí" {
+  usecase "UC-08.1\nĐăng ký\ncông tác" as UC1
+  usecase "UC-08.2\nDuyệt / Từ chối\ncông tác" as UC2
+
+  usecase "Validate\nZod schema" as INC1
+  usecase "Ghi approvedBy\n+ timestamp" as INC2
+}
+
+EMP --> UC1
+HR --> UC2
+
+UC1 ..> INC1 : <<include>>
+UC2 ..> INC2 : <<include>>
+
+note right of UC1
+  Điền: điểm đến, ngày đi/về,
+  mục đích, phụ cấp dự kiến.
+  Status → "Chờ duyệt"
+end note
+
+note right of UC2
+  Nhấn Duyệt → "Đã duyệt"
+  Nhấn Từ chối → "Từ chối"
+end note
+
+@enduml

@@ -5,7 +5,8 @@ import Link from "next/link"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts"
 import { DollarSign, Banknote, Calculator, PiggyBank, ArrowUpRight, RefreshCw, AlertTriangle, Download, ArrowRight, FileText, Settings } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
-import { getDashboardStats, getDashboardCharts } from "@/lib/actions/dashboard.actions"
+import { getDashboardCharts, getAccountantDashboardStats } from "@/lib/actions/dashboard.actions"
+import { CompanyEventsWidget } from "@/components/dashboard/CompanyEvents"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 function StatCard({ label, value, sub, accent, icon }: any) {
@@ -22,30 +23,75 @@ function StatCard({ label, value, sub, accent, icon }: any) {
 
 function fmtM(v: number) { return v >= 1000000 ? (v/1000000).toFixed(1)+"M" : v.toLocaleString("vi-VN") }
 
-function QuickAction({ icon, label, sub, href, accent, dark }: any) {
+function FeatureCard({ icon, label, desc, href, accent, dark, isMobile, vi }: any) {
   const th = getTheme(dark)
+  if (isMobile) {
+    return (
+      <Link href={href} style={{ textDecoration: "none" }}>
+        <div style={{
+          background: th.cardBg, borderRadius: 14, padding: "14px 16px",
+          border: `1.5px solid ${th.cardBorder}`,
+          display: "flex", alignItems: "center", gap: 14,
+          cursor: "pointer", transition: "all .22s",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = accent
+            e.currentTarget.style.boxShadow = `0 4px 16px ${accent}22`
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = th.cardBorder
+            e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"
+          }}
+        >
+          <div style={{
+            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+            background: `${accent}18`, border: `1.5px solid ${accent}35`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>{icon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: th.text1 }}>{label}</div>
+            <div style={{ fontSize: 11.5, color: th.text2, lineHeight: 1.4, marginTop: 2,
+              overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{desc}</div>
+          </div>
+          <ArrowRight size={16} color={accent} style={{ flexShrink: 0 }}/>
+        </div>
+      </Link>
+    )
+  }
   return (
     <Link href={href} style={{ textDecoration: "none" }}>
       <div style={{
-        background: th.cardBg, borderRadius: 12, padding: "14px 16px",
+        background: th.cardBg, borderRadius: 14, padding: "20px",
         border: `1.5px solid ${th.cardBorder}`,
-        display: "flex", alignItems: "center", gap: 14,
-        cursor: "pointer", transition: "all .2s",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+        display: "flex", flexDirection: "column", gap: 12,
+        cursor: "pointer", transition: "all .22s", height: "100%",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
       }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 4px 16px ${accent}22` }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = th.cardBorder; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.04)" }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = accent
+          e.currentTarget.style.transform = "translateY(-3px)"
+          e.currentTarget.style.boxShadow = `0 8px 24px ${accent}28`
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = th.cardBorder
+          e.currentTarget.style.transform = "translateY(0)"
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"
+        }}
       >
         <div style={{
-          width: 42, height: 42, borderRadius: 10,
-          background: `${accent}15`, border: `1.5px solid ${accent}30`,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          width: 48, height: 48, borderRadius: 14,
+          background: `${accent}18`, border: `1.5px solid ${accent}35`,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>{icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: th.text1 }}>{label}</div>
-          <div style={{ fontSize: 11.5, color: th.text2 }}>{sub}</div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: th.text1, marginBottom: 5 }}>{label}</div>
+          <div style={{ fontSize: 12, color: th.text2, lineHeight: 1.5 }}>{desc}</div>
         </div>
-        <ArrowRight size={14} color={th.text2} style={{ flexShrink: 0 }} />
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: accent }}>{vi ? "Truy cập" : "Open"}</span>
+          <ArrowRight size={12} color={accent}/>
+        </div>
       </div>
     </Link>
   )
@@ -58,22 +104,37 @@ export default function AccountantDashboard() {
   const tk = th.text2, gs = th.tableBorder
   const { isMobile } = useBreakpoint()
 
-  const [trend, setTrend]       = useState<any[]>([])
-  const [totalNet, setTotalNet] = useState("—")
+  const [trend, setTrend]         = useState<any[]>([])
+  const [totalNet, setTotalNet]     = useState("—")
   const [totalGross, setTotalGross] = useState("—")
-  const [loading, setLoading]   = useState(true)
+  const [bhxhCompany, setBhxhCompany] = useState("—")
+  const [totalPIT, setTotalPIT]     = useState("—")
+  const [loading, setLoading]       = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [chartsRes] = await Promise.all([getDashboardCharts()])
+    const [chartsRes, statsRes] = await Promise.all([
+      getDashboardCharts(),
+      getAccountantDashboardStats(),
+    ])
     if (chartsRes.success && chartsRes.data) {
       const raw = (chartsRes.data.payrollTrend ?? []) as any[]
       setTrend(raw)
       if (raw.length > 0) {
         const last = raw[raw.length - 1]
         setTotalNet(fmtM(Math.round((last.salary ?? 0) * 1_000_000)))
-        setTotalGross(fmtM(Math.round((last.salary ?? 0) * 1_000_000 / 0.895))) // approx gross = net / (1 - 10.5%)
+        setTotalGross(fmtM(Math.round((last.salary ?? 0) * 1_000_000 / 0.895)))
       }
+    }
+    if (statsRes.success && statsRes.data) {
+      const d = statsRes.data as any
+      // Nếu tháng hiện tại có gross từ DB → dùng đó, ngược lại fallback từ trend
+      if (d.gross > 0) {
+        setTotalGross(fmtM(Math.round(d.gross)))
+        setTotalNet(fmtM(Math.round(d.net)))
+      }
+      setBhxhCompany(fmtM(Math.round(d.bhxhCompany)))
+      setTotalPIT(fmtM(Math.round(d.tax)))
     }
     setLoading(false)
   }, [])
@@ -85,15 +146,18 @@ export default function AccountantDashboard() {
     try {
       const res = await fetch("/api/export/excel?type=payroll")
       if (!res.ok) throw new Error("Export failed")
-      const blob = await res.blob()
+      const buffer = await res.arrayBuffer()
+      const blob   = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const today  = new Date()
+      const dateTag = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
       const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `AXIOM_BangLuong_${new Date().toISOString().slice(0,10)}.xlsx`
+      const a   = document.createElement("a")
+      a.style.display = "none"
+      a.href     = url
+      a.download = `AXIOM_BangLuong_${dateTag}.xlsx`
       document.body.appendChild(a)
       a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url) }, 10_000)
     } catch (err) {
       console.error("[exportExcel]", err)
       alert(vi ? "Không thể xuất Excel." : "Excel export failed.")
@@ -105,9 +169,9 @@ export default function AccountantDashboard() {
   const td:   React.CSSProperties = { padding:"10px 12px", fontSize:12.5, color:th.text1, borderBottom:`1px solid ${th.tableBorder}` }
 
   const expenseRows = [
-    { cat:"BHXH", pct:8,   payTo: vi?"Quỹ BHXH":"Social Fund" },
-    { cat:"BHYT", pct:1.5, payTo: vi?"Quỹ BHXH":"Social Fund" },
-    { cat:"BHTN", pct:1,   payTo: vi?"Quỹ BHXH":"Social Fund" },
+    { cat:vi?"BHXH":"Social Ins.", pct:8,   payTo: vi?"Quỹ BHXH":"Social Fund" },
+    { cat:vi?"BHYT":"Health Ins.", pct:1.5, payTo: vi?"Quỹ BHXH":"Social Fund" },
+    { cat:vi?"BHTN":"Unemp. Ins.", pct:1,   payTo: vi?"Quỹ BHXH":"Social Fund" },
     { cat: vi?"Thuế TNCN":"Income Tax", pct:null, payTo: vi?"Cục thuế":"Tax Dept" },
     { cat: vi?"Phụ cấp":"Allowance",    pct:null, payTo: vi?"Nhân viên":"Employee" },
   ]
@@ -135,8 +199,8 @@ export default function AccountantDashboard() {
       <div className="stat-row" style={{ marginBottom: 18 }}>
         <StatCard label={vi?"Tổng Gross tháng này":"Total Gross"} value={loading?"…":totalGross} sub={vi?"Theo hợp đồng":"Contract-based"} accent="linear-gradient(135deg,#D0211C,#991414)" icon={<DollarSign size={52}/>}/>
         <StatCard label={vi?"Tổng Net chi trả":"Total Net Paid"} value={loading?"…":totalNet} sub={vi?"Sau BH & Thuế":"After insurance & tax"} accent="linear-gradient(135deg,#059669,#047857)" icon={<Banknote size={52}/>}/>
-        <StatCard label={vi?"BHXH công ty đóng (21.5%)":"Company BHXH (21.5%)"} value="—" sub="21.5% × Gross" accent="linear-gradient(135deg,#D97706,#B45309)" icon={<PiggyBank size={52}/>}/>
-        <StatCard label={vi?"Tổng thuế TNCN":"Total PIT"} value="—" sub={vi?"Phải nộp cho nhà nước":"Payable to state"} accent="linear-gradient(135deg,#7C3AED,#6D28D9)" icon={<Calculator size={52}/>}/>
+        <StatCard label={vi?"BHXH công ty đóng (21.5%)":"Company Insurance (21.5%)"} value={loading?"…":bhxhCompany} sub="21.5% × Gross" accent="linear-gradient(135deg,#D97706,#B45309)" icon={<PiggyBank size={52}/>}/>
+        <StatCard label={vi?"Tổng thuế TNCN":"Total PIT"} value={loading?"…":totalPIT} sub={vi?"Phải nộp cho nhà nước":"Payable to state"} accent="linear-gradient(135deg,#7C3AED,#6D28D9)" icon={<Calculator size={52}/>}/>
       </div>
 
       <div className="rg-2" style={{ marginBottom: 16 }}>
@@ -184,20 +248,45 @@ export default function AccountantDashboard() {
           <div style={{ marginTop:14, background:dark?"rgba(245,158,11,0.1)":"#FFFBEB", border:`1px solid ${dark?"rgba(245,158,11,0.3)":"#FDE68A"}`, borderRadius:10, padding:"10px 12px", display:"flex", gap:8, alignItems:"flex-start" }}>
             <AlertTriangle size={14} color="#D97706" style={{ marginTop:2, flexShrink:0 }}/>
             <span style={{ fontSize:12, color:dark?"#FCD34D":"#92400E" }}>
-              {vi?"BHXH: NLĐ đóng 10.5%, NSDLĐ đóng 21.5% trên mức lương đóng BH.":"BHXH: Employee pays 10.5%, Employer pays 21.5% on insured salary."}
+              {vi?"BHXH: NLĐ đóng 10.5%, NSDLĐ đóng 21.5% trên mức lương đóng BH.":"Insurance: Employee pays 10.5%, Employer pays 21.5% on insured salary."}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions — UC linked */}
-      <div style={{ ...card, padding:"18px", marginTop: 16 }}>
-        <div style={{ fontWeight:700, fontSize:14, color:th.text1, marginBottom:14 }}>⚡ {vi?"Chức năng theo Use Case":"Use Case Actions"}</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <QuickAction icon={<Settings size={18} color="#D0211C"/>} label={vi?"Thiết lập công thức lương":"Payroll Formula Setup"} sub="UC-08" href="/payroll" accent="#D0211C" dark={dark}/>
-          <QuickAction icon={<Calculator size={18} color="#059669"/>} label={vi?"Tính lương tự động (Gross→Net)":"Auto Calculate (Gross→Net)"} sub="UC-09" href="/payroll" accent="#059669" dark={dark}/>
-          <QuickAction icon={<FileText size={18} color="#7C3AED"/>} label={vi?"Xuất phiếu lương (Payslip)":"Generate Payslips"} sub="UC-10" href="/payslips" accent="#7C3AED" dark={dark}/>
+      {/* Quick Actions — redesigned as feature card grid */}
+      <div style={{ ...card, padding:"20px", marginTop: 16 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:18 }}>
+          <div style={{ width:4, height:18, borderRadius:2, background:"#D0211C" }}/>
+          <span style={{ fontWeight:700, fontSize:15, color:th.text1 }}>
+            {vi ? "Thao tác nhanh" : "Quick Actions"}
+          </span>
         </div>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: isMobile ? 10 : 14 }}>
+          <FeatureCard
+            icon={<Settings size={22} color="#D0211C"/>}
+            label={vi ? "Cấu hình lương" : "Payroll Config"}
+            desc={vi ? "Thiết lập hệ số, phụ cấp và công thức tính lương Gross → Net." : "Set up coefficients, allowances and Gross → Net formula."}
+            href="/payroll/config" accent="#D0211C" dark={dark} isMobile={isMobile} vi={vi}
+          />
+          <FeatureCard
+            icon={<Calculator size={22} color="#059669"/>}
+            label={vi ? "Bảng lương" : "Payroll"}
+            desc={vi ? "Xem, kiểm tra và phê duyệt bảng lương tháng." : "View, verify and approve monthly payroll."}
+            href="/payroll" accent="#059669" dark={dark} isMobile={isMobile} vi={vi}
+          />
+          <FeatureCard
+            icon={<FileText size={22} color="#7C3AED"/>}
+            label={vi ? "Phiếu lương" : "Payslips"}
+            desc={vi ? "Tạo và xuất phiếu lương chi tiết cho từng nhân viên." : "Generate and export detailed payslips per employee."}
+            href="/payslips" accent="#7C3AED" dark={dark} isMobile={isMobile} vi={vi}
+          />
+        </div>
+      </div>
+
+      {/* Company Events */}
+      <div style={{ marginTop: 16 }}>
+        <CompanyEventsWidget dark={dark} vi={vi} maxHeight={380}/>
       </div>
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

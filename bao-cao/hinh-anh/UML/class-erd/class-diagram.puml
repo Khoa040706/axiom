@@ -1,0 +1,174 @@
+@startuml
+title Hình 4.13 — Class Diagram\nHệ thống Axiom HRM
+skinparam class {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #991414
+  FontSize 11
+}
+skinparam linetype ortho
+
+class User {
+  +id: String
+  +username: String
+  +passwordHash: String
+  +role: Role
+  +isActive: Boolean
+  +personalEmail: String
+  --
+  +login()
+  +logout()
+  +changePassword()
+  +resetPassword()
+}
+
+class Employee {
+  +id: String
+  +code: String
+  +fullName: String
+  +gender: String
+  +dateOfBirth: Date
+  +email: String
+  +phone: String
+  +hireDate: Date
+  +status: String
+  +taxCode: String
+  +numDependents: Int
+  --
+  +getProfile()
+  +softDelete()
+  +reinstate()
+}
+
+class Department {
+  +id: String
+  +name: String
+  +isActive: Boolean
+}
+
+class Position {
+  +id: String
+  +name: String
+  +isActive: Boolean
+}
+
+class Contract {
+  +id: String
+  +contractType: String
+  +baseSalary: Decimal
+  +salaryGrade: Float
+  +allowance: Decimal
+  +startDate: Date
+  +endDate: Date
+  +status: String
+  --
+  +terminate()
+  +findExpiringSoon()
+}
+
+class Attendance {
+  +id: String
+  +workDate: Date
+  +checkIn: DateTime
+  +checkOut: DateTime
+  +status: String
+  +lateMinutes: Int
+  +otHours: Float
+  --
+  +checkIn()
+  +checkOut()
+  +calculateNetHours()
+}
+
+class LeaveRequest {
+  +id: String
+  +leaveType: String
+  +startDate: Date
+  +endDate: Date
+  +totalDays: Int
+  +status: String
+  +reason: String
+  --
+  +approve()
+  +reject()
+  +countWeekdays()
+}
+
+class LeaveBalance {
+  +id: String
+  +year: Int
+  +leaveType: String
+  +totalDays: Int
+  +usedDays: Int
+  --
+  +getRemaining()
+  +deduct()
+}
+
+class BusinessTrip {
+  +id: String
+  +destination: String
+  +startDate: Date
+  +endDate: Date
+  +purpose: String
+  +allowance: Decimal
+  +status: String
+  --
+  +approve()
+  +reject()
+}
+
+class Payroll {
+  +id: String
+  +payMonth: Int
+  +payYear: Int
+  +workDays: Int
+  +otHours: Float
+  +grossSalary: Decimal
+  +bhxh: Decimal
+  +bhyt: Decimal
+  +bhtn: Decimal
+  +pit: Decimal
+  +netSalary: Decimal
+  +status: String
+  --
+  +calculate()
+  +confirmPayment()
+}
+
+class Payslip {
+  +id: String
+  +issuedDate: Date
+  +isViewed: Boolean
+  --
+  +markViewed()
+  +exportPDF()
+}
+
+class CareerHistory {
+  +id: String
+  +eventType: String
+  +eventDate: Date
+  +oldDept: String
+  +newDept: String
+  +oldPos: String
+  +newPos: String
+  +oldSalary: Decimal
+  +newSalary: Decimal
+  --
+  +autoUpdateEmployee()
+}
+
+User "1" -- "0..1" Employee
+Employee "*" -- "1" Department
+Employee "*" -- "1" Position
+Employee "1" -- "*" Contract
+Employee "1" -- "*" Attendance
+Employee "1" -- "*" LeaveRequest
+Employee "1" -- "*" LeaveBalance
+Employee "1" -- "*" BusinessTrip
+Employee "1" -- "*" Payroll
+Employee "1" -- "*" CareerHistory
+Payroll "1" -- "1" Payslip
+
+@enduml

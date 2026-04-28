@@ -740,7 +740,7 @@ export default function LoginPage() {
                     {error && (
                       <div style={{
                         padding: "10px 14px", background: dark ? "rgba(211,47,47,0.08)" : "#FFF5F5",
-                        border: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderLeft: "3px solid #D32F2F",
+                        borderTop: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderRight: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderBottom: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderLeft: "3px solid #D32F2F",
                         borderRadius: 8, fontSize: 12.5, color: dark ? "#fca5a5" : "#9A0007",
                         display: "flex", gap: 8, alignItems: "center",
                       }}>
@@ -845,7 +845,7 @@ export default function LoginPage() {
                         {fpError && (
                           <div style={{
                             padding: "9px 12px", background: dark ? "rgba(211,47,47,0.08)" : "#FFF5F5",
-                            border: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderLeft: "3px solid #D32F2F",
+                            borderTop: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderRight: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderBottom: `1px solid rgba(211,47,47,${dark ? .2 : .15})`, borderLeft: "3px solid #D32F2F",
                             borderRadius: 8, fontSize: 12, color: dark ? "#fca5a5" : "#9A0007",
                             display: "flex", gap: 8, alignItems: "center",
                           }}>

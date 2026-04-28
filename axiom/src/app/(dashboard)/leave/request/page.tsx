@@ -10,6 +10,7 @@ import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { DateInput } from "@/components/ui/date-input"
 import { useCurrentUser, useEmployeeId } from "@/hooks/use-current-user"
 import { createLeaveRequest, getLeaveBalance, getLeaveRequests } from "@/lib/actions/leave.actions"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 const LEAVE_TYPES = [
   { vi: "Nghỉ năm",      en: "Annual Leave",    bg: "#DBEAFE", c: "#1E40AF", icon: "🏖️" },
@@ -83,6 +84,7 @@ export default function LeaveRequestPage() {
   const currentUser = useCurrentUser()
   const employeeId = useEmployeeId()
   const today = new Date().toISOString().split("T")[0]
+  const { isMobile } = useBreakpoint()
 
   const [step, setStep]           = useState(0)
   const [submitted, setSubmitted] = useState(false)
@@ -209,16 +211,16 @@ export default function LeaveRequestPage() {
   }
 
   return (
-    <div style={{ padding: "28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-start", gap: isMobile ? 12 : 0, marginBottom: 24 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <a href="/leave" style={{ color: th.text2, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 13, textDecoration: "none" }}>
               <ChevronLeft size={14}/>{vi ? "Quản lý nghỉ phép" : "Leave Management"}
             </a>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: th.text1, margin: 0 }}>
+          <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: th.text1, margin: 0 }}>
             {vi ? "Tạo đơn xin nghỉ phép" : "Create Leave Request"}
           </h1>
           <p style={{ fontSize: 13, color: th.text2, margin: "4px 0 0" }}>
@@ -234,7 +236,7 @@ export default function LeaveRequestPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: 20 }}>
 
         {/* Wizard */}
         <div style={{ background: th.cardBg, borderRadius: 18, padding: "28px", border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
@@ -245,7 +247,7 @@ export default function LeaveRequestPage() {
               <h3 style={{ fontSize: 16, fontWeight: 800, color: th.text1, margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
                 <Layers size={18} color="#D0211C"/>{vi ? "Chọn loại nghỉ phép" : "Select Leave Type"}
               </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(3,1fr)", gap: 10 }}>
                 {LEAVE_TYPES.map(t => (
                   <button key={t.vi} onClick={() => setForm(f => ({ ...f, type: t.vi }))} style={{
                     padding: "14px 12px", borderRadius: 14,

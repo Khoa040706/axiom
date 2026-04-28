@@ -1,0 +1,24 @@
+@startuml
+title Hình 6.14 — State Diagram: Trạng thái hợp đồng lao động
+skinparam state {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+}
+
+[*] --> HieuLuc : Tạo hợp đồng mới
+HieuLuc : status = "Hiệu lực"
+HieuLuc : Dùng để tính lương\nvà các phúc lợi
+
+HieuLuc --> HetHan : endDate đã qua
+HieuLuc --> DaThanhLy : HR thanh lý sớm
+
+HetHan : status = "Hết hạn"
+HetHan : Cảnh báo trước 30 ngày
+
+DaThanhLy : status = "Đã thanh lý"
+
+HetHan --> HieuLuc : Gia hạn hợp đồng
+HetHan --> [*]
+DaThanhLy --> [*]
+
+@enduml

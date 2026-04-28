@@ -9,20 +9,52 @@ import { useEmployeeId } from "@/hooks/use-current-user"
 import { useSession } from "next-auth/react"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { matchAny } from "@/lib/utils/search"
+import { tPurpose } from "@/lib/i18n-maps"
+import { AvatarImg } from "@/components/ui/avatar-img"
 
 function EmpAvatar({ name, avatarPath, size = 30 }: { name: string; avatarPath?: string | null; size?: number }) {
-  const [imgErr, setImgErr] = useState(false)
-  const src = (avatarPath && !imgErr) ? avatarPath : "/images/avatarmacdinh.jpg"
-  return (
-    <img
-      src={src}
-      alt={name}
-      onError={() => setImgErr(true)}
-      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-    />
-  )
+  return <AvatarImg src={avatarPath} name={name} alt={name} size={size} />
 }
 
+/** Strip Vietnamese/Unicode diacritics for accent-insensitive comparison */
+function normalize(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+}
+
+/** Highlight matching substring – accent-insensitive (e.g. "Hung" matches "Hưng") */
+function Hl({ text, q }: { text: string; q: string }) {
+  if (!q.trim() || !text) return <>{text}</>
+  const normText = normalize(text)
+  const normQ    = normalize(q)
+  const idx = normText.indexOf(normQ)
+  if (idx === -1) return <>{text}</>
+
+  // Map normalized idx back to original text positions
+  // Walk original chars until the normalized prefix equals idx chars consumed
+  let origStart = 0, normConsumed = 0
+  for (let i = 0; i < text.length; i++) {
+    if (normConsumed === idx) { origStart = i; break }
+    normConsumed += normalize(text[i]).length
+  }
+  let origEnd = origStart, normMatched = 0
+  for (let i = origStart; i < text.length; i++) {
+    if (normMatched >= normQ.length) { origEnd = i; break }
+    normMatched += normalize(text[i]).length
+    if (i === text.length - 1) origEnd = text.length
+  }
+
+  return (
+    <>
+      {text.slice(0, origStart)}
+      <mark style={{
+        background: "#FEF08A", color: "#713F12",
+        borderRadius: 3, padding: "0 2px",
+        fontWeight: 700, boxShadow: "0 0 0 1px #CA8A0440",
+      }}>{text.slice(origStart, origEnd)}</mark>
+      {text.slice(origEnd)}
+    </>
+  )
+}
 
 export default function BusinessTripsPage() {
   const { dark, lang } = useDashboard()
@@ -125,22 +157,23 @@ export default function BusinessTripsPage() {
   return (
     <div className="page-pad">
       {/* Header */}
-      <div className="page-header" style={{ marginBottom: 22 }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: th.text1, margin: 0 }}>
             {vi ? "Quản lý công tác" : "Business Trips"}
           </h1>
           <p style={{ fontSize: 13, color: th.text2, margin: "4px 0 0" }}>
-            {vi ? "Theo dõi các chuyến công tác và phê duyệt (UC-07)" : "Track and approve business trips (UC-07)"}
+            {vi ? "Theo dõi các chuyến công tác và phê duyệt" : "Track and approve business trips"}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={load} disabled={loading}
-            style={{ padding: "8px 14px", borderRadius: 9, border: `1px solid ${th.cardBorder}`, background: th.cardBg, color: th.text2, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontFamily: "inherit" }}>
+            style={{ padding: "8px 14px", borderRadius: 9, border: `1px solid ${th.cardBorder}`, background: th.cardBg, color: th.text2, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 500, fontFamily: "inherit", whiteSpace: "nowrap" }}>
             <RefreshCw size={13} style={{ animation: loading ? "spin .7s linear infinite" : "none" }} />
+            {vi ? "Tải lại" : "Reload"}
           </button>
           <button onClick={() => setShowForm(p => !p)}
-            style={{ padding: "8px 16px", borderRadius: 9, background: "linear-gradient(135deg,#D0211C,#991414)", color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", boxShadow: "0 2px 8px rgba(208,33,28,0.25)" }}>
+            style={{ padding: "8px 16px", borderRadius: 9, background: "linear-gradient(135deg,#D0211C,#991414)", color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", boxShadow: "0 2px 8px rgba(208,33,28,0.25)", whiteSpace: "nowrap" }}>
             <Plus size={14} />{vi ? "Tạo đề xuất" : "New Trip"}
           </button>
         </div>
@@ -188,13 +221,13 @@ export default function BusinessTripsPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: "flex", gap: 14, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="stat-row" style={{ marginBottom: 16 }}>
         {[
           { icon: <Plane size={20} color="#D0211C" />,      label: vi ? "Tổng chuyến"  : "Total Trips",   value: String(trips.length),    bg: "#FEF2F2" },
           { icon: <Calendar size={20} color="#059669" />,   label: vi ? "Đã duyệt"     : "Approved",      value: String(totalApproved),   bg: "#F0FDF4" },
           { icon: <DollarSign size={20} color="#D97706" />, label: vi ? "Tổng kinh phí": "Total Budget",  value: `${(totalBudget/1_000_000).toFixed(1)}M đ`, bg: "#FFFBEB" },
         ].map(s => (
-          <div key={s.label} style={{ flex: 1, minWidth: 120, background: th.cardBg, borderRadius: 12, border: `1px solid ${th.cardBorder}`, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div key={s.label} style={{ background: th.cardBg, borderRadius: 12, border: `1px solid ${th.cardBorder}`, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: dark ? `${s.bg}22` : s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.icon}</div>
             <div>
               <div style={{ fontSize: 11.5, color: th.text2 }}>{s.label}</div>
@@ -206,9 +239,38 @@ export default function BusinessTripsPage() {
 
       {/* Search */}
       <div style={{ marginBottom: 14, position: "relative" }}>
-        <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: th.text2 }} />
-        <input placeholder={vi ? "Tìm theo nhân viên hoặc điểm đến..." : "Search by employee or destination..."} value={search} onChange={e => setSearch(e.target.value)}
-          style={{ width: "100%", padding: "9px 10px 9px 32px", border: `1.5px solid ${th.inputBorder}`, borderRadius: 9, fontSize: 13, background: th.inputBg, color: th.text1, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+        <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: th.text2, pointerEvents: "none" }} />
+        <input
+          placeholder={vi ? "Tìm theo nhân viên hoặc điểm đến..." : "Search by employee or destination..."}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            width: "100%", padding: `9px ${search ? "36px" : "10px"} 9px 32px`,
+            border: `1.5px solid ${search ? "#D0211C" : th.inputBorder}`,
+            borderRadius: 9, fontSize: 13, background: th.inputBg, color: th.text1,
+            outline: "none", fontFamily: "inherit", boxSizing: "border-box",
+            transition: "border-color .2s",
+            boxShadow: search ? "0 0 0 3px rgba(208,33,28,0.1)" : "none",
+          }}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            title={vi ? "Xóa tìm kiếm" : "Clear search"}
+            style={{
+              position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+              width: 20, height: 20, borderRadius: "50%", border: "none",
+              background: dark ? "rgba(255,255,255,0.15)" : "#E5E7EB",
+              color: th.text2, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all .15s", padding: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#D0211C"; e.currentTarget.style.color = "#fff" }}
+            onMouseLeave={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.15)" : "#E5E7EB"; e.currentTarget.style.color = th.text2 }}
+          >
+            <X size={11}/>
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -217,9 +279,9 @@ export default function BusinessTripsPage() {
           <div style={{ width: 32, height: 32, border: `3px solid ${th.cardBorder}`, borderTopColor: "#D0211C", borderRadius: "50%", animation: "spin .7s linear infinite" }} />
         </div>
       ) : (
-        <div style={{ background: th.cardBg, borderRadius: 14, overflow: "hidden", border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ background: th.cardBg, borderRadius: 14, border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+          <div className="table-scroll">
+            <table style={{ width: "100%", minWidth: 600, borderCollapse: "collapse" }}>
               <thead><tr>
                 {(isManager
                   ? [vi?"Nhân viên":"Employee", vi?"Điểm đến":"Destination", vi?"Từ":"From", vi?"Đến":"To", vi?"Kinh phí":"Budget", vi?"Mục đích":"Purpose", vi?"Trạng thái":"Status", vi?"Thao tác":"Action"]
@@ -242,14 +304,14 @@ export default function BusinessTripsPage() {
                       <td style={{ ...td, fontWeight: 600 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <EmpAvatar name={t.employee?.fullName ?? "?"} avatarPath={t.employee?.avatarPath} size={30} />
-                          <span>{t.employee?.fullName ?? "—"}</span>
+                          <span><Hl text={t.employee?.fullName ?? "—"} q={search}/></span>
                         </div>
                       </td>
-                      <td style={td}><span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12} color={th.text2} />{t.destination}</span></td>
+                      <td style={td}><span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12} color={th.text2} /><Hl text={t.destination} q={search}/></span></td>
                       <td style={td}>{fromDate}</td>
                       <td style={td}>{toDate} <span style={{ color: th.text2, fontSize: 11 }}>({days}{vi?"n":"d"})</span></td>
                       <td style={{ ...td, fontWeight: 600, color: "#059669" }}>{Number(t.allowance).toLocaleString("vi-VN")}đ</td>
-                      <td style={{ ...td, fontSize: 12, color: th.text2 }}>{t.purpose ?? "—"}</td>
+                      <td style={{ ...td, fontSize: 12, color: th.text2 }}><Hl text={tPurpose(t.purpose, vi) ?? "—"} q={search}/></td>
                       <td style={td}>{statusBadge(t.status)}</td>
                       {isManager && (
                         <td style={td}>
@@ -273,8 +335,9 @@ export default function BusinessTripsPage() {
               </tbody>
             </table>
           </div>
-          <div style={{ padding: "10px 14px", background: th.tableHead, borderTop: `1px solid ${th.tableBorder}`, fontSize: 12, color: th.text2 }}>
-            {filtered.length} {vi ? "chuyến công tác" : "trips"}
+          <div style={{ padding: "10px 14px", background: th.tableHead, borderTop: `1px solid ${th.tableBorder}`, fontSize: 12, color: th.text2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>{filtered.length} {vi ? "chuyến công tác" : "trips"}</span>
+            {search && <span style={{ color: "#D0211C", fontWeight: 600 }}>{vi ? `Tìm thấy ${filtered.length} kết quả cho` : `${filtered.length} result(s) for`} &ldquo;<b>{search}</b>&rdquo;</span>}
           </div>
         </div>
       )}

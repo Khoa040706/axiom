@@ -13,7 +13,9 @@ import { getLeaveRequests, approveLeave, createLeaveRequest, getAllLeaveBalances
 import { getDepartments } from "@/lib/actions/department.actions"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { useCurrentUser, useEmployeeId, useUserId } from "@/hooks/use-current-user"
+import { AvatarImg } from "@/components/ui/avatar-img"
 import { useSession } from "next-auth/react"
+import { tLeaveType, tDept, tLeaveReason } from "@/lib/i18n-maps"
 
 // ─── Types ────────────────────────────────────────────────
 type LeaveStatus = "pending" | "approved" | "rejected"
@@ -22,6 +24,7 @@ interface LeaveRequest {
   name: string
   userId: string
   department: string
+  avatarPath?: string | null
   type: string
   from: string   // dd/MM/yyyy
   to: string
@@ -34,16 +37,34 @@ interface LeaveRequest {
   createdAt: string  // dd/MM/yyyy HH:mm
 }
 
-const LEAVE_TYPES = [
-  { vi: "Nghỉ năm",      en: "Annual Leave",    bg: "#DBEAFE", c: "#1E40AF" },
-  { vi: "Nghỉ lễ",       en: "Public Holiday",  bg: "#D1FAE5", c: "#065F46" },
-  { vi: "Việc riêng",    en: "Personal Leave",  bg: "#FEF3C7", c: "#92400E" },
-  { vi: "Nghỉ ốm",       en: "Sick Leave",      bg: "#FCE7F3", c: "#9D174D" },
-  { vi: "Thai sản",      en: "Maternity Leave", bg: "#EDE9FE", c: "#5B21B6" },
-  { vi: "Không lương",   en: "Unpaid Leave",    bg: "#F3F4F6", c: "#374151" },
+// Internal VI values used for form state & DB
+const LEAVE_TYPES_FORM = [
+  { vi: "Nghỉ phép năm",  en: "Annual Leave",    bg: "#DBEAFE", c: "#1E40AF" },
+  { vi: "Nghỉ lễ",        en: "Public Holiday",  bg: "#D1FAE5", c: "#065F46" },
+  { vi: "Việc riêng",     en: "Personal Leave",  bg: "#FEF3C7", c: "#92400E" },
+  { vi: "Nghỉ bệnh",      en: "Sick Leave",      bg: "#FCE7F3", c: "#9D174D" },
+  { vi: "Nghỉ thai sản",  en: "Maternity Leave", bg: "#EDE9FE", c: "#5B21B6" },
+  { vi: "Nghỉ không lương",en: "Unpaid Leave",   bg: "#F3F4F6", c: "#374151" },
 ]
 
-// QUOTA loaded from DB
+// Color badge lookup — accent-insensitive via normStr
+function normStr(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+}
+
+const LEAVE_COLOR: Array<{ norm: string; bg: string; c: string }> = LEAVE_TYPES_FORM.map(t => ({
+  norm: normStr(t.vi), bg: t.bg, c: t.c,
+}))
+
+function getLeaveColor(typeVi: string): { bg: string; c: string } {
+  return LEAVE_COLOR.find(x => x.norm === normStr(typeVi))
+    ?? LEAVE_COLOR.find(x => normStr(typeVi).includes(x.norm.split(" ")[1] ?? ""))
+    ?? { bg: "#F3F4F6", c: "#374151" }
+}
+
+function EmpAvatar({ name, avatarPath, size = 34 }: { name: string; avatarPath?: string | null; size?: number }) {
+  return <AvatarImg src={avatarPath} name={name} alt={name} size={size} />
+}
 
 // ─── Utilities ────────────────────────────────────────────
 function toDateObj(s: string): Date {
@@ -76,10 +97,6 @@ function toInputDate(ddMMyyyy: string): string {
 function fromInputDate(yyyyMMdd: string): string {
   const [y,m,d] = yyyyMMdd.split("-")
   return `${d}/${m}/${y}`
-}
-
-function getTypeStyle(typeVi: string) {
-  return LEAVE_TYPES.find(t => t.vi === typeVi) ?? { bg:"#F3F4F6", c:"#374151", en: typeVi, vi: typeVi }
 }
 
 // ─── Status Badge ─────────────────────────────────────────
@@ -117,13 +134,16 @@ export default function LeavePage() {
   const [showCreate, setShowCreate] = useState(false)
   const [viewItem, setViewItem]   = useState<LeaveRequest | null>(null)
   const [toast, setToast]         = useState<{type:"success"|"error"; msg:string}|null>(null)
+  const [quotaPage, setQuotaPage] = useState(0)
+  const QUOTA_PER_PAGE = 6
 
   // Create form state
   const today = new Date().toISOString().split("T")[0]
+  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().split("T")[0]
   const [form, setForm] = useState({
-    type:    LEAVE_TYPES[0].vi,
+    type:    LEAVE_TYPES_FORM[0].vi,
     from:    today,
-    to:      today,
+    to:      tomorrow,
     reason:  "",
     note:    "",
   })
@@ -138,11 +158,12 @@ export default function LeavePage() {
       getAllLeaveBalances(currentYear),
     ])
     if (leavesRes.success && leavesRes.data) {
-      setLeaves((leavesRes.data as any[]).map(l => ({
+      let allLeaves = (leavesRes.data as any[]).map(l => ({
         id:         l.id,
         name:       l.employee?.fullName ?? "—",
         userId:     l.employee?.code ?? "",
         department: l.employee?.department?.name ?? "—",
+        avatarPath: l.employee?.avatarPath ?? null,
         type:       l.leaveType,
         from:       new Date(l.startDate).toLocaleDateString("vi-VN"),
         to:         new Date(l.endDate).toLocaleDateString("vi-VN"),
@@ -153,18 +174,30 @@ export default function LeavePage() {
         approver:   null,
         approvedAt: null,
         createdAt:  new Date(l.createdAt).toLocaleDateString("vi-VN"),
-      } as LeaveRequest)))
+        employeeId: l.employeeId,
+      } as LeaveRequest & { employeeId: number }))
+      // Nhân viên thường chỉ thấy đơn của bản thân
+      if (!isManager && sessionEmployeeId) {
+        allLeaves = allLeaves.filter((l: any) => l.employeeId === sessionEmployeeId)
+      }
+      setLeaves(allLeaves)
     }
     if (quotaRes.success && quotaRes.data) {
-      setQuota((quotaRes.data as any[]).map(q => ({
+      let allQuota = (quotaRes.data as any[]).map(q => ({
         name:  q.employee?.fullName ?? "—",
         total: q.totalDays,
         used:  q.usedDays,
         left:  q.totalDays - q.usedDays,
-      })))
+        employeeId: q.employeeId,
+      }))
+      // Nhân viên chỉ thấy quota của bản thân
+      if (!isManager && sessionEmployeeId) {
+        allQuota = allQuota.filter((q: any) => q.employeeId === sessionEmployeeId)
+      }
+      setQuota(allQuota)
     }
     setLoading(false)
-  }, [])
+  }, [isManager, sessionEmployeeId])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -183,7 +216,7 @@ export default function LeavePage() {
   const pending  = leaves.filter(l => l.status==="pending").length
   const approved = leaves.filter(l => l.status==="approved").length
   const rejected = leaves.filter(l => l.status==="rejected").length
-  const totalDays = leaves.filter(l => l.status==="approved").reduce((s,l) => s+l.days, 0)
+  const totalDays = leaves.filter(l => l.status==="approved").reduce((s,l) => s + Number(l.days), 0)
 
   const filtered = leaves.filter(l =>
     tab==="all" ? true : l.status===tab
@@ -196,7 +229,6 @@ export default function LeavePage() {
     if (!form.reason.trim())   { showToast("error", vi?"Nhập lý do nghỉ phép":"Enter leave reason"); return }
 
     setSubmitting(true)
-    // Gọi server action tạo đơn — dùng employeeId từ session
     const empId = sessionEmployeeId ?? 1
     const res = await createLeaveRequest({
       employeeId: empId,
@@ -210,7 +242,7 @@ export default function LeavePage() {
     if (res.success) {
       showToast("success", vi?"Tạo đơn nghỉ phép thành công!":"Leave request submitted!")
       setShowCreate(false)
-      setForm({ type: LEAVE_TYPES[0].vi, from: today, to: today, reason: "", note: "" })
+      setForm({ type: LEAVE_TYPES_FORM[0].vi, from: today, to: tomorrow, reason: "", note: "" })
       loadData()
     } else {
       showToast("error", vi?"Có lỗi xảy ra, vui lòng thử lại":"An error occurred")
@@ -276,9 +308,9 @@ export default function LeavePage() {
     <div className="page-pad">
 
       {/* ── Header ── */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize:22, fontWeight:800, color:th.text1, margin:0 }}>
+          <h1 style={{ fontSize: 22, fontWeight:800, color:th.text1, margin:0 }}>
             {vi?"Quản lý nghỉ phép":"Leave Management"}
           </h1>
           <p style={{ fontSize:13, color:th.text2, margin:"4px 0 0" }}>
@@ -309,7 +341,7 @@ export default function LeavePage() {
         {statCards.map(s => (
           <div key={s.label} style={{
             background:th.cardBg, borderRadius:14, padding:"16px 18px",
-            border:`1px solid ${th.cardBorder}`, borderLeft:`4px solid ${s.accent}`,
+            borderTop:`1px solid ${th.cardBorder}`, borderRight:`1px solid ${th.cardBorder}`, borderBottom:`1px solid ${th.cardBorder}`, borderLeft:`4px solid ${s.accent}`,
             display:"flex", alignItems:"center", gap:14,
             boxShadow:"0 2px 8px rgba(0,0,0,0.06)",
             position:"relative", overflow:"hidden",
@@ -349,9 +381,10 @@ export default function LeavePage() {
       </div>
 
       {/* ── Table ── */}
-      <div style={{ background:th.cardBg, borderRadius:14, overflow:"hidden",
+      <div style={{ background:th.cardBg, borderRadius:14,
         border:`1px solid ${th.cardBorder}`, boxShadow:"0 2px 8px rgba(0,0,0,0.05)", marginBottom:20 }}>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+        <div className="table-scroll">
+        <table style={{ width:"100%", minWidth: 700, borderCollapse:"collapse" }}>
           <thead><tr>
             {[vi?"Nhân viên":"Employee", vi?"Loại nghỉ":"Type", vi?"Từ ngày":"From", vi?"Đến ngày":"To",
               vi?"Số ngày":"Days", vi?"Lý do":"Reason", vi?"Nộp lúc":"Submitted", vi?"Trạng thái":"Status", vi?"Thao tác":"Actions"
@@ -371,31 +404,32 @@ export default function LeavePage() {
               >
                 <td style={td}>
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <div style={{ width:34, height:34, borderRadius:"50%", background:"linear-gradient(135deg, #D0211C, #991414)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:700, fontSize:13, flexShrink:0 }}>
-                      {l.name.charAt(0)}
-                    </div>
+                    <EmpAvatar name={l.name} avatarPath={l.avatarPath} size={34}/>
                     <div>
                       <div style={{ fontWeight:600 }}>{l.name}</div>
-                      <div style={{ fontSize:11.5, color:th.text2 }}>{l.department}</div>
+                      <div style={{ fontSize:11.5, color:th.text2 }}>{tDept(l.department, vi)}</div>
                     </div>
                   </div>
                 </td>
                 <td style={td}>
-                  {(() => { const s = getTypeStyle(l.type); return (
-                    <span style={{ background:s.bg, color:s.c, borderRadius:12, padding:"3px 10px", fontSize:12, fontWeight:600, whiteSpace:"nowrap" }}>
-                      {vi ? l.type : s.en}
-                    </span>
-                  )})()}
+                  {(() => {
+                    const col = getLeaveColor(l.type)
+                    return (
+                      <span style={{ background: col.bg, color: col.c, borderRadius: 12, padding: "3px 10px", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
+                        {tLeaveType(l.type, vi)}
+                      </span>
+                    )
+                  })()}
                 </td>
                 <td style={td}><span style={{ fontSize:13 }}>{l.from}</span></td>
                 <td style={td}><span style={{ fontSize:13 }}>{l.to}</span></td>
                 <td style={td}>
                   <span style={{ fontWeight:700, color:"#D0211C", fontSize:15 }}>{l.days}</span>
-                  <span style={{ fontSize:11, color:th.text2 }}> {vi?"ngày":"days"}</span>
+                  <span style={{ fontSize:11, color:th.text2 }}> {vi ? "ngày" : (Number(l.days) === 1 ? "day" : "days")}</span>
                 </td>
                 <td style={{ ...td, maxWidth:160 }}>
                   <span style={{ color:th.text2, fontSize:12.5, display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {l.reason}
+                    {tLeaveReason(l.reason, vi)}
                   </span>
                 </td>
                 <td style={td}><span style={{ fontSize:12, color:th.text2 }}>{l.createdAt}</span></td>
@@ -436,30 +470,102 @@ export default function LeavePage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ── Leave quota ── */}
       <div style={{ background:th.cardBg, borderRadius:14, border:`1px solid ${th.cardBorder}`, padding:"20px", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
-        <div style={{ fontWeight:700, color:th.text1, fontSize:15, marginBottom:16, display:"flex", alignItems:"center", gap:8 }}>
-          <CalendarDays size={18} color="#D0211C"/>
-          {vi?"Quỹ phép còn lại":"Remaining Leave Quota"}
-        </div>
-        {loading ? (<div style={{ textAlign:"center", padding:24, color:th.text2 }}><Loader2 size={20} style={{ animation:"spin 1s linear infinite" }}/></div>) : (
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
-          {quota.map(q => (
-            <div key={q.name} style={{ background:th.tableHead, borderRadius:12, padding:"14px 16px" }}>
-              <div style={{ fontWeight:600, color:th.text1, fontSize:13, marginBottom:8 }}>{q.name}</div>
-              <div style={{ display:"flex", gap:16, fontSize:12, color:th.text2, marginBottom:8 }}>
-                <span>{vi?"Tổng phép":"Total"} <b style={{ color:th.text1 }}>{q.total}</b></span>
-                <span>{vi?"Đã dùng":"Used"} <b style={{ color:"#F59E0B" }}>{q.used}</b></span>
-                <span>{vi?"Còn lại":"Left"} <b style={{ color:"#10B981" }}>{q.left}</b></span>
-              </div>
-              <div style={{ background:th.tableBorder, borderRadius:4, height:6, overflow:"hidden" }}>
-                <div style={{ width:`${(q.used/q.total)*100}%`, background:q.left<=3?"#EF4444":"#10B981", height:"100%", borderRadius:4, transition:"width .5s" }}/>
-              </div>
+        {/* Header */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+          <div style={{ fontWeight:700, color:th.text1, fontSize:15, display:"flex", alignItems:"center", gap:8 }}>
+            <CalendarDays size={18} color="#D0211C"/>
+            {vi ? "Quỹ phép còn lại" : "Remaining Leave Quota"}
+            <span style={{ fontSize:12, fontWeight:500, color:th.text2 }}>({quota.length} {vi ? "nhân viên" : "employees"})</span>
+          </div>
+          {/* Pagination controls */}
+          {quota.length > QUOTA_PER_PAGE && (
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <button
+                onClick={() => setQuotaPage(p => Math.max(0, p - 1))}
+                disabled={quotaPage === 0}
+                style={{
+                  width:30, height:30, borderRadius:8, border:`1px solid ${th.cardBorder}`,
+                  background: quotaPage === 0 ? th.tableHead : th.cardBg,
+                  color: quotaPage === 0 ? th.text3 : th.text1,
+                  cursor: quotaPage === 0 ? "not-allowed" : "pointer",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  transition:"all .15s",
+                }}
+              >
+                &#8249;
+              </button>
+              <span style={{ fontSize:12.5, color:th.text2, fontWeight:600, minWidth:60, textAlign:"center" }}>
+                {quotaPage + 1} / {Math.ceil(quota.length / QUOTA_PER_PAGE)}
+              </span>
+              <button
+                onClick={() => setQuotaPage(p => Math.min(Math.ceil(quota.length / QUOTA_PER_PAGE) - 1, p + 1))}
+                disabled={quotaPage >= Math.ceil(quota.length / QUOTA_PER_PAGE) - 1}
+                style={{
+                  width:30, height:30, borderRadius:8, border:`1px solid ${th.cardBorder}`,
+                  background: quotaPage >= Math.ceil(quota.length / QUOTA_PER_PAGE) - 1 ? th.tableHead : th.cardBg,
+                  color: quotaPage >= Math.ceil(quota.length / QUOTA_PER_PAGE) - 1 ? th.text3 : th.text1,
+                  cursor: quotaPage >= Math.ceil(quota.length / QUOTA_PER_PAGE) - 1 ? "not-allowed" : "pointer",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  transition:"all .15s",
+                }}
+              >
+                &#8250;
+              </button>
             </div>
-          ))}
-        </div>)}
+          )}
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign:"center", padding:24, color:th.text2 }}>
+            <Loader2 size={20} style={{ animation:"spin 1s linear infinite" }}/>
+          </div>
+        ) : quota.length === 0 ? (
+          <div style={{ textAlign:"center", padding:32, color:th.text2, fontSize:13 }}>
+            {vi ? "Chưa có dữ liệu" : "No data available"}
+          </div>
+        ) : (
+          <>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap:14 }}>
+              {quota
+                .slice(quotaPage * QUOTA_PER_PAGE, (quotaPage + 1) * QUOTA_PER_PAGE)
+                .map(q => (
+                  <div key={q.name} style={{ background:th.tableHead, borderRadius:12, padding:"14px 16px" }}>
+                    <div style={{ fontWeight:600, color:th.text1, fontSize:13, marginBottom:8 }}>{q.name}</div>
+                    <div style={{ display:"flex", gap:16, fontSize:12, color:th.text2, marginBottom:8 }}>
+                      <span>{vi?"Tổng phép":"Total"} <b style={{ color:th.text1 }}>{q.total}</b></span>
+                      <span>{vi?"Đã dùng":"Used"} <b style={{ color:"#F59E0B" }}>{q.used}</b></span>
+                      <span>{vi?"Còn lại":"Left"} <b style={{ color:"#10B981" }}>{q.left}</b></span>
+                    </div>
+                    <div style={{ background:th.tableBorder, borderRadius:4, height:6, overflow:"hidden" }}>
+                      <div style={{ width:`${Math.min((q.used/q.total)*100, 100)}%`, background:q.left<=3?"#EF4444":"#10B981", height:"100%", borderRadius:4, transition:"width .5s" }}/>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Dot indicators */}
+            {quota.length > QUOTA_PER_PAGE && (
+              <div style={{ display:"flex", justifyContent:"center", gap:6, marginTop:16 }}>
+                {Array.from({ length: Math.ceil(quota.length / QUOTA_PER_PAGE) }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setQuotaPage(i)}
+                    style={{
+                      width: i === quotaPage ? 20 : 8, height:8, borderRadius:4, border:"none",
+                      background: i === quotaPage ? "#D0211C" : th.cardBorder,
+                      cursor:"pointer", padding:0, transition:"all .2s",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* ══════════ MODAL: Tạo đơn nghỉ phép ══════════ */}
@@ -500,7 +606,7 @@ export default function LeavePage() {
                 <div>
                   <label style={labelStyle}><AlignLeft size={12} style={{ display:"inline", marginRight:4 }}/>{vi?"Loại nghỉ phép":"Leave Type"} <span style={{ color:"#EF4444" }}>*</span></label>
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
-                    {LEAVE_TYPES.map(t => (
+                    {LEAVE_TYPES_FORM.map(t => (
                       <button key={t.vi} onClick={() => setForm(f => ({ ...f, type:t.vi }))} style={{
                         padding:"8px 10px", borderRadius:9, border:`2px solid ${form.type===t.vi ? t.c : th.inputBorder}`,
                         background: form.type===t.vi ? t.bg : th.inputBg,
@@ -635,7 +741,7 @@ export default function LeavePage() {
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                   <div>
                     <div style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginBottom:4 }}>{vi?"Chi tiết đơn #":"Request #"}{viewItem.id}</div>
-                    <div style={{ color:"#fff", fontWeight:800, fontSize:18 }}>{vi?viewItem.type:getTypeStyle(viewItem.type).en}</div>
+                    <div style={{ color:"#fff", fontWeight:800, fontSize:18 }}>{tLeaveType(viewItem.type, vi)}</div>
                     <div style={{ color:"rgba(255,255,255,0.7)", fontSize:13, marginTop:4 }}>
                       {viewItem.from} → {viewItem.to} · <b style={{ color:"#fff" }}>{viewItem.days}</b> {vi?"ngày":"days"}
                     </div>
@@ -658,7 +764,7 @@ export default function LeavePage() {
                       <User size={11}/>{vi?"Người nộp":"Requester"}
                     </div>
                     <div style={{ fontWeight:700, color:th.text1, fontSize:14 }}>{viewItem.name}</div>
-                    <div style={{ fontSize:12, color:th.text2 }}>{viewItem.department}</div>
+                    <div style={{ fontSize:12, color:th.text2 }}>{tDept(viewItem.department, vi)}</div>
                   </div>
                   <div style={{ background:th.tableHead, borderRadius:10, padding:"12px 14px" }}>
                     <div style={{ fontSize:11, color:th.text2, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"flex", gap:5, alignItems:"center" }}>
@@ -673,7 +779,7 @@ export default function LeavePage() {
                   <div style={{ fontSize:11, color:th.text2, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6, display:"flex", gap:5, alignItems:"center" }}>
                     <AlignLeft size={11}/>{vi?"Lý do":"Reason"}
                   </div>
-                  <div style={{ color:th.text1, fontSize:14, lineHeight:1.6 }}>{viewItem.reason}</div>
+                  <div style={{ color:th.text1, fontSize:14, lineHeight:1.6 }}>{tLeaveReason(viewItem.reason, vi)}</div>
                 </div>
 
                 {/* Note */}

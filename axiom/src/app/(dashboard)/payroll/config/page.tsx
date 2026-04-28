@@ -8,6 +8,7 @@ import {
   Percent, DollarSign, Users, Clock, Zap, BookOpen,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 // ─── Types ────────────────────────────────────────────────────────
 interface PayrollConfig {
@@ -49,19 +50,19 @@ const DEFAULT_CONFIG: PayrollConfig = {
 
 // ─── PIT Bracket reference ────────────────────────────────────────
 const PIT_BRACKETS = [
-  { bracket: "Bậc 1", bracketEn: "Bracket 1", range: "≤ 5 triệu",      rangeEn: "≤ 5M VND",      rate: "5%",  formula: "0.05 × TNTT" },
-  { bracket: "Bậc 2", bracketEn: "Bracket 2", range: "5 – 10 triệu",   rangeEn: "5 – 10M VND",   rate: "10%", formula: "0.1×TNTT − 250K" },
-  { bracket: "Bậc 3", bracketEn: "Bracket 3", range: "10 – 18 triệu",  rangeEn: "10 – 18M VND",  rate: "15%", formula: "0.15×TNTT − 750K" },
-  { bracket: "Bậc 4", bracketEn: "Bracket 4", range: "18 – 32 triệu",  rangeEn: "18 – 32M VND",  rate: "20%", formula: "0.2×TNTT − 1.65tr" },
-  { bracket: "Bậc 5", bracketEn: "Bracket 5", range: "32 – 52 triệu",  rangeEn: "32 – 52M VND",  rate: "25%", formula: "0.25×TNTT − 3.25tr" },
-  { bracket: "Bậc 6", bracketEn: "Bracket 6", range: "52 – 80 triệu",  rangeEn: "52 – 80M VND",  rate: "30%", formula: "0.3×TNTT − 5.85tr" },
-  { bracket: "Bậc 7", bracketEn: "Bracket 7", range: "> 80 triệu",     rangeEn: "> 80M VND",     rate: "35%", formula: "0.35×TNTT − 9.85tr" },
+  { bracket: "Bậc 1", bracketEn: "Bracket 1", range: "≤ 5 triệu",      rangeEn: "≤ 5M VND",      rate: "5%",  formula: "0.05 × TNTT",       formulaEn: "0.05 × TI" },
+  { bracket: "Bậc 2", bracketEn: "Bracket 2", range: "5 – 10 triệu",   rangeEn: "5 – 10M VND",   rate: "10%", formula: "0.1×TNTT − 250K",    formulaEn: "0.1×TI − 250K" },
+  { bracket: "Bậc 3", bracketEn: "Bracket 3", range: "10 – 18 triệu",  rangeEn: "10 – 18M VND",  rate: "15%", formula: "0.15×TNTT − 750K",   formulaEn: "0.15×TI − 750K" },
+  { bracket: "Bậc 4", bracketEn: "Bracket 4", range: "18 – 32 triệu",  rangeEn: "18 – 32M VND",  rate: "20%", formula: "0.2×TNTT − 1.65tr",  formulaEn: "0.2×TI − 1.65M" },
+  { bracket: "Bậc 5", bracketEn: "Bracket 5", range: "32 – 52 triệu",  rangeEn: "32 – 52M VND",  rate: "25%", formula: "0.25×TNTT − 3.25tr", formulaEn: "0.25×TI − 3.25M" },
+  { bracket: "Bậc 6", bracketEn: "Bracket 6", range: "52 – 80 triệu",  rangeEn: "52 – 80M VND",  rate: "30%", formula: "0.3×TNTT − 5.85tr",  formulaEn: "0.3×TI − 5.85M" },
+  { bracket: "Bậc 7", bracketEn: "Bracket 7", range: "> 80 triệu",     rangeEn: "> 80M VND",     rate: "35%", formula: "0.35×TNTT − 9.85tr", formulaEn: "0.35×TI − 9.85M" },
 ]
 
 // ─── Format helpers ────────────────────────────────────────────────
 function fmtM(v: number, vi = true) {
   if (v >= 1_000_000) return (v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1) + (vi ? " triệu" : "M VND")
-  return v.toLocaleString("vi-VN") + " đ"
+  return v.toLocaleString("vi-VN") + (vi ? " đ" : " VND")
 }
 
 // ─── Section wrapper ──────────────────────────────────────────────
@@ -107,14 +108,26 @@ function NumField({ label, value, onChange, unit, min, max, step, note, th }: {
   )
 }
 
+const STORAGE_KEY = "axiom_payroll_config"
+
+function loadSavedConfig(): PayrollConfig {
+  if (typeof window === "undefined") return DEFAULT_CONFIG
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) }
+  } catch {}
+  return DEFAULT_CONFIG
+}
+
 // ─── Main ─────────────────────────────────────────────────────────
 export default function PayrollConfigPage() {
   const { dark, lang } = useDashboard()
   const th = getTheme(dark)
   const vi = lang === "vi"
+  const { isMobile } = useBreakpoint()
 
-  const [config, setConfig]   = useState<PayrollConfig>(DEFAULT_CONFIG)
-  const [draft, setDraft]     = useState<PayrollConfig>(DEFAULT_CONFIG)
+  const [config, setConfig]   = useState<PayrollConfig>(loadSavedConfig)
+  const [draft, setDraft]     = useState<PayrollConfig>(loadSavedConfig)
   const [saving, setSaving]   = useState(false)
   const [saved, setSaved]     = useState(false)
   const [toast, setToast]     = useState<{ type: "success"|"error"|"info"; msg: string } | null>(null)
@@ -133,12 +146,15 @@ export default function PayrollConfigPage() {
     setConfig({ ...draft })
     setSaved(true)
     setSaving(false)
-    showToast("success", vi ? "✅ Đã lưu cấu hình lương! Bảng lương sẽ được tính lại theo công thức mới." : "✅ Config saved! Payroll will be recalculated.")
+    // Persist to localStorage so payroll page picks it up
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(draft)) } catch {}
+    showToast("success", vi ? "✅ Đã lưu cấu hình lương! Bảng lương sẽ tính lại theo công thức mới." : "✅ Config saved! Payroll will recalculate with the new formula.")
     setTimeout(() => setSaved(false), 2000)
   }
 
   const handleReset = () => {
     setDraft({ ...DEFAULT_CONFIG })
+    try { localStorage.removeItem(STORAGE_KEY) } catch {}
     showToast("info", vi ? "Đã khôi phục về giá trị mặc định (VN 2026)." : "Reset to VN 2026 defaults.")
   }
 
@@ -156,17 +172,17 @@ export default function PayrollConfigPage() {
   ]
 
   return (
-    <div style={{ padding: "28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-start", gap: isMobile ? 14 : 0, marginBottom: 24 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <a href="/payroll" style={{ color: th.text2, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 13, textDecoration: "none" }}>
               <ChevronLeft size={14}/>{vi ? "Quản lý tiền lương" : "Payroll Management"}
             </a>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: th.text1, margin: 0 }}>
+          <h1 style={{ fontSize: isMobile ? 17 : 22, fontWeight: 800, color: th.text1, margin: 0 }}>
             {vi ? "Cấu hình công thức tính lương" : "Payroll Formula Configuration"}
           </h1>
           <p style={{ fontSize: 13, color: th.text2, margin: "4px 0 0" }}>
@@ -202,14 +218,14 @@ export default function PayrollConfigPage() {
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: isMobile ? 10 : 14, marginBottom: 22 }}>
         {[
-          { icon: <Shield size={18}/>,     label: vi ? "BH nhân viên đóng" : "Employee Insurance", value: `${totalInsEmp}%`, accent: "#EF4444",     note: vi ? "BHXH + BHYT + BHTN" : "BHXH+BHYT+BHTN" },
+          { icon: <Shield size={18}/>,     label: vi ? "BH nhân viên đóng" : "Employee Insurance", value: `${totalInsEmp}%`, accent: "#EF4444",     note: vi ? "BHXH + BHYT + BHTN" : "SI + HI + UI" },
           { icon: <Users size={18}/>,      label: vi ? "BH doanh nghiệp" : "Employer Insurance",  value: `${totalInsEmployer}%`, accent: "#F59E0B", note: vi ? "Tổng chi phí DN" : "Total employer cost" },
           { icon: <TrendingUp size={18}/>, label: vi ? "Giảm trừ bản thân" : "Self deduction", value: fmtM(draft.selfDeduction, vi), accent: "#10B981", note: vi ? "/người/tháng" : "/person/month" },
           { icon: <Clock size={18}/>,      label: vi ? "Ngày công chuẩn" : "Standard work days", value: `${draft.standardDays} ${vi?"ngày":"days"}`, accent: "#3B82F6", note: vi ? "Ngày tính lương" : "Per month base" },
         ].map(s => (
-          <div key={s.label} style={{ background: th.cardBg, borderRadius: 14, padding: "16px 18px", border: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", position: "relative", overflow: "hidden" }}>
+          <div key={s.label} style={{ background: th.cardBg, borderRadius: 14, padding: "16px 18px", borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${s.accent}15`, pointerEvents: "none" }}/>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: `${s.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: s.accent }}>{s.icon}</div>
             <div>
@@ -221,7 +237,7 @@ export default function PayrollConfigPage() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 320px", gap: 20 }}>
 
         {/* Left: Tabbed config */}
         <div>
@@ -245,10 +261,10 @@ export default function PayrollConfigPage() {
           {activeTab === "insurance" && (
             <div style={{ display: "grid", gap: 16 }}>
               <Section title={vi ? "Bảo hiểm bắt buộc — Nhân viên đóng" : "Mandatory Insurance — Employee Share"} icon={<Shield size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-                  <NumField label={vi?"BH Xã hội (BHXH)":"BHXH"} value={draft.bhxh} onChange={upd("bhxh")} unit="%" min={0} max={25} step={0.5} note={vi?"Hưu trí, Thai sản, Ốm đau":"Pension, Maternity, Sickness"} th={th}/>
-                  <NumField label={vi?"BH Y tế (BHYT)":"BHYT"} value={draft.bhyt} onChange={upd("bhyt")} unit="%" min={0} max={10} step={0.5} note={vi?"Khám chữa bệnh":"Medical insurance"} th={th}/>
-                  <NumField label={vi?"BH Thất nghiệp (BHTN)":"BHTN"} value={draft.bhtn} onChange={upd("bhtn")} unit="%" min={0} max={5} step={0.5} note={vi?"Trợ cấp thất nghiệp":"Unemployment benefit"} th={th}/>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 14 }}>
+                  <NumField label={vi?"BH Xã hội (BHXH)":"Social Ins. (SI)"} value={draft.bhxh} onChange={upd("bhxh")} unit="%" min={0} max={25} step={0.5} note={vi?"Hưu trí, Thai sản, Ốm đau":"Pension, Maternity, Sickness"} th={th}/>
+                  <NumField label={vi?"BH Y tế (BHYT)":"Health Ins. (HI)"} value={draft.bhyt} onChange={upd("bhyt")} unit="%" min={0} max={10} step={0.5} note={vi?"Khám chữa bệnh":"Medical insurance"} th={th}/>
+                  <NumField label={vi?"BH Thất nghiệp (BHTN)":"Unemp. Ins. (UI)"} value={draft.bhtn} onChange={upd("bhtn")} unit="%" min={0} max={5} step={0.5} note={vi?"Trợ cấp thất nghiệp":"Unemployment benefit"} th={th}/>
                 </div>
                 <div style={{ marginTop: 14, padding: "12px 16px", background: dark ? "rgba(239,68,68,0.1)" : "#FEF2F2", borderRadius: 10, border: "1px solid #FECACA", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 13, color: th.text1, fontWeight: 600 }}>{vi ? "Tổng nhân viên đóng" : "Total employee contribution"}</span>
@@ -257,10 +273,10 @@ export default function PayrollConfigPage() {
               </Section>
 
               <Section title={vi ? "Bảo hiểm bắt buộc — Doanh nghiệp đóng" : "Mandatory Insurance — Employer Share"} icon={<Users size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-                  <NumField label="BHXH (DN)" value={draft.bhxhEmployer} onChange={upd("bhxhEmployer")} unit="%" min={0} max={30} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
-                  <NumField label="BHYT (DN)" value={draft.bhytEmployer} onChange={upd("bhytEmployer")} unit="%" min={0} max={10} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
-                  <NumField label="BHTN (DN)" value={draft.bhtnEmployer} onChange={upd("bhtnEmployer")} unit="%" min={0} max={10} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 14 }}>
+                  <NumField label={vi?"BHXH (DN)":"SI (Employer)"} value={draft.bhxhEmployer} onChange={upd("bhxhEmployer")} unit="%" min={0} max={30} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
+                  <NumField label={vi?"BHYT (DN)":"HI (Employer)"} value={draft.bhytEmployer} onChange={upd("bhytEmployer")} unit="%" min={0} max={10} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
+                  <NumField label={vi?"BHTN (DN)":"UI (Employer)"} value={draft.bhtnEmployer} onChange={upd("bhtnEmployer")} unit="%" min={0} max={10} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
                 </div>
                 <div style={{ marginTop: 14, padding: "12px 16px", background: dark ? "rgba(245,158,11,0.1)" : "#FEF3C7", borderRadius: 10, border: "1px solid #FCD34D", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 13, color: th.text1, fontWeight: 600 }}>{vi ? "Tổng doanh nghiệp đóng" : "Total employer contribution"}</span>
@@ -322,7 +338,7 @@ export default function PayrollConfigPage() {
                         <td style={{ padding: "9px 12px", borderBottom: `1px solid ${th.tableBorder}` }}>
                           <span style={{ background: "#D0211C", color: "#fff", borderRadius: 6, padding: "2px 8px", fontSize: 12, fontWeight: 700 }}>{b.rate}</span>
                         </td>
-                        <td style={{ padding: "9px 12px", fontSize: 12, color: th.text2, fontFamily: "monospace", borderBottom: `1px solid ${th.tableBorder}` }}>{b.formula}</td>
+                        <td style={{ padding: "9px 12px", fontSize: 12, color: th.text2, fontFamily: "monospace", borderBottom: `1px solid ${th.tableBorder}` }}>{vi ? b.formula : b.formulaEn}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -342,7 +358,7 @@ export default function PayrollConfigPage() {
               </Section>
 
               <Section title={vi ? "Hệ số tăng ca (OT)" : "Overtime Multipliers"} icon={<Zap size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 14 }}>
                   <NumField label={vi?"OT ngày thường (×)":"OT Weekday (×)"} value={draft.otWeekday} onChange={upd("otWeekday")} unit="×" min={1} max={5} step={0.1} note={vi?"Thường: ×1.5 (150%)":"Typical: ×1.5"} th={th}/>
                   <NumField label={vi?"OT cuối tuần (×)":"OT Weekend (×)"} value={draft.otWeekend} onChange={upd("otWeekend")} unit="×" min={1} max={5} step={0.1} note={vi?"Thường: ×2.0 (200%)":"Typical: ×2.0"} th={th}/>
                   <NumField label={vi?"OT ngày lễ (×)":"OT Holiday (×)"} value={draft.otHoliday} onChange={upd("otHoliday")} unit="×" min={1} max={5} step={0.1} note={vi?"Thường: ×3.0 (300%)":"Typical: ×3.0"} th={th}/>
@@ -370,7 +386,7 @@ export default function PayrollConfigPage() {
             <Section title={vi ? "Lương tối thiểu vùng 2026 (Nghị định 74/2024/NĐ-CP)" : "Regional Minimum Wages 2026"} icon={<DollarSign size={15}/>} th={th}>
               <div style={{ marginBottom: 14, background: dark ? "rgba(59,130,246,0.1)" : "#EFF6FF", borderRadius: 10, padding: "11px 14px", fontSize: 12.5, color: dark ? "#93C5FD" : "#1D4ED8", display: "flex", gap: 7, border: "1px solid #BFDBFE" }}>
                 <Info size={14} style={{ flexShrink: 0 }}/>
-                <span>{vi ? "AXIOM đặt tại Vùng 1. Lương tối thiểu vùng là cơ sở đóng BHXH tối thiểu." : "AXIOM is in Region 1. Regional minimum wage is the base for minimum BHXH contribution."}</span>
+                <span>{vi ? "AXIOM đặt tại Vùng 1. Lương tối thiểu vùng là cơ sở đóng BHXH tối thiểu." : "AXIOM is in Region 1. Regional minimum wage is the base for minimum social insurance contribution."}</span>
               </div>
               <div style={{ display: "grid", gap: 12 }}>
                 {[
@@ -379,7 +395,7 @@ export default function PayrollConfigPage() {
                   { label: vi ? "Vùng 3 (Các tỉnh còn lại)" : "Region 3 (Provincial areas)", key: "minWageRegion3" as const, accent: "#10B981", note: "" },
                   { label: vi ? "Vùng 4 (Nông thôn, miền núi)" : "Region 4 (Rural, mountainous)", key: "minWageRegion4" as const, accent: "#3B82F6", note: "" },
                 ].map(r => (
-                  <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: th.tableHead, borderRadius: 12, border: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${r.accent}` }}>
+                  <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: th.tableHead, borderRadius: 12, borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${r.accent}` }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 600, color: th.text1 }}>{r.label}</div>
                       {r.note && <div style={{ fontSize: 11.5, color: r.accent, marginTop: 2 }}>★ {r.note}</div>}
@@ -390,7 +406,7 @@ export default function PayrollConfigPage() {
                         onFocus={e => (e.target.style.borderColor = "#D0211C")}
                         onBlur={e => (e.target.style.borderColor = th.inputBorder)}
                         style={{ width: 140, padding: "8px 12px", border: `1.5px solid ${th.inputBorder}`, borderRadius: 9, fontSize: 14, background: th.inputBg, color: th.text1, outline: "none", fontFamily: "inherit", transition: "border-color .15s" }}/>
-                      <span style={{ fontSize: 12.5, color: r.accent, fontWeight: 700 }}>{fmtM(draft[r.key])}</span>
+                      <span style={{ fontSize: 12.5, color: r.accent, fontWeight: 700 }}>{fmtM(draft[r.key], vi)}</span>
                     </div>
                   </div>
                 ))}
@@ -430,13 +446,13 @@ export default function PayrollConfigPage() {
               {vi ? "Công thức áp dụng" : "Applied Formula"}
             </div>
             <div style={{ background: "linear-gradient(135deg,rgba(208,33,28,0.08),rgba(153,20,20,0.04))", borderRadius: 12, padding: "14px", fontSize: 12.5, color: th.text1, lineHeight: 1.9, border: "1px solid rgba(208,33,28,0.15)", fontFamily: "monospace" }}>
-              <span style={{ color: "#10B981", fontWeight: 700 }}>Net</span> = Gross_thực_tế
-              <br/>+ OT + Thưởng + Phụ_cấp
-              <br/>− <span style={{ color: "#EF4444" }}>BH ({totalInsEmp}%)</span>
-              <br/>− <span style={{ color: "#D97706" }}>Thuế_TNCN</span>
+              <span style={{ color: "#10B981", fontWeight: 700 }}>Net</span> = {vi ? "Gross_thực_tế" : "Actual_Gross"}
+              <br/>+ {vi ? "OT + Thưởng + Phụ_cấp" : "OT + Bonus + Allowances"}
+              <br/>− <span style={{ color: "#EF4444" }}>{vi ? "BH" : "Insurance"} ({totalInsEmp}%)</span>
+              <br/>− <span style={{ color: "#D97706" }}>{vi ? "Thuế_TNCN" : "Income_Tax"}</span>
             </div>
             <div style={{ marginTop: 12, fontSize: 12, color: th.text2, lineHeight: 1.7 }}>
-              <div>• {vi ? `BHXH: ${draft.bhxh}% · BHYT: ${draft.bhyt}% · BHTN: ${draft.bhtn}%` : `BHXH:${draft.bhxh}% · BHYT:${draft.bhyt}% · BHTN:${draft.bhtn}%`}</div>
+              <div>• {vi ? `BHXH: ${draft.bhxh}% · BHYT: ${draft.bhyt}% · BHTN: ${draft.bhtn}%` : `SI: ${draft.bhxh}% · HI: ${draft.bhyt}% · UI: ${draft.bhtn}%`}</div>
               <div>• {vi ? `Ngày chuẩn: ${draft.standardDays} ngày` : `Standard: ${draft.standardDays} days`}</div>
               <div>• {vi ? `Chi lương ngày ${draft.payDay} hàng tháng` : `Pay day: ${draft.payDay}th of month`}</div>
               <div>• {vi ? `Giảm trừ bản thân: ${fmtM(draft.selfDeduction, vi)}/tháng` : `Self deduction: ${fmtM(draft.selfDeduction, vi)}/mo`}</div>

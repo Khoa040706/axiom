@@ -46,7 +46,9 @@ export function MiniStatCard({ icon, label, value, accent }: MiniStatCardProps) 
   return (
     <div style={{
       flex: 1, background: th.cardBg, borderRadius: 12, padding: "16px 20px",
-      border: `1px solid ${th.cardBorder}`,
+      borderTop: `1px solid ${th.cardBorder}`,
+      borderRight: `1px solid ${th.cardBorder}`,
+      borderBottom: `1px solid ${th.cardBorder}`,
       borderLeft: `4px solid ${accent}`,
       display: "flex", alignItems: "center", gap: 14,
       boxShadow: "0 2px 8px rgba(0,0,0,0.06)",

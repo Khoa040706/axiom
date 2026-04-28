@@ -715,7 +715,7 @@ export default function ContractsPage() {
         <FilterPopup
           label={vi?"Phòng ban":"Department"}
           value={deptFilter}
-          options={depts.map(d => ({ value:String(d.id), label:d.name }))}
+          options={depts.map(d => ({ value:String(d.id), label:tDept(d.name, vi) }))}
           onChange={setDeptFilter}
           onClear={() => setDeptFilter("")}
           th={th}
@@ -774,7 +774,7 @@ export default function ContractsPage() {
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                   <div>
                     <div style={{ fontWeight:700, fontSize:14, color:th.text1 }}>{c.empName}</div>
-                    <div style={{ fontSize:11.5, color:th.text3 }}>{c.empCode} · {c.dept}</div>
+                    <div style={{ fontSize:11.5, color:th.text3 }}>{c.empCode} · {tDept(c.dept, vi)}</div>
                   </div>
                   <span style={{ fontWeight:700, fontSize:11, color:"#D0211C" }}>
                     {vi?"HĐ":"C"}{String(c.id).padStart(3,"0")}

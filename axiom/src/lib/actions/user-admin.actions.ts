@@ -82,9 +82,38 @@ export async function adminResetPasswordInDB(userId: number, newPassword: string
   }
 }
 
-/** Đổi role */
+/** Đổi role — có kiểm tra ràng buộc thăng chức */
 export async function updateUserRoleInDB(userId: number, role: string) {
   try {
+    const { prisma } = await import("@/lib/prisma")
+
+    // Lấy role hiện tại của user
+    const current = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    })
+    if (!current) return { success: false, error: "Không tìm thấy tài khoản" }
+
+    // ── Ràng buộc: Nhân viên chỉ được thăng lên Trưởng phòng ──────────────
+    if (current.role === "Employee") {
+      if (role !== "Manager" && role !== "Employee") {
+        return {
+          success: false,
+          error: "Nhân viên chỉ có thể được thăng lên chức vụ Trưởng phòng",
+        }
+      }
+    }
+
+    // ── Ràng buộc: Trưởng phòng chỉ được giữ nguyên hoặc hạ về Nhân viên ──
+    if (current.role === "Manager") {
+      if (role !== "Manager" && role !== "Employee") {
+        return {
+          success: false,
+          error: "Trưởng phòng chỉ có thể được giữ nguyên hoặc hạ xuống Nhân viên",
+        }
+      }
+    }
+
     const updated = await userService.updateRole(userId, role)
     return { success: true, data: serialize(updated) }
   } catch (err) {
@@ -92,6 +121,7 @@ export async function updateUserRoleInDB(userId: number, role: string) {
     return { success: false, error: "Không thể cập nhật quyền" }
   }
 }
+
 
 /** Lấy departments cho dropdown khi tạo user */
 export async function getDepartmentsForSelect() {

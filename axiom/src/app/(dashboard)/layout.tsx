@@ -52,6 +52,7 @@ function getNav(role: string): NavItem[] {
   const accountant: NavItem[] = [
     { href: "/dashboard-accountant", icon: LayoutDashboard, vi: "Tổng quan", en: "Overview" },
     { href: "/payroll", icon: DollarSign, vi: "Bảng lương", en: "Payroll" },
+    { href: "/payroll/config", icon: Settings, vi: "Cấu hình lương", en: "Salary Config" },
     { href: "/payslips", icon: FileText, vi: "Phiếu lương", en: "Payslips" },
   ]
   // ── MANAGER (Trưởng phòng): UC-05 (Duyệt NP) + UC-06 (Chấm công) + UC-11 (Dashboard thống kê) ──
@@ -62,6 +63,7 @@ function getNav(role: string): NavItem[] {
   ]
   // ── EMPLOYEE (Nhân viên): UC-04 (Đăng ký NP) + UC-06 (Chấm công) + UC-07 (Công tác phí) + UC-10 (Xem phiếu lương) ──
   const employee: NavItem[] = [
+    { href: "/dashboard-employee", icon: LayoutDashboard, vi: "Trang chủ", en: "Overview" },
     { href: "/attendance/check-in", icon: Clock, vi: "Chấm công", en: "My Attendance" },
     { href: "/leave", icon: CalendarDays, vi: "Đơn nghỉ phép", en: "My Leaves" },
     { href: "/payslips", icon: DollarSign, vi: "Phiếu lương", en: "My Payslip" },
@@ -104,14 +106,67 @@ function Inner({ children }: { children: React.ReactNode }) {
   const [showNotif, setShowNotif] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  // TODO: Production — thay bằng dữ liệu thật từ API/WebSocket. Đây là demo data.
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: "leave", read: false, timeVi: "2 phút trước", timeEn: "2 min ago", titleVi: "Đơn nghỉ phép mới", titleEn: "New Leave Request", bodyVi: "Nguyễn Văn A đã gửi đơn xin nghỉ 2 ngày", bodyEn: "Nguyen Van A submitted a 2-day leave request" },
-    { id: 2, type: "payroll", read: false, timeVi: "15 phút trước", timeEn: "15 min ago", titleVi: "Bảng lương đã tính xong", titleEn: "Payroll Completed", bodyVi: "Lương tháng 3/2026 đã được duyệt", bodyEn: "March 2026 payroll has been approved" },
-    { id: 3, type: "attendance", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "Cảnh báo chấm công", titleEn: "Attendance Alert", bodyVi: "3 nhân viên chưa check-in hôm nay", bodyEn: "3 employees have not checked in today" },
-    { id: 4, type: "system", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Cập nhật hệ thống", titleEn: "System Update", bodyVi: "Phiên bản AXIOM HRM v2.1 đã ra mắt", bodyEn: "AXIOM HRM v2.1 has been released" },
-    { id: 5, type: "leave", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Đơn nghỉ phép đã duyệt", titleEn: "Leave Request Approved", bodyVi: "Trần Thị B - đơn nghỉ 2 ngày được chấp thuận", bodyEn: "Tran Thi B - 2-day leave request approved" },
-  ])
+  // Thông báo theo role — mỗi tài khoản thấy nội dung phù hợp với công việc của mình
+  const [notifications, setNotifications] = useState(() => {
+    const role = (() => {
+      if (typeof window !== "undefined") {
+        try {
+          // Đọc role từ session cookie hoặc localStorage nếu có
+          const stored = localStorage.getItem("axiom_mock_user")
+          if (stored) return JSON.parse(stored).role ?? "Employee"
+        } catch { /* ignore */ }
+      }
+      return "Employee"
+    })()
+
+    const SYSTEM = { id: 99, type: "system", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Cập nhật hệ thống", titleEn: "System Update", bodyVi: "Phiên bản AXIOM HRM v2.1 đã ra mắt", bodyEn: "AXIOM HRM v2.1 has been released" }
+
+    const byRole: Record<string, typeof SYSTEM[]> = {
+      // Giám đốc: báo cáo, phê duyệt ngân sách, hoạt động toàn công ty
+      Director: [
+        { id: 1, type: "payroll", read: false, timeVi: "30 phút trước", timeEn: "30 min ago", titleVi: "Báo cáo lương tháng 4", titleEn: "April Payroll Report", bodyVi: "Tổng quỹ lương tháng 4/2026 sẵn sàng để xem xét", bodyEn: "April 2026 total payroll fund is ready for review" },
+        { id: 2, type: "leave", read: false, timeVi: "2 giờ trước", timeEn: "2 hrs ago", titleVi: "5 đơn nghỉ phép chờ duyệt", titleEn: "5 Pending Leave Requests", bodyVi: "Các trưởng phòng đã chuyển 5 đơn để lãnh đạo duyệt", bodyEn: "5 leave requests forwarded by department heads" },
+        { id: 3, type: "attendance", read: true, timeVi: "Hôm nay", timeEn: "Today", titleVi: "Tỷ lệ chấm công tháng 4", titleEn: "April Attendance Rate", bodyVi: "Tỷ lệ đi làm đúng giờ đạt 94.2% trong tháng 4", bodyEn: "On-time attendance rate reached 94.2% in April" },
+        SYSTEM,
+      ],
+      // Admin: quản trị hệ thống, phân quyền, nhân sự
+      Admin: [
+        { id: 1, type: "system", read: false, timeVi: "10 phút trước", timeEn: "10 min ago", titleVi: "Tài khoản mới cần kích hoạt", titleEn: "New Account Pending Activation", bodyVi: "2 tài khoản nhân viên mới đang chờ phê duyệt", bodyEn: "2 new employee accounts awaiting approval" },
+        { id: 2, type: "leave", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "Hợp đồng sắp hết hạn", titleEn: "Contracts Expiring Soon", bodyVi: "3 hợp đồng lao động sẽ hết hạn trong 30 ngày tới", bodyEn: "3 employment contracts expiring within 30 days" },
+        { id: 3, type: "attendance", read: true, timeVi: "3 giờ trước", timeEn: "3 hrs ago", titleVi: "Cảnh báo chấm công", titleEn: "Attendance Alert", bodyVi: "5 nhân viên chưa check-in hôm nay", bodyEn: "5 employees have not checked in today" },
+        SYSTEM,
+      ],
+      // Kế toán: lương, bảo hiểm, thuế
+      Accountant: [
+        { id: 1, type: "payroll", read: false, timeVi: "15 phút trước", timeEn: "15 min ago", titleVi: "Bảng lương đã tính xong", titleEn: "Payroll Completed", bodyVi: "Lương tháng 4/2026 đã tính xong — chờ phê duyệt", bodyEn: "April 2026 payroll calculated — awaiting approval" },
+        { id: 2, type: "payroll", read: false, timeVi: "2 giờ trước", timeEn: "2 hrs ago", titleVi: "Nhắc nộp BHXH", titleEn: "Insurance Payment Reminder", bodyVi: "Hạn nộp BHXH tháng 4 là ngày 30/04/2026", bodyEn: "April insurance payment deadline: April 30, 2026" },
+        { id: 3, type: "system", read: true, timeVi: "Hôm nay", timeEn: "Today", titleVi: "Thuế TNCN Q1 đã nộp", titleEn: "Q1 PIT Submitted", bodyVi: "Báo cáo thuế TNCN quý 1/2026 đã được gửi lên Cục Thuế", bodyEn: "Q1 2026 PIT report submitted to Tax Department" },
+        SYSTEM,
+      ],
+      // HR Manager: nhân sự, nghỉ phép, hợp đồng
+      HRManager: [
+        { id: 1, type: "leave", read: false, timeVi: "5 phút trước", timeEn: "5 min ago", titleVi: "Đơn nghỉ phép mới", titleEn: "New Leave Request", bodyVi: "Nguyễn Văn A đã gửi đơn xin nghỉ 2 ngày", bodyEn: "Nguyen Van A submitted a 2-day leave request" },
+        { id: 2, type: "leave", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "3 đơn chờ duyệt", titleEn: "3 Pending Approvals", bodyVi: "Có 3 đơn nghỉ phép đang chờ bạn xem xét", bodyEn: "3 leave requests are awaiting your review" },
+        { id: 3, type: "attendance", read: false, timeVi: "2 giờ trước", timeEn: "2 hrs ago", titleVi: "Cảnh báo chấm công", titleEn: "Attendance Alert", bodyVi: "4 nhân viên chưa check-in hôm nay", bodyEn: "4 employees have not checked in today" },
+        { id: 4, type: "system", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Hợp đồng sắp hết hạn", titleEn: "Contract Expiring", bodyVi: "Hợp đồng của Trần Thị B hết hạn sau 15 ngày", bodyEn: "Tran Thi B's contract expires in 15 days" },
+        SYSTEM,
+      ],
+      // Trưởng phòng: duyệt nghỉ phép phòng, chấm công phòng
+      Manager: [
+        { id: 1, type: "leave", read: false, timeVi: "20 phút trước", timeEn: "20 min ago", titleVi: "Đơn nghỉ phép cần duyệt", titleEn: "Leave Request Pending", bodyVi: "Lê Văn C gửi đơn xin nghỉ phép 1 ngày", bodyEn: "Le Van C submitted a 1-day leave request" },
+        { id: 2, type: "attendance", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "Chấm công phòng bạn", titleEn: "Your Team Attendance", bodyVi: "2 thành viên phòng chưa check-in hôm nay", bodyEn: "2 team members have not checked in today" },
+        SYSTEM,
+      ],
+      // Nhân viên: chỉ nhìn thấy thông tin cá nhân
+      Employee: [
+        { id: 1, type: "payroll", read: false, timeVi: "Hôm nay", timeEn: "Today", titleVi: "Phiếu lương tháng 4 sẵn sàng", titleEn: "April Payslip Available", bodyVi: "Phiếu lương tháng 4/2026 của bạn đã được tạo", bodyEn: "Your April 2026 payslip is now available" },
+        { id: 2, type: "leave", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Đơn nghỉ phép được duyệt", titleEn: "Leave Request Approved", bodyVi: "Đơn nghỉ ngày 28/04 của bạn đã được chấp thuận", bodyEn: "Your leave request for Apr 28 has been approved" },
+        SYSTEM,
+      ],
+    }
+
+    return byRole[role] ?? byRole["Employee"]
+  })
   const th = getTheme(dark)
 
   // ── NextAuth session ─────────────────────────────────────
@@ -165,6 +220,51 @@ function Inner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     reloadUser()
   }, [reloadUser])
+
+  // Cập nhật notifications theo role thực khi session load xong
+  useEffect(() => {
+    if (!user) return
+    const role = String(user.role)
+    const SYSTEM = { id: 99, type: "system", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Cập nhật hệ thống", titleEn: "System Update", bodyVi: "Phiên bản AXIOM HRM v2.1 đã ra mắt", bodyEn: "AXIOM HRM v2.1 has been released" }
+    const map: Record<string, typeof SYSTEM[]> = {
+      Director: [
+        { id: 1, type: "payroll", read: false, timeVi: "30 phút trước", timeEn: "30 min ago", titleVi: "Báo cáo lương tháng 4", titleEn: "April Payroll Report", bodyVi: "Tổng quỹ lương tháng 4/2026 sẵn sàng để xem xét", bodyEn: "April 2026 total payroll fund is ready for review" },
+        { id: 2, type: "leave", read: false, timeVi: "2 giờ trước", timeEn: "2 hrs ago", titleVi: "5 đơn nghỉ phép chờ duyệt", titleEn: "5 Pending Leave Requests", bodyVi: "Các trưởng phòng đã chuyển 5 đơn để lãnh đạo duyệt", bodyEn: "5 leave requests forwarded by department heads" },
+        { id: 3, type: "attendance", read: true, timeVi: "Hôm nay", timeEn: "Today", titleVi: "Tỷ lệ chấm công tháng 4", titleEn: "April Attendance Rate", bodyVi: "Tỷ lệ đi làm đúng giờ đạt 94.2% trong tháng 4", bodyEn: "On-time attendance rate reached 94.2% in April" },
+        SYSTEM,
+      ],
+      Admin: [
+        { id: 1, type: "system", read: false, timeVi: "10 phút trước", timeEn: "10 min ago", titleVi: "Tài khoản mới cần kích hoạt", titleEn: "New Account Pending Activation", bodyVi: "2 tài khoản nhân viên mới đang chờ phê duyệt", bodyEn: "2 new employee accounts awaiting approval" },
+        { id: 2, type: "leave", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "Hợp đồng sắp hết hạn", titleEn: "Contracts Expiring Soon", bodyVi: "3 hợp đồng lao động sẽ hết hạn trong 30 ngày tới", bodyEn: "3 employment contracts expiring within 30 days" },
+        { id: 3, type: "attendance", read: true, timeVi: "3 giờ trước", timeEn: "3 hrs ago", titleVi: "Cảnh báo chấm công", titleEn: "Attendance Alert", bodyVi: "5 nhân viên chưa check-in hôm nay", bodyEn: "5 employees have not checked in today" },
+        SYSTEM,
+      ],
+      Accountant: [
+        { id: 1, type: "payroll", read: false, timeVi: "15 phút trước", timeEn: "15 min ago", titleVi: "Bảng lương đã tính xong", titleEn: "Payroll Completed", bodyVi: "Lương tháng 4/2026 đã tính xong — chờ phê duyệt", bodyEn: "April 2026 payroll calculated — awaiting approval" },
+        { id: 2, type: "payroll", read: false, timeVi: "2 giờ trước", timeEn: "2 hrs ago", titleVi: "Nhắc nộp BHXH", titleEn: "Insurance Payment Reminder", bodyVi: "Hạn nộp BHXH tháng 4 là ngày 30/04/2026", bodyEn: "April insurance payment deadline: April 30, 2026" },
+        { id: 3, type: "system", read: true, timeVi: "Hôm nay", timeEn: "Today", titleVi: "Thuế TNCN Q1 đã nộp", titleEn: "Q1 PIT Submitted", bodyVi: "Báo cáo thuế TNCN quý 1/2026 đã được gửi lên Cục Thuế", bodyEn: "Q1 2026 PIT report submitted to Tax Department" },
+        SYSTEM,
+      ],
+      HRManager: [
+        { id: 1, type: "leave", read: false, timeVi: "5 phút trước", timeEn: "5 min ago", titleVi: "Đơn nghỉ phép mới", titleEn: "New Leave Request", bodyVi: "Nguyễn Văn A đã gửi đơn xin nghỉ 2 ngày", bodyEn: "Nguyen Van A submitted a 2-day leave request" },
+        { id: 2, type: "leave", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "3 đơn chờ duyệt", titleEn: "3 Pending Approvals", bodyVi: "Có 3 đơn nghỉ phép đang chờ bạn xem xét", bodyEn: "3 leave requests are awaiting your review" },
+        { id: 3, type: "attendance", read: false, timeVi: "2 giờ trước", timeEn: "2 hrs ago", titleVi: "Cảnh báo chấm công", titleEn: "Attendance Alert", bodyVi: "4 nhân viên chưa check-in hôm nay", bodyEn: "4 employees have not checked in today" },
+        { id: 4, type: "system", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Hợp đồng sắp hết hạn", titleEn: "Contract Expiring", bodyVi: "Hợp đồng của Trần Thị B hết hạn sau 15 ngày", bodyEn: "Tran Thi B's contract expires in 15 days" },
+        SYSTEM,
+      ],
+      Manager: [
+        { id: 1, type: "leave", read: false, timeVi: "20 phút trước", timeEn: "20 min ago", titleVi: "Đơn nghỉ phép cần duyệt", titleEn: "Leave Request Pending", bodyVi: "Lê Văn C gửi đơn xin nghỉ phép 1 ngày", bodyEn: "Le Van C submitted a 1-day leave request" },
+        { id: 2, type: "attendance", read: false, timeVi: "1 giờ trước", timeEn: "1 hr ago", titleVi: "Chấm công phòng bạn", titleEn: "Your Team Attendance", bodyVi: "2 thành viên phòng chưa check-in hôm nay", bodyEn: "2 team members have not checked in today" },
+        SYSTEM,
+      ],
+      Employee: [
+        { id: 1, type: "payroll", read: false, timeVi: "Hôm nay", timeEn: "Today", titleVi: "Phiếu lương tháng 4 sẵn sàng", titleEn: "April Payslip Available", bodyVi: "Phiếu lương tháng 4/2026 của bạn đã được tạo", bodyEn: "Your April 2026 payslip is now available" },
+        { id: 2, type: "leave", read: true, timeVi: "Hôm qua", timeEn: "Yesterday", titleVi: "Đơn nghỉ phép được duyệt", titleEn: "Leave Request Approved", bodyVi: "Đơn nghỉ ngày 28/04 của bạn đã được chấp thuận", bodyEn: "Your leave request for Apr 28 has been approved" },
+        SYSTEM,
+      ],
+    }
+    setNotifications(map[role] ?? map["Employee"])
+  }, [user?.role]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     window.addEventListener("axiom-user-updated", reloadAvatar)
@@ -296,7 +396,7 @@ function Inner({ children }: { children: React.ReactNode }) {
         {/* Nav */}
         <nav style={{ flex: 1, padding: isTablet ? "12px 8px" : "12px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
           {navItems.map(({ href, icon: Icon, vi, en }) => {
-            const active = pathname === href || pathname.startsWith(href + "/")
+            const active = pathname === href || (pathname.startsWith(href + "/") && !navItems.some(n => n.href !== href && pathname.startsWith(n.href)))
             return (
               <Link key={href} href={href}
                 onMouseEnter={() => setHov(href)} onMouseLeave={() => setHov(null)}
@@ -345,18 +445,15 @@ function Inner({ children }: { children: React.ReactNode }) {
             onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%",
-              border: "2px solid rgba(255,200,200,0.4)",
-              overflow: "hidden", flexShrink: 0,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-            }}>
-              <AvatarImg
-                src={avatarUrl}
-                alt={user.name}
-                size={36}
-              />
-            </div>
+            <AvatarImg
+              src={avatarUrl}
+              alt={user.name}
+              size={36}
+              style={{
+                border: "2px solid rgba(255,200,200,0.4)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              }}
+            />
             {!isTablet && (
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
@@ -392,15 +489,17 @@ function Inner({ children }: { children: React.ReactNode }) {
         zIndex: 90,
         transition: "background .3s, border-color .3s, left .28s",
       }}>
-        {/* Left: hamburger (mobile) or greeting */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+        {/* Left: logo+name (mobile) or empty space (desktop — sidebar has logo) */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
           {isMobile && (
-            <button
-              onClick={() => setMobileSidebarOpen(true)}
-              style={{ ...headerIconBtn, flexShrink: 0 }}
-            >
-              <Menu size={20} color={th.text1} />
-            </button>
+            <Link href={user?.dashboardPath ?? "/dashboard"} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+              <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={30} height={30}
+                style={{ objectFit: "contain", flexShrink: 0 }} />
+              <span style={{
+                fontWeight: 800, fontSize: 16, letterSpacing: 2,
+                color: "#D0211C",
+              }}>AXIOM</span>
+            </Link>
           )}
         </div>
 
@@ -569,17 +668,14 @@ function Inner({ children }: { children: React.ReactNode }) {
               }}
             >
               {/* Avatar */}
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%",
-                border: `2px solid ${dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)"}`,
-                overflow: "hidden", flexShrink: 0,
-              }}>
-                <AvatarImg
-                  src={avatarUrl}
-                  alt={user.name}
-                  size={36}
-                />
-              </div>
+              <AvatarImg
+                src={avatarUrl}
+                alt={user.name}
+                size={36}
+                style={{
+                  border: `2px solid ${dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)"}`,
+                }}
+              />
               {/* Name — hidden on mobile */}
               {!isMobile && (
                 <div style={{ textAlign: "left", minWidth: 70 }}>
@@ -615,9 +711,7 @@ function Inner({ children }: { children: React.ReactNode }) {
                     borderBottom: `1px solid ${th.tableBorder}`,
                     display: "flex", alignItems: "center", gap: 10,
                   }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-                      <AvatarImg src={avatarUrl} alt={user.name} size={40} />
-                    </div>
+                    <AvatarImg src={avatarUrl} alt={user.name} size={40} />
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: th.text1 }}>{user.name}</div>
                       <div style={{ fontSize: 11, color: th.text2 }}>{lang === "vi" ? user.roleLabel : user.roleLabelEn}</div>
@@ -701,6 +795,8 @@ function Inner({ children }: { children: React.ReactNode }) {
         paddingBottom: isMobile ? 60 : 0,
         background: th.pageBg, minHeight: "100vh",
         transition: "background .3s, margin-left .28s",
+        overflowX: "hidden",
+        maxWidth: "100vw",
       }}>
         {children}
       </main>
@@ -712,7 +808,7 @@ function Inner({ children }: { children: React.ReactNode }) {
           borderTop: `1px solid ${th.cardBorder}`,
         }}>
           {bottomNavItems.map(({ href, icon: Icon, vi, en }) => {
-            const active = pathname === href || pathname.startsWith(href + "/")
+            const active = pathname === href || (pathname.startsWith(href + "/") && !bottomNavItems.some(n => n.href !== href && pathname.startsWith(n.href)))
             return (
               <Link key={href} href={href} style={{
                 flex: 1,
@@ -731,8 +827,8 @@ function Inner({ children }: { children: React.ReactNode }) {
                   }} />
                 )}
                 <Icon size={20} />
-                <span style={{ fontSize: 9.5, lineHeight: 1 }}>
-                  {lang === "vi" ? vi.length > 8 ? vi.slice(0, 7) + "…" : vi : en.length > 8 ? en.slice(0, 7) + "…" : en}
+                <span style={{ fontSize: 9.5, lineHeight: 1, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textAlign: "center" }}>
+                  {lang === "vi" ? vi : en}
                 </span>
               </Link>
             )
@@ -804,9 +900,7 @@ function Inner({ children }: { children: React.ReactNode }) {
                   border: `1px solid ${th.cardBorder}`,
                   marginBottom: 18,
                 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-                    <AvatarImg src={avatarUrl} alt={user.name} size={44} />
-                  </div>
+                  <AvatarImg src={avatarUrl} alt={user.name} size={44} />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14, color: th.text1 }}>{user.name}</div>
                     <div style={{ fontSize: 12, color: th.text2 }}>{lang === "vi" ? user.roleLabel : user.roleLabelEn}</div>

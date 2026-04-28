@@ -7,6 +7,7 @@ import Image from "next/image"
 import { useSession } from "next-auth/react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { AvatarImg } from "@/components/ui/avatar-img"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 import {
   Users, Plus, Search, Trash2,
   RefreshCw, UserCheck, UserX, Key, Eye, EyeOff, X,
@@ -148,6 +149,17 @@ function SortTh({
   )
 }
 
+// ── Role transition rules ────────────────────────────────────
+// Trả về danh sách role mà user CÓ THỂ được chuyển sang
+function getAllowedTargetRoles(currentRole: string) {
+  // Nhân viên chỉ được lên Trưởng phòng
+  if (currentRole === "Employee") return ["Employee", "Manager"]
+  // Trưởng phòng chỉ có thể giữ nguyên hoặc xuống lại Nhân viên
+  if (currentRole === "Manager")  return ["Manager", "Employee"]
+  // Các vai trò quản lý cấp cao: không giới hạn
+  return ROLES.map(r => r.value)
+}
+
 // ── RoleDropdown: inline role change dropdown ────────────────
 function RoleDropdown({
   user, vi, onRoleChange, actionLoading, th,
@@ -159,6 +171,10 @@ function RoleDropdown({
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const ri = roleInfo(user.role)
+
+  const allowedValues = getAllowedTargetRoles(user.role)
+  const allowedRoles  = ROLES.filter(r => allowedValues.includes(r.value))
+  const isRestricted  = allowedRoles.length < ROLES.length
 
   useEffect(() => {
     if (!open) return
@@ -197,7 +213,7 @@ function RoleDropdown({
           borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.18)",
           minWidth: 200, overflow: "hidden",
         }}>
-          {ROLES.map(r => {
+          {allowedRoles.map(r => {
             const isSelected = user.role === r.value
             return (
               <button
@@ -221,6 +237,20 @@ function RoleDropdown({
               </button>
             )
           })}
+          {/* Info note khi bị giới hạn */}
+          {isRestricted && (
+            <div style={{
+              padding: "8px 12px",
+              fontSize: 11, color: th.text3,
+              borderTop: `1px solid ${th.tableBorder}`,
+              display: "flex", alignItems: "flex-start", gap: 5, lineHeight: 1.4,
+            }}>
+              <span style={{ fontSize: 13, flexShrink: 0 }}>ℹ️</span>
+              <span>{vi
+                ? "Nhân viên chỉ có thể được thăng lên Trưởng phòng"
+                : "Employee can only be promoted to Manager"}</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -233,6 +263,7 @@ export default function UsersAdminPage() {
   const th = getTheme(dark)
   const vi = lang === "vi"
   const { data: session, status } = useSession()
+  const { isMobile } = useBreakpoint()
 
   const [users, setUsers]           = useState<any[]>([])
   const [departments, setDepts]     = useState<any[]>([])
@@ -429,9 +460,9 @@ export default function UsersAdminPage() {
   }
 
   return (
-    <div style={{ padding: "28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-start", gap: isMobile ? 12 : 0, marginBottom: 22 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: th.text1, display: "flex", alignItems: "center", gap: 10 }}>
             <Users size={22} color="#D0211C"/>{vi ? "Quản lý tài khoản" : "User Management"}
@@ -453,7 +484,7 @@ export default function UsersAdminPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10, marginBottom: 16 }}>
         <div style={{ position: "relative", flex: 1 }}>
           <Search size={14} color={th.text2} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}/>
           <input placeholder={vi ? "Tìm kiếm tên hoặc username..." : "Search name or username..."}
@@ -475,7 +506,7 @@ export default function UsersAdminPage() {
           { label: vi?"Bị khoá":"Inactive",   value: users.filter(u => !u.isActive).length,     color: "#EF4444" },
           { label: vi?"Admin":"Admin",         value: users.filter(u => u.role === "Admin").length, color: "#7C3AED" },
         ].map(s => (
-          <div key={s.label} style={{ background: th.cardBg, border: `1px solid ${th.cardBorder}`, borderRadius: 12, padding: "12px 18px", borderLeft: `4px solid ${s.color}`, flex: 1 }}>
+          <div key={s.label} style={{ background: th.cardBg, borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.color}`, borderRadius: 12, padding: "12px 18px", flex: 1 }}>
             <div style={{ fontSize: 11.5, color: th.text2 }}>{s.label}</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
           </div>
@@ -483,8 +514,9 @@ export default function UsersAdminPage() {
       </div>
 
       {/* Table */}
-      <div style={{ background: th.cardBg, borderRadius: 14, overflow: "hidden", border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
+      <div style={{ background: th.cardBg, borderRadius: 14, border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+        <div className="table-scroll">
+        <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead><tr>
             <SortTh label={vi?"Tên / Mã NV":"Name / Code"} field="name" sortField={sortField} sortDir={sortDir}
               onSort={handleSort} onClear={clearSort} th={th} options={sortName} style={hd}/>
@@ -514,12 +546,8 @@ export default function UsersAdminPage() {
                 <tr key={u.id} onMouseEnter={e => (e.currentTarget.style.background = dark ? "rgba(255,255,255,0.03)" : "#FAFAFA")} onMouseLeave={e => (e.currentTarget.style.background = "")} style={{ transition: "background .1s" }}>
                   <td style={tdS}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width:36, height:36, borderRadius:"50%",
-                        overflow:"hidden", flexShrink:0,
-                        border:`2px solid ${ri.color}40`,
-                        boxShadow:"0 2px 6px rgba(0,0,0,0.15)" }}>
-                        <AvatarImg src={u.employee?.avatarPath} alt={empName} size={36}/>
-                      </div>
+                      <AvatarImg src={u.employee?.avatarPath} alt={empName} size={36}
+                        style={{ border:`2px solid ${ri.color}40`, boxShadow:"0 2px 6px rgba(0,0,0,0.15)" }}/>
                       <div>
                         <div style={{ fontWeight: 700, color: th.text1, fontSize: 13 }}>{empName}</div>
                         <div style={{ fontSize: 11.5, color: th.text2 }}>{empCode}</div>
@@ -560,6 +588,7 @@ export default function UsersAdminPage() {
             })}
           </tbody>
         </table>
+        </div>
 
         {/* ── Pagination bar ── */}
         <div style={{ padding: "12px 16px", borderTop: `1px solid ${th.tableBorder}`, background: th.tableHead, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -630,12 +659,12 @@ export default function UsersAdminPage() {
                 <input style={inputStyle} value={createForm.fullName} onChange={e => setCreateForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Nguyễn Văn A"/>
               </div>
               {/* Email + Phone */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: th.text2, display: "block", marginBottom: 6 }}>Email</label>
                   <div style={{ position: "relative" }}>
                     <Mail size={13} color={th.text2} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)" }}/>
-                    <input type="email" style={{ ...inputStyle, paddingLeft: 30 }} value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="email@axiom.vn"/>
+                    <input type="email" style={{ ...inputStyle, paddingLeft: 30 }} value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="email@gmail.com"/>
                   </div>
                 </div>
                 <div>
@@ -647,7 +676,7 @@ export default function UsersAdminPage() {
                 </div>
               </div>
               {/* Role + Department */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: th.text2, display: "block", marginBottom: 6 }}>{vi?"Vai trò":"Role"}</label>
                   <select style={inputStyle} value={createForm.role} onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))}>
@@ -660,7 +689,7 @@ export default function UsersAdminPage() {
                     <Building2 size={13} color={th.text2} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)" }}/>
                     <select style={{ ...inputStyle, paddingLeft: 28 }} value={createForm.departmentId} onChange={e => setCreateForm(f => ({ ...f, departmentId: e.target.value }))}>
                       <option value="">{vi ? "-- Chọn phòng --" : "-- Select dept --"}</option>
-                      {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      {departments.map((d: any) => <option key={d.id} value={d.id}>{tDept(d.name, vi)}</option>)}
                     </select>
                   </div>
                 </div>

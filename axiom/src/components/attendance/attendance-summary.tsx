@@ -29,7 +29,7 @@ export function AttendanceSummary({
       {stats.map(s => (
         <div key={s.label} style={{
           flex: 1, background: th.cardBg, borderRadius: 12, padding: "18px 20px",
-          border: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`,
+          borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`,
           boxShadow: "0 2px 8px rgba(0,0,0,0.06)", position: "relative", overflow: "hidden",
         }}>
           <div style={{

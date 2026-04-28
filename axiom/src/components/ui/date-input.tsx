@@ -68,7 +68,7 @@ export function DateInput({
   // Khớp chính xác màu native ::placeholder của browser
   // Browser tính placeholder ~ 42% opacity của input color (#f8fafc) trên nền #162032 ≈ #94a3b8
   const autoPlaceholderColor = dark
-    ? "#94a3b8"   // ← solid color, giống hệt email@axiom.vn, 0900 000 000
+    ? "#94a3b8"   // ← solid color, giống hệt email@gmail.com, 0900 000 000
     : "#9CA3AF"
 
   // Chữ ngày đã chọn cần tương phản cao hơn placeholder

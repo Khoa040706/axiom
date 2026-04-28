@@ -1,0 +1,23 @@
+@startuml
+title Hình 6.12 — Sequence Diagram: Xuất PDF phiếu lương
+actor "Employee" as E
+participant "UI /payslips" as UI
+participant "API Route" as API
+participant "PayslipService" as SVC
+database "PostgreSQL" as DB
+
+E -> UI : Vào /payslips\n→ Chọn kỳ lương
+UI -> DB : SELECT payslip\nWHERE employeeId, month, year
+DB --> UI : Payslip + Payroll data
+UI --> E : Hiển thị chi tiết phiếu lương
+UI -> DB : UPDATE Payslip\nSET isViewed=true
+E -> UI : Nhấn "Tải PDF"
+UI -> API : GET /api/export/\npayslip-pdf?id=xxx
+API -> SVC : generatePDF(payslipId)
+SVC -> DB : SELECT payroll\n+ employee data
+DB --> SVC : Full data
+SVC -> SVC : Tạo PDF với jsPDF\n(header, bảng lương, chữ ký)
+SVC --> API : PDF Buffer
+API --> UI : Response\n(blob, application/pdf)
+UI --> E : Browser tải file PDF
+@enduml

@@ -14,6 +14,7 @@ import { matchAny } from "@/lib/utils/search"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { tDept, tPos, tContractType } from "@/lib/i18n-maps"
 import { DateInput } from "@/components/ui/date-input"
+import { AvatarImg } from "@/components/ui/avatar-img"
 
 // ── Position classification for optgroup + intern logic ────────
 const EXEC_POSITIONS = new Set(["Giám đốc", "Phó Giám đốc"])
@@ -79,16 +80,7 @@ function mapEmp(e: any): Employee {
 
 
 function EmpAvatar({ name, avatarPath, size = 32 }: { name: string; avatarPath: string | null; size?: number }) {
-  const [imgErr, setImgErr] = useState(false)
-  const src = (avatarPath && !imgErr) ? avatarPath : "/images/avatarmacdinh.jpg"
-  return (
-    <img
-      src={src}
-      alt={name}
-      onError={() => setImgErr(true)}
-      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-    />
-  )
+  return <AvatarImg src={avatarPath} name={name} alt={name} size={size} />
 }
 
 // ── i18n ──────────────────────────────────────────────────────
@@ -665,7 +657,7 @@ export default function EmployeesPage() {
         <FilterPopup
           label={t.allDepts}
           value={deptFilter}
-          options={depts.map(d => ({ value: String(d.id), label: d.name }))}
+          options={depts.map(d => ({ value: String(d.id), label: tDept(d.name, vi) }))}
           onChange={setDeptFilter}
           onClear={() => setDeptFilter("")}
           th={th}
@@ -676,7 +668,7 @@ export default function EmployeesPage() {
           <FilterPopup
             label={t.allPos}
             value={posFilter}
-            options={posInDept.map(p => ({ value: String(p.id), label: p.name }))}
+            options={posInDept.map(p => ({ value: String(p.id), label: tPos(p.name, vi) }))}
             onChange={setPosFilter}
             onClear={() => setPosFilter("")}
             th={th}
@@ -736,8 +728,8 @@ export default function EmployeesPage() {
                 <span style={{ fontWeight: 700, color: "#D0211C", fontSize: 12 }}>{e.id}</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", marginBottom: 12, fontSize: 12.5 }}>
-                <div><span style={{ color: th.text2 }}>{vi ? "Phòng ban" : "Dept"}: </span><b style={{ color: th.text1 }}>{e.dept || "—"}</b></div>
-                <div><span style={{ color: th.text2 }}>{vi ? "Chức vụ" : "Position"}: </span><b style={{ color: th.text1 }}>{e.pos || "—"}</b></div>
+                <div><span style={{ color: th.text2 }}>{vi ? "Phòng ban" : "Dept"}: </span><b style={{ color: th.text1 }}>{tDept(e.dept, vi) || "—"}</b></div>
+                <div><span style={{ color: th.text2 }}>{vi ? "Chức vụ" : "Position"}: </span><b style={{ color: th.text1 }}>{tPos(e.pos, vi) || "—"}</b></div>
                 <div><span style={{ color: th.text2 }}>{vi ? "Hợp đồng" : "Contract"}: </span><b style={{ color: th.text1 }}>{tContractType(e.type, vi)}</b></div>
                 <div><span style={{ color: th.text2 }}>{vi ? "Ngày vào" : "Join"}: </span><b style={{ color: th.text1 }}>{e.date}</b></div>
               </div>
@@ -920,7 +912,7 @@ export default function EmployeesPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <Field label={t.fEmail} error={errors.email} th={th}>
                   <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    placeholder="email@axiom.vn" style={inp(!!errors.email)} />
+                    placeholder="email@gmail.com" style={inp(!!errors.email)} />
                 </Field>
                 <Field label={t.fPhone} th={th}>
                   <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
@@ -929,87 +921,141 @@ export default function EmployeesPage() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <Field label={t.fDept} th={th}>
-                  <select
-                    value={form.deptId}
-                    onChange={e => setForm(f => ({ ...f, deptId: e.target.value, posId: "" }))}
-                    style={inp()}
-                  >
-                    <option value="">{t.selectDept}</option>
-                    {depts.map(d => <option key={d.id} value={d.id}>{tDept(d.name, vi) || d.name}</option>)}
-                  </select>
+                  {modal === "edit" ? (
+                    // Chức vụ và phòng ban không được đổi tự do — phải qua Quá trình công tác
+                    <div style={{
+                      ...inp(), display: "flex", alignItems: "center", justifyContent: "space-between",
+                      background: dark ? "rgba(255,255,255,0.05)" : "#F9FAFB",
+                      color: th.text2, cursor: "not-allowed",
+                    }}>
+                      <span style={{ color: th.text1, fontWeight: 500 }}>
+                        {tDept(editTarget?.dept ?? "", vi) || editTarget?.dept || "—"}
+                      </span>
+                      <span style={{ fontSize: 11, color: th.text3, marginLeft: 6 }}>🔒</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={form.deptId}
+                      onChange={e => setForm(f => ({ ...f, deptId: e.target.value, posId: "" }))}
+                      style={inp()}
+                    >
+                      <option value="">{t.selectDept}</option>
+                      {depts.map(d => <option key={d.id} value={d.id}>{tDept(d.name, vi) || d.name}</option>)}
+                    </select>
+                  )}
                 </Field>
                 <Field label={t.fPos} th={th}>
-                  <select
-                    value={form.posId}
-                    onChange={e => {
-                      const newPosId = e.target.value
-                      const intern = isInternPos(newPosId, positions)
-                      setForm(f => ({
-                        ...f,
-                        posId: newPosId,
-                        type: intern ? "Thực tập" : (f.type === "Thực tập" ? "Chính thức" : f.type),
-                      }))
-                    }}
-                    disabled={!form.deptId}
-                    style={{
-                      ...inp(),
-                      opacity: form.deptId ? 1 : 0.5,
-                      cursor: form.deptId ? "auto" : "not-allowed",
-                    }}
-                  >
-                    <option value="">{form.deptId ? t.selectPos : (vi ? "-- Chọn phòng ban trước --" : "-- Select dept first --")}</option>
-                    {(() => {
-                      const mgr = posInForm.filter(p => posGroup(p.name) === "mgr")
-                      const staff = posInForm.filter(p => posGroup(p.name) === "staff")
-                      return (
-                        <>
-                          {mgr.length > 0 && (
-                            <optgroup label={vi ? "── Quản lý ──" : "── Management ──"}>
-                              {mgr.map(p => <option key={p.id} value={p.id}>{tPos(p.name, vi) || p.name}</option>)}
-                            </optgroup>
-                          )}
-                          {staff.length > 0 && (
-                            <optgroup label={vi ? "── Chuyên môn ──" : "── Professional ──"}>
-                              {staff.map(p => <option key={p.id} value={p.id}>{tPos(p.name, vi) || p.name}</option>)}
-                            </optgroup>
-                          )}
-                        </>
-                      )
-                    })()}
-                  </select>
+                  {modal === "edit" ? (
+                    <div style={{
+                      ...inp(), display: "flex", alignItems: "center", justifyContent: "space-between",
+                      background: dark ? "rgba(255,255,255,0.05)" : "#F9FAFB",
+                      color: th.text2, cursor: "not-allowed",
+                    }}>
+                      <span style={{ color: th.text1, fontWeight: 500 }}>
+                        {tPos(editTarget?.pos ?? "", vi) || editTarget?.pos || "—"}
+                      </span>
+                      <span style={{ fontSize: 11, color: th.text3, marginLeft: 6 }}>🔒</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={form.posId}
+                      onChange={e => {
+                        const newPosId = e.target.value
+                        const intern = isInternPos(newPosId, positions)
+                        setForm(f => ({
+                          ...f,
+                          posId: newPosId,
+                          type: intern ? "Thực tập" : (f.type === "Thực tập" ? "Chính thức" : f.type),
+                        }))
+                      }}
+                      disabled={!form.deptId}
+                      style={{
+                        ...inp(),
+                        opacity: form.deptId ? 1 : 0.5,
+                        cursor: form.deptId ? "auto" : "not-allowed",
+                      }}
+                    >
+                      <option value="">{form.deptId ? t.selectPos : (vi ? "-- Chọn phòng ban trước --" : "-- Select dept first --")}</option>
+                      {(() => {
+                        const mgr = posInForm.filter(p => posGroup(p.name) === "mgr")
+                        const staff = posInForm.filter(p => posGroup(p.name) === "staff")
+                        return (
+                          <>
+                            {mgr.length > 0 && (
+                              <optgroup label={vi ? "── Quản lý ──" : "── Management ──"}>
+                                {mgr.map(p => <option key={p.id} value={p.id}>{tPos(p.name, vi) || p.name}</option>)}
+                              </optgroup>
+                            )}
+                            {staff.length > 0 && (
+                              <optgroup label={vi ? "── Chuyên môn ──" : "── Professional ──"}>
+                                {staff.map(p => <option key={p.id} value={p.id}>{tPos(p.name, vi) || p.name}</option>)}
+                              </optgroup>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </select>
+                  )}
                 </Field>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <Field label={t.fType} th={th}>
                   {(() => {
                     const intern = isInternPos(form.posId, positions)
+                    const isFormal = editTarget?.type === "Chính thức"
+                    // Nếu đang edit và đã là Chính thức → khóa, không cho hạ xuống
+                    if (modal === "edit" && isFormal) {
+                      return (
+                        <div style={{
+                          ...inp(), display: "flex", alignItems: "center", justifyContent: "space-between",
+                          background: dark ? "rgba(255,255,255,0.05)" : "#F9FAFB",
+                          color: th.text2, cursor: "not-allowed",
+                        }}>
+                          <span style={{ color: th.text1, fontWeight: 500 }}>
+                            {vi ? "Chính thức" : "Full-time"}
+                          </span>
+                          <span style={{ fontSize: 11, color: th.text3, marginLeft: 6 }}>🔒</span>
+                        </div>
+                      )
+                    }
                     // Intern: chỉ hiện "Thực tập". Non-intern: chỉ hiện 3 loại kia (không cho chọn Thực tập)
                     const visibleTypes = intern ? ["Thực tập"] : ["Chính thức", "Thử việc", "Thời vụ"]
                     const allTypes = ["Chính thức", "Thử việc", "Thời vụ", "Thực tập"]
                     return (
-                      <>
-                        <select
-                          value={form.type}
-                          onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                          disabled={intern}
-                          style={{
-                            ...inp(),
-                            opacity: intern ? 0.5 : 1,
-                            cursor: intern ? "not-allowed" : "auto",
-                          }}
-                        >
-                          {visibleTypes.map(tp => {
-                            const idx = allTypes.indexOf(tp)
-                            return <option key={tp} value={tp}>{t.types[idx]}</option>
-                          })}
-                        </select>
-                      </>
+                      <select
+                        value={form.type}
+                        onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+                        disabled={intern}
+                        style={{
+                          ...inp(),
+                          opacity: intern ? 0.5 : 1,
+                          cursor: intern ? "not-allowed" : "auto",
+                        }}
+                      >
+                        {visibleTypes.map(tp => {
+                          const idx = allTypes.indexOf(tp)
+                          return <option key={tp} value={tp}>{t.types[idx]}</option>
+                        })}
+                      </select>
                     )
                   })()}
-
                 </Field>
                 <Field label={t.fDate} error={errors.date} th={th}>
-                  <DateInput value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inp(!!errors.date)} />
+                  {modal === "edit" ? (
+                    // Ngày vào làm là dữ liệu lịch sử — chỉ đặt lúc tạo mới, không cho sửa
+                    <div style={{
+                      ...inp(), display: "flex", alignItems: "center", justifyContent: "space-between",
+                      background: dark ? "rgba(255,255,255,0.05)" : "#F9FAFB",
+                      color: th.text2, cursor: "not-allowed",
+                    }}>
+                      <span style={{ color: th.text1, fontWeight: 500 }}>
+                        {editTarget?.date || "—"}
+                      </span>
+                      <span style={{ fontSize: 11, color: th.text3, marginLeft: 6 }}>🔒</span>
+                    </div>
+                  ) : (
+                    <DateInput value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inp(!!errors.date)} />
+                  )}
                 </Field>
               </div>
             </div>

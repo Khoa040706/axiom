@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, User, Check } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { DateInput } from "@/components/ui/date-input"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 const DEPTS = ["Công nghệ thông tin","Nhân sự","Kinh doanh","Kế toán","Marketing"]
 const POSITIONS: Record<string,string[]> = {
@@ -42,6 +43,7 @@ export default function NewEmployeePage() {
   const th = getTheme(dark)
   const vi = lang === "vi"
   const router = useRouter()
+  const { isMobile } = useBreakpoint()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({ ...EMPTY })
   const [errors, setErrors] = useState<Record<string,string>>({})
@@ -111,7 +113,7 @@ export default function NewEmployeePage() {
   )
 
   return (
-    <div style={{ padding:"28px 28px 60px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 40px" : "28px 28px 60px" }}>
       {/* Back */}
       <button onClick={() => router.back()} style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:8, border:`1px solid ${th.cardBorder}`, background:"none", cursor:"pointer", color:th.text2, fontSize:13, fontFamily:"inherit", marginBottom:20 }}>
         <ArrowLeft size={14}/>{vi?"Quay lại":"Back"}
@@ -121,7 +123,7 @@ export default function NewEmployeePage() {
       <p style={{ fontSize:13, color:th.text2, marginBottom:24 }}>{vi?"Điền đầy đủ thông tin theo các bước":"Fill in all information step by step"}</p>
 
       {/* Step indicators */}
-      <div style={{ display:"flex", alignItems:"center", marginBottom:28, gap:0 }}>
+      <div style={{ display:"flex", alignItems:"center", marginBottom:28, gap:0, overflowX: isMobile ? "auto" : "visible" }}>
         {STEPS.map((s, i) => (
           <div key={i} style={{ display:"flex", alignItems:"center", flex:1 }}>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -160,15 +162,15 @@ export default function NewEmployeePage() {
             <Field label={vi?"Họ và tên *":"Full Name *"} error={errors.name}>
               <input value={form.name} onChange={e=>set("name",e.target.value)} placeholder={vi?"Nguyễn Văn An...":"John Doe..."} style={inpErr("name")}/>
             </Field>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:14 }}>
               <Field label="Email *" error={errors.email}>
-                <input value={form.email} onChange={e=>set("email",e.target.value)} placeholder="email@axiom.vn" style={inpErr("email")}/>
+                <input value={form.email} onChange={e=>set("email",e.target.value)} placeholder="email@gmail.com" style={inpErr("email")}/>
               </Field>
               <Field label={vi?"Điện thoại":"Phone"}>
                 <input value={form.phone} onChange={e=>set("phone",e.target.value)} placeholder="0900 000 000" style={inp}/>
               </Field>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:14 }}>
               <Field label={vi?"Giới tính":"Gender"}>
                 <select value={form.gender} onChange={e=>set("gender",e.target.value)} style={inp}>
                   <option>Nam</option><option>Nữ</option><option>Khác</option>
@@ -188,7 +190,7 @@ export default function NewEmployeePage() {
 
           {/* Step 1: Công việc & Hợp đồng */}
           {step === 1 && <>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:14 }}>
               <Field label={vi?"Phòng ban *":"Department *"}>
                 <select value={form.dept} onChange={e=>{ set("dept",e.target.value); set("pos","") }} style={inp}>
                   {DEPTS.map(d => <option key={d}>{d}</option>)}
@@ -201,7 +203,7 @@ export default function NewEmployeePage() {
                 </select>
               </Field>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:14 }}>
               <Field label={vi?"Loại hợp đồng":"Contract Type"}>
                 <select value={form.contractType} onChange={e=>set("contractType",e.target.value)} style={inp}>
                   {CONTRACT_TYPES.map(c => <option key={c}>{c}</option>)}
@@ -218,7 +220,7 @@ export default function NewEmployeePage() {
 
           {/* Step 2: Lương & Ngân hàng */}
           {step === 2 && <>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:14 }}>
               <Field label={vi?"Lương Gross (đồng) *":"Gross Salary (VND) *"} error={errors.salary}>
                 <input value={form.salary} onChange={e=>set("salary",e.target.value)} placeholder="15000000" style={inpErr("salary")}/>
               </Field>
@@ -226,7 +228,7 @@ export default function NewEmployeePage() {
                 <input value={form.allowance} onChange={e=>set("allowance",e.target.value)} placeholder="2000000" style={inp}/>
               </Field>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:14 }}>
               <Field label={vi?"Số người phụ thuộc":"Dependents"}>
                 <select value={form.numDependents} onChange={e=>set("numDependents",e.target.value)} style={inp}>
                   {[0,1,2,3,4,5].map(n => <option key={n}>{n}</option>)}
@@ -258,7 +260,7 @@ export default function NewEmployeePage() {
                   { l:vi?"Chức vụ":"Position",  v:form.pos },
                   { l:vi?"Loại HĐ":"Contract",  v:form.contractType },
                   { l:vi?"Ngày vào làm":"Join", v:form.joinDate },
-                  { l:vi?"Lương Gross":"Gross",  v:Number(form.salary||0).toLocaleString("vi-VN")+" đ" },
+                  { l:vi?"Lương Gross":"Gross",  v:Number(form.salary||0).toLocaleString("vi-VN")+(vi ? " đ" : " VND") },
                 ].map(r => (
                   <div key={r.l} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid rgba(208,33,28,0.1)`, fontSize:13 }}>
                     <span style={{ color:"#991414" }}>{r.l}</span>

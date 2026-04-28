@@ -480,7 +480,15 @@ export default function ProfilePage() {
   }
 
   const user = sessionUser
-  if (!user) return null
+  if (!user) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 40, height: 40, border: "3px solid #F1F5F9", borderTopColor: "#D0211C", borderRadius: "50%", animation: "spin .7s linear infinite", margin: "0 auto 12px" }} />
+        <div style={{ fontSize: 14, color: "#64748B" }}>Loading...</div>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
 
   const TABS: { id: Tab; icon: React.ReactNode; label: string; labelEn: string }[] = [
     { id: "info",     icon: <User size={16} />,   label: "Thông tin cá nhân", labelEn: "Personal Info" },
@@ -531,10 +539,11 @@ export default function ProfilePage() {
         <div style={{ position: "absolute", right: 60, bottom: -60, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
 
         {/* Avatar */}
-        <div style={{ position: "relative", flexShrink: 0, zIndex: 1 }}>
-          <div style={{ width: 88, height: 88, borderRadius: "50%", overflow: "hidden", border: "3px solid rgba(255,255,255,0.4)", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
-            <AvatarImg src={avatarPreview} alt={user.name} size={88} />
-          </div>
+        <div style={{ position: "relative", flexShrink: 0, alignSelf: "flex-start", zIndex: 1 }}>
+          <AvatarImg src={avatarPreview} alt={user.name} size={88} style={{
+            border: "3px solid rgba(255,255,255,0.4)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+          }} />
           <button
             onClick={() => setTab("avatar")}
             style={{
@@ -588,38 +597,36 @@ export default function ProfilePage() {
         {/* Tab sidebar */}
         <div style={{
           background: th.cardBg, border: `1px solid ${th.cardBorder}`,
-          borderRadius: 16, padding: isMobile ? "8px 12px" : "12px",
+          borderRadius: 16, padding: isMobile ? "6px" : "12px",
           height: isMobile ? "auto" : "fit-content",
           boxShadow: dark ? "0 4px 20px rgba(0,0,0,0.3)" : "0 4px 20px rgba(0,0,0,0.06)",
-          display: isMobile ? "flex" : "block",
-          gap: isMobile ? 8 : undefined,
-          overflowX: isMobile ? "auto" : undefined,
+          display: isMobile ? "grid" : "block",
+          gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : undefined,
+          gap: isMobile ? 6 : undefined,
         }}>
           {TABS.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               style={{
-                width: isMobile ? "auto" : "100%",
-                flexShrink: isMobile ? 0 : undefined,
-                display: "flex", alignItems: "center", gap: 8,
-                padding: isMobile ? "8px 14px" : "11px 14px",
+                width: "100%",
+                display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: 8,
+                padding: isMobile ? "10px 8px" : "11px 14px",
                 borderRadius: 10, border: "none",
                 background: tab === t.id
                   ? "linear-gradient(135deg, rgba(208,33,28,0.12), rgba(153,20,20,0.08))"
                   : "none",
-                cursor: "pointer", textAlign: "left",
+                cursor: "pointer", textAlign: isMobile ? "center" : "left",
                 marginBottom: isMobile ? 0 : 4,
                 color: tab === t.id ? "#D0211C" : th.text2,
-                fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
+                fontSize: isMobile ? 11.5 : 13, fontWeight: tab === t.id ? 700 : 400,
                 fontFamily: "inherit", transition: "all .15s",
                 borderLeft: isMobile ? "none" : (tab === t.id ? "3px solid #D0211C" : "3px solid transparent"),
-                borderBottom: isMobile ? (tab === t.id ? "2px solid #D0211C" : "2px solid transparent") : "none",
-                whiteSpace: "nowrap",
+                flexDirection: isMobile ? "column" : "row",
               }}
             >
               {t.icon}
-              {vi ? t.label : t.labelEn}
+              <span>{vi ? t.label : t.labelEn}</span>
             </button>
           ))}
         </div>
@@ -659,7 +666,7 @@ export default function ProfilePage() {
                         style={{ ...inputStyle, paddingLeft: 38 }}
                         value={infoForm.email} type="email"
                         onChange={e => setInfoForm(f => ({ ...f, email: e.target.value }))}
-                        placeholder="example@axiom.vn"
+                        placeholder="example@gmail.com"
                         onFocus={e => (e.target.style.borderColor = "#D0211C")}
                         onBlur={e => (e.target.style.borderColor = th.inputBorder)}
                       />
@@ -877,14 +884,11 @@ export default function ProfilePage() {
 
               <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
                 {/* Preview */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-                  <div style={{
-                    width: 140, height: 140, borderRadius: "50%", overflow: "hidden",
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, flexShrink: 0 }}>
+                  <AvatarImg src={avatarPreview} alt="Preview" size={140} style={{
                     border: `3px solid ${th.cardBorder}`,
                     boxShadow: dark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.12)",
-                  }}>
-                    <AvatarImg src={avatarPreview} alt="Preview" size={140} />
-                  </div>
+                  }} />
                   <div style={{ fontSize: 12, color: th.text2, textAlign: "center" }}>
                     {vi ? "Xem trước" : "Preview"}
                   </div>

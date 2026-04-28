@@ -1,0 +1,43 @@
+@startuml
+title Hình 4.8 — Sơ đồ Use Case UC-07\nPhân hệ Phiếu lương
+skinparam usecase {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #D0211C
+  ActorBorderColor #991414
+  ActorFontStyle Bold
+}
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Employee" as EMP
+actor "Accountant" as ACC
+
+rectangle "UC-07 — Phân hệ Phiếu lương" {
+  usecase "UC-07.1\nXem phiếu\nlương" as UC1
+  usecase "UC-07.2\nTải PDF\nphiếu lương" as UC2
+
+  usecase "Đánh dấu\nisViewed = true" as INC1
+  usecase "Tạo file PDF\n(jsPDF)" as INC2
+}
+
+EMP --> UC1
+EMP --> UC2
+ACC --> UC1
+ACC --> UC2
+
+UC1 ..> INC1 : <<include>>
+UC2 ..> INC2 : <<include>>
+
+note right of UC1
+  Nhân viên chỉ xem được
+  phiếu lương của bản thân.
+  Kế toán xem được tất cả.
+end note
+
+note right of UC2
+  Kỳ lương chưa tính
+  → "Chưa có dữ liệu"
+end note
+
+@enduml

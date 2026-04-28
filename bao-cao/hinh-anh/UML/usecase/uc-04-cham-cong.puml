@@ -1,0 +1,52 @@
+@startuml
+title Hình 4.5 — Sơ đồ Use Case UC-04\nPhân hệ Chấm công GPS
+skinparam usecase {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #D0211C
+  ActorBorderColor #991414
+  ActorFontStyle Bold
+}
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Employee" as EMP
+actor "HRManager" as HR
+actor "Manager" as MGR
+actor "GPS\n(Geolocation API)" as GPS <<system>>
+
+rectangle "UC-04 — Phân hệ Chấm công" {
+  usecase "UC-04.1\nCheck-in GPS" as UC1
+  usecase "UC-04.2\nCheck-out" as UC2
+  usecase "UC-04.3\nXem bảng chấm\ncông tháng" as UC3
+  usecase "UC-04.4\nXuất Excel\nchấm công" as UC4
+
+  usecase "Xác minh vị trí\nHaversine ≤ 500m" as INC1
+  usecase "Tính lateMinutes\nso với 07:30" as INC2
+  usecase "Tính otHours\n(> 8 giờ)" as INC3
+  usecase "Từ chối\nngoài khu vực" as EXT1
+}
+
+EMP --> UC1
+EMP --> UC2
+HR --> UC3
+MGR --> UC3
+HR --> UC4
+
+UC1 ..> INC1 : <<include>>
+UC1 ..> INC2 : <<include>>
+UC2 ..> INC3 : <<include>>
+INC1 --> GPS
+EXT1 ..> UC1 : <<extend>>
+
+note right of UC1
+  Ngoài 500m → khóa nút
+  Từ chối GPS → báo lỗi
+end note
+
+note right of UC4
+  Xuất file .xlsx
+  bằng ExcelJS
+end note
+
+@enduml

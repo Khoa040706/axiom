@@ -1,0 +1,54 @@
+@startuml
+title Hình 4.7 — Sơ đồ Use Case UC-06\nPhân hệ Tính lương
+skinparam usecase {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+  ArrowColor #D0211C
+  ActorBorderColor #991414
+  ActorFontStyle Bold
+}
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Accountant" as ACC
+actor "Admin" as Admin
+
+rectangle "UC-06 — Phân hệ Tính lương" {
+  usecase "UC-06.1\nTính lương\nđơn lẻ" as UC1
+  usecase "UC-06.2\nTính lương\nhàng loạt" as UC2
+  usecase "UC-06.3\nXác nhận\nchi lương" as UC3
+  usecase "UC-06.4\nCấu hình\ntham số lương" as UC4
+
+  usecase "Lấy hợp đồng\nhiệu lực" as INC1
+  usecase "Tổng hợp ngày\ncông + OT" as INC2
+  usecase "Tính BH\n(BHXH+BHYT+BHTN)" as INC3
+  usecase "Tính thuế TNCN\nlũy tiến 7 bậc" as INC4
+  usecase "Tạo Payslip" as INC5
+}
+
+ACC --> UC1
+ACC --> UC2
+ACC --> UC3
+ACC --> UC4
+Admin --> UC4
+
+UC1 ..> INC1 : <<include>>
+UC1 ..> INC2 : <<include>>
+UC1 ..> INC3 : <<include>>
+UC1 ..> INC4 : <<include>>
+UC1 ..> INC5 : <<include>>
+UC2 ..> UC1 : <<include>>
+
+note right of UC2
+  Loop qua tất cả NV active
+  Báo: "Đã tính X/Y nhân viên"
+end note
+
+note right of UC4
+  Cấu hình: BHXH 8%,
+  BHYT 1.5%, BHTN 1%,
+  Giảm trừ BT 11tr,
+  Giảm trừ NPT 4.4tr
+end note
+
+@enduml

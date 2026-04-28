@@ -1,0 +1,39 @@
+@startgantt
+title Hình 3.1 — Gantt Chart: Kế hoạch dự án Axiom HRM (9 tuần)
+project starts 2026-03-01
+printscale weekly
+
+-- Phân tích & Thiết kế --
+[Khảo sát yêu cầu (SRS)] lasts 7 days
+[Thiết kế CSDL & ERD] lasts 7 days
+[Thiết kế CSDL & ERD] starts at [Khảo sát yêu cầu (SRS)]'s end
+[Thiết kế Use Case & UI Mockup] lasts 7 days
+[Thiết kế Use Case & UI Mockup] starts 2026-03-10
+
+-- Phát triển Backend --
+[Prisma Schema & Migrations] lasts 7 days
+[Prisma Schema & Migrations] starts at [Thiết kế CSDL & ERD]'s end
+[API Routes & Server Actions] lasts 14 days
+[API Routes & Server Actions] starts 2026-03-20
+[Auth & RBAC Middleware] lasts 7 days
+[Auth & RBAC Middleware] starts 2026-03-22
+
+-- Phát triển Frontend --
+[Dashboard Layouts & Components] lasts 7 days
+[Dashboard Layouts & Components] starts 2026-03-29
+[Chấm công GPS] lasts 5 days
+[Chấm công GPS] starts 2026-04-03
+[Nghỉ phép & Payroll] lasts 7 days
+[Nghỉ phép & Payroll] starts 2026-04-07
+[Giao diện song ngữ (i18n)] lasts 5 days
+[Giao diện song ngữ (i18n)] starts 2026-04-12
+
+-- Kiểm thử & Hoàn thiện --
+[Unit Test & Integration Test] lasts 5 days
+[Unit Test & Integration Test] starts 2026-04-17
+[UAT & Bug Fixing] lasts 5 days
+[UAT & Bug Fixing] starts 2026-04-20
+[Viết báo cáo & tài liệu] lasts 6 days
+[Viết báo cáo & tài liệu] starts 2026-04-22
+
+@endgantt

@@ -37,7 +37,16 @@ export const payslipService = {
     return prisma.payslip.findMany({
       where: { employeeId },
       include: {
-        payroll: true,
+        payroll: {
+          include: {
+            employee: {
+              include: {
+                department: true,
+                position:   true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take: limit,

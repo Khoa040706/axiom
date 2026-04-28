@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   Clock, MapPin, Wifi, CheckCircle, LogIn, LogOut,
   AlertCircle, Calendar, User, TrendingUp, Activity,
@@ -10,8 +10,10 @@ import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { useCurrentUser, useEmployeeId } from "@/hooks/use-current-user"
 import {
   checkIn as doCheckIn, checkOut as doCheckOut,
-  getAttendanceByMonth,
+  getAttendanceByMonth, getTodayAttendance,
 } from "@/lib/actions/attendance.actions"
+import { AvatarImg } from "@/components/ui/avatar-img"
+import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 const STATUS_MAP = {
   "Đúng giờ": { vi: "Đúng giờ",  en: "On Time",   bg: "#D1FAE5", c: "#065F46" },
@@ -29,12 +31,27 @@ function formatDuration(seconds: number) {
   return `${padZ(h)}:${padZ(m)}:${padZ(s)}`
 }
 
+// ── Cấu hình GPS văn phòng ────────────────────────────────────────
+const OFFICE_LAT  = 10.731805820306546
+const OFFICE_LNG  = 106.69911295227274
+const MAX_RADIUS_M = 500   // bán kính tối đa (mét)
+
+/** Haversine formula — tính khoảng cách (mét) giữa 2 tọa độ GPS */
+function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
 export default function CheckInPage() {
   const { dark, lang } = useDashboard()
   const th = getTheme(dark)
   const vi = lang === "vi"
   const currentUser = useCurrentUser()
   const employeeId = useEmployeeId()
+  const { isMobile } = useBreakpoint()
 
   const [now, setNow]                   = useState(new Date())
   const [checkedIn, setCheckedIn]       = useState(false)
@@ -45,6 +62,8 @@ export default function CheckInPage() {
   const [elapsed, setElapsed]           = useState(0)
   const [loading, setLoading]           = useState(false)
   const [locationOk, setLocationOk]     = useState<boolean | null>(null)
+  const [locationDist, setLocationDist] = useState<number | null>(null)
+  const [locationErr, setLocationErr]   = useState<string | null>(null)
   const [toast, setToast]               = useState<{ type: "success"|"error"|"info"; msg: string } | null>(null)
   const [history, setHistory]           = useState<any[]>([])
   const [monthStats, setMonthStats]     = useState({ total: 0, ontime: 0, late: 0 })
@@ -56,8 +75,39 @@ export default function CheckInPage() {
     return () => clearInterval(t)
   }, [])
 
-  // Giả lập kiểm tra vị trí
-  useEffect(() => { setTimeout(() => setLocationOk(true), 1200) }, [])
+  // Kiểm tra vị trí GPS thực tế
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationOk(false)
+      setLocationErr(vi ? "Trình duyệt không hỗ trợ GPS" : "Browser does not support GPS")
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const dist = haversineM(pos.coords.latitude, pos.coords.longitude, OFFICE_LAT, OFFICE_LNG)
+        const rounded = Math.round(dist)
+        setLocationDist(rounded)
+        setLocationOk(dist <= MAX_RADIUS_M)
+        if (dist > MAX_RADIUS_M) {
+          setLocationErr(null) // lỗi cụ thể sẽ hiện từ badge UI
+        }
+      },
+      (err) => {
+        setLocationOk(false)
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setLocationErr(vi ? "Bạn đã từ chối quyền GPS" : "GPS permission denied")
+            break
+          case err.POSITION_UNAVAILABLE:
+            setLocationErr(vi ? "Không xác định được vị trí" : "Position unavailable")
+            break
+          default:
+            setLocationErr(vi ? "Lỗi xác định vị trí" : "Location error")
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    )
+  }, [vi])
 
   // Load attendance history tháng này
   useEffect(() => {
@@ -66,22 +116,60 @@ export default function CheckInPage() {
     getAttendanceByMonth(now.getMonth() + 1, now.getFullYear()).then(res => {
       if (!res.success || !res.data) return
       const myRecs = (res.data as any[]).filter((r: any) => r.employeeId === employeeId)
-      setHistory(myRecs.slice(0, 7))
-      const ontime = myRecs.filter((r: any) => r.status === "Đúng giờ" || r.status === "Ra sớm").length
+      // Lấy 7 bản ghi MỚI NHẤT (sort asc từ DB, reverse để mới nhất lên đầu)
+      setHistory(myRecs.slice(-7).reverse())
+      const ontime = myRecs.filter((r: any) => r.status === "Đi làm" || r.status === "Ra sớm").length
       const late   = myRecs.filter((r: any) => r.status === "Đi muộn").length
       setMonthStats({ total: myRecs.length, ontime, late })
     })
   }, [employeeId])
 
-  // Timer khi đang làm
-  useEffect(() => {
-    if (checkedIn && !checkedOut) {
-      timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000)
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current)
+  // Chuẩn hóa datetime: seed data dùng 1970-01-01, cần gắn vào ngày thực tế hôm nay
+  function normalizeTime(dt: Date): Date {
+    if (dt.getFullYear() < 2000) {
+      const today = new Date()
+      return new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+        dt.getHours(), dt.getMinutes(), dt.getSeconds())
     }
+    return dt
+  }
+
+  // Load trạng thái check-in hôm nay từ DB (khôi phục sau khi reload/tắt app)
+  const loadToday = useCallback(async () => {
+    if (!employeeId) return
+    const res = await getTodayAttendance(employeeId)
+    if (!res.success || !res.data || !(res.data as any[]).length) return
+    const rec = (res.data as any[])[0]
+    if (rec.checkIn) {
+      const ci = normalizeTime(new Date(rec.checkIn))
+      setCheckInTime(ci)
+      setAttendanceId(rec.id)
+      setCheckedIn(true)
+      if (rec.checkOut) {
+        const co = normalizeTime(new Date(rec.checkOut))
+        setCheckOutTime(co)
+        setCheckedOut(true)
+        // Tính elapsed: nếu co > ci thì dùng, ngược lại để 0
+        const diff = co.getTime() - ci.getTime()
+        setElapsed(diff > 0 ? Math.floor(diff / 1000) : 0)
+      }
+    }
+  }, [employeeId])
+
+  useEffect(() => { loadToday() }, [loadToday])
+
+  // Timer: tính elapsed từ checkInTime thực tế → không bị reset khi reload
+  useEffect(() => {
+    if (!checkedIn || checkedOut || !checkInTime) {
+      if (timerRef.current) clearInterval(timerRef.current)
+      return
+    }
+    // Tính ngay lập tức từ checkInTime
+    const tick = () => setElapsed(Math.floor((Date.now() - checkInTime.getTime()) / 1000))
+    tick()
+    timerRef.current = setInterval(tick, 1000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [checkedIn, checkedOut])
+  }, [checkedIn, checkedOut, checkInTime])
 
   const isLate   = now.getHours() > 8 || (now.getHours() === 8 && now.getMinutes() > 5)
   const dayStr   = now.toLocaleDateString(vi ? "vi-VN" : "en-US", { weekday: "long" })
@@ -95,6 +183,17 @@ export default function CheckInPage() {
 
   const handleCheckIn = async () => {
     if (checkedIn || !employeeId) return
+    // Chặn check-in nếu ngoài khu vực
+    if (locationOk === false) {
+      showToast("error", vi
+        ? `❌ Bạn đang ngoài khu vực văn phòng${locationDist ? ` (~${locationDist}m)` : ""}. Không thể check-in.`
+        : `❌ You are outside the office area${locationDist ? ` (~${locationDist}m)` : ""}. Check-in blocked.`)
+      return
+    }
+    if (locationOk === null) {
+      showToast("info", vi ? "⏳ Đang xác định vị trí, vui lòng chờ..." : "⏳ Verifying location, please wait...")
+      return
+    }
     setLoading(true)
     const res = await doCheckIn(employeeId)
     if (res.success && res.data) {
@@ -133,31 +232,38 @@ export default function CheckInPage() {
   const tdS: React.CSSProperties = { padding: "11px 14px", fontSize: 13, color: th.text1, borderBottom: `1px solid ${th.tableBorder}` }
 
   return (
-    <div style={{ padding: "28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-start", gap: isMobile ? 12 : 0, marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: th.text1, margin: 0 }}>Check-in / Check-out</h1>
+          <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: th.text1, margin: 0 }}>Check-in / Check-out</h1>
           <p style={{ fontSize: 13, color: th.text2, margin: "4px 0 0" }}>
             {vi ? "Ghi nhận giờ làm việc hàng ngày của bạn." : "Record your daily working hours."}
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 10,
-          border: `1px solid ${locationOk === null ? th.cardBorder : locationOk ? "#A7F3D0" : "#FECACA"}`,
-          background: locationOk === null ? th.cardBg : locationOk ? (dark ? "rgba(16,185,129,0.1)" : "#F0FDF4") : "#FEF2F2",
-        }}>
-          {locationOk === null
-            ? <><Wifi size={14} color={th.text2}/><span style={{ fontSize: 12, color: th.text2 }}>{vi ? "Đang xác định..." : "Checking..."}</span></>
-            : locationOk
-              ? <><MapPin size={14} color="#10B981"/><span style={{ fontSize: 12, color: "#065F46", fontWeight: 600 }}>{vi ? "Vị trí hợp lệ" : "Location OK"}</span></>
-              : <><AlertCircle size={14} color="#EF4444"/><span style={{ fontSize: 12, color: "#991B1B", fontWeight: 600 }}>{vi ? "Ngoài khu vực" : "Out of range"}</span></>
-          }
+        <div style={{ display: "flex", flexDirection: "column", alignItems: isMobile ? "flex-start" : "flex-end", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 10,
+            border: `1px solid ${locationOk === null ? th.cardBorder : locationOk ? "#A7F3D0" : "#FECACA"}`,
+            background: locationOk === null ? th.cardBg : locationOk ? (dark ? "rgba(16,185,129,0.1)" : "#F0FDF4") : "#FEF2F2",
+          }}>
+            {locationOk === null
+              ? <><Wifi size={14} color={th.text2}/><span style={{ fontSize: 12, color: th.text2 }}>{vi ? "Đang xác định GPS..." : "Getting GPS..."}</span></>
+              : locationOk
+                ? <><MapPin size={14} color="#10B981"/><span style={{ fontSize: 12, color: "#065F46", fontWeight: 600 }}>{vi ? `✅ Trong khu vực (~${locationDist}m)` : `✅ In range (~${locationDist}m)`}</span></>
+                : <><AlertCircle size={14} color="#EF4444"/><span style={{ fontSize: 12, color: "#991B1B", fontWeight: 600 }}>{locationErr ?? (vi ? `❌ Ngoài khu vực (~${locationDist}m)` : `❌ Out of range (~${locationDist}m)`)}</span></>
+            }
+          </div>
+          {locationOk === false && locationDist && (
+            <span style={{ fontSize: 11, color: "#EF4444" }}>
+              {vi ? `Cần trong ${MAX_RADIUS_M}m, hiện tại: ${locationDist}m` : `Must be within ${MAX_RADIUS_M}m, current: ${locationDist}m`}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Main 2-col */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 18, marginBottom: 18 }}>
 
         {/* Clock card */}
         <div style={{
@@ -194,12 +300,15 @@ export default function CheckInPage() {
 
           {/* User info */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#D0211C,#991414)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 18, flexShrink: 0 }}>
-              {currentUser?.name?.charAt(0) ?? "U"}
-            </div>
+            <AvatarImg
+              src={(currentUser as any)?.image ?? ""}
+              name={currentUser?.name ?? "U"}
+              size={48}
+              style={{ flexShrink: 0 }}
+            />
             <div>
-              <div style={{ fontWeight: 700, color: th.text1, fontSize: 15 }}>{currentUser?.name ?? (vi?"Đang tải...":"Loading...")}</div>
-              <div style={{ fontSize: 12, color: th.text2 }}>{currentUser?.department ?? "N/A"}</div>
+              <div style={{ fontWeight: 700, color: th.text1, fontSize: 15 }}>{currentUser?.name ?? (vi?"Đang tải..":"Loading..")}</div>
+              <div style={{ fontSize: 12, color: th.text2 }}>{currentUser?.department ?? "AXIOM HRM"}</div>
             </div>
             <div style={{ marginLeft: "auto", textAlign: "right" }}>
               <div style={{ fontSize: 11, color: th.text2 }}>{vi ? "Mã NV" : "ID"}</div>
@@ -279,14 +388,14 @@ export default function CheckInPage() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: isMobile ? 10 : 14, marginBottom: 18 }}>
         {[
           { icon: <Clock size={18} color="#D0211C"/>,       label: vi ? "Ngày công tháng này" : "This month", value: `${monthStats.total} ${vi?"ngày":"days"}`,  accent: "#D0211C" },
           { icon: <CheckCircle size={18} color="#10B981"/>, label: vi ? "Đúng giờ" : "On-time",               value: `${monthStats.ontime}`,        accent: "#10B981" },
           { icon: <AlertCircle size={18} color="#F59E0B"/>, label: vi ? "Đi muộn" : "Late",                   value: `${monthStats.late} ${vi?"lần":"times"}`,      accent: "#F59E0B" },
           { icon: <TrendingUp size={18} color="#3B82F6"/>,  label: vi ? "Hôm nay" : "Today",                  value: checkedIn ? (vi ? "Có mặt" : "Present") : (vi ? "Chưa vào" : "Not in"), accent: "#3B82F6" },
         ].map(s => (
-          <div key={s.label} style={{ background: th.cardBg, borderRadius: 14, padding: "16px 18px", border: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", position: "relative", overflow: "hidden" }}>
+          <div key={s.label} style={{ background: th.cardBg, borderRadius: 14, padding: "16px 18px", borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${s.accent}15`, pointerEvents: "none" }}/>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: `${s.accent}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{s.icon}</div>
             <div>
@@ -308,6 +417,36 @@ export default function CheckInPage() {
           <div style={{ padding: "32px", textAlign: "center", color: th.text2, fontSize: 14 }}>
             {vi ? "Chưa có dữ liệu chấm công tháng này" : "No attendance data this month"}
           </div>
+        ) : isMobile ? (
+          // Mobile: card list
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {history.map((h: any, i: number) => {
+              const st = STATUS_MAP[h.status as keyof typeof STATUS_MAP] ?? { vi: h.status, en: h.status, bg: "#F3F4F6", c: "#374151" }
+              const ci = h.checkIn ? new Date(h.checkIn) : null
+              const co = h.checkOut ? new Date(h.checkOut) : null
+              let hours = "—"
+              if (ci && co) {
+                const rawMs = co.getTime() - ci.getTime()
+                const lunchStart = new Date(ci); lunchStart.setHours(11,30,0,0)
+                const lunchEnd   = new Date(ci); lunchEnd.setHours(13,0,0,0)
+                const lunchMs = (co > lunchEnd && ci < lunchStart) ? 90*60*1000 : 0
+                const netMs = Math.max(0, rawMs - lunchMs)
+                hours = `${Math.floor(netMs/3600000)}h${Math.floor((netMs%3600000)/60000)}m`
+              }
+              const dateStr2 = new Date(h.workDate).toLocaleDateString(vi?"vi-VN":"en-US", { weekday:"short", day:"2-digit", month:"2-digit" })
+              return (
+                <div key={i} style={{ padding: "12px 16px", borderBottom: i < history.length-1 ? `1px solid ${th.tableBorder}` : "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: th.text1 }}>{dateStr2}</div>
+                    <div style={{ fontSize: 12, color: th.text2, marginTop: 3 }}>
+                      {ci ? `${padZ(ci.getHours())}:${padZ(ci.getMinutes())}` : "—"} → {co ? `${padZ(co.getHours())}:${padZ(co.getMinutes())}` : "—"} · {hours}
+                    </div>
+                  </div>
+                  <span style={{ background: st.bg, color: st.c, borderRadius: 12, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>{vi ? st.vi : st.en}</span>
+                </div>
+              )
+            })}
+          </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
@@ -320,7 +459,15 @@ export default function CheckInPage() {
                 const st = STATUS_MAP[h.status as keyof typeof STATUS_MAP] ?? { vi: h.status, en: h.status, bg: "#F3F4F6", c: "#374151" }
                 const ci = h.checkIn ? new Date(h.checkIn) : null
                 const co = h.checkOut ? new Date(h.checkOut) : null
-                const hours = ci && co ? `${Math.floor((co.getTime()-ci.getTime())/3600000)}h${Math.floor(((co.getTime()-ci.getTime())%3600000)/60000)}m` : "—"
+                let hours = "—"
+                if (ci && co) {
+                  const rawMs = co.getTime() - ci.getTime()
+                  const lunchStart = new Date(ci); lunchStart.setHours(11,30,0,0)
+                  const lunchEnd   = new Date(ci); lunchEnd.setHours(13,0,0,0)
+                  const lunchMs = (co > lunchEnd && ci < lunchStart) ? 90*60*1000 : 0
+                  const netMs = Math.max(0, rawMs - lunchMs)
+                  hours = `${Math.floor(netMs/3600000)}h${Math.floor((netMs%3600000)/60000)}m`
+                }
                 const dateStr2 = new Date(h.workDate).toLocaleDateString(vi?"vi-VN":"en-US", { day:"2-digit", month:"2-digit" })
                 return (
                   <tr key={i} onMouseEnter={e => (e.currentTarget.style.background = dark ? "rgba(255,255,255,0.03)" : "#FAFAFA")} onMouseLeave={e => (e.currentTarget.style.background = "transparent")} style={{ transition: "background .1s" }}>
@@ -341,7 +488,7 @@ export default function CheckInPage() {
       <div style={{ marginTop: 14, background: dark ? "rgba(59,130,246,0.08)" : "#EFF6FF", borderRadius: 12, padding: "12px 16px", border: "1px solid #BFDBFE", display: "flex", gap: 10, alignItems: "flex-start" }}>
         <User size={14} color="#3B82F6" style={{ flexShrink: 0, marginTop: 1 }}/>
         <p style={{ fontSize: 12.5, color: dark ? "#93C5FD" : "#1D4ED8", margin: 0, lineHeight: 1.6 }}>
-          {vi ? "Giờ làm việc chuẩn: 08:00 – 17:30. Đi muộn sau 08:05 sẽ bị ghi nhận. Dữ liệu tự động đồng bộ về hệ thống." : "Standard hours: 08:00 – 17:30. Arrivals after 08:05 are marked late. Data syncs automatically."}
+          {vi ? "Giờ làm việc chuẩn: 07:30–11:30 và 13:00–17:00. Đi muộn sau 07:30 sẽ bị ghi nhận. Dữ liệu tự động đồng bộ về hệ thống." : "Standard hours: 07:30–11:30 and 13:00–17:00. Arrivals after 07:30 are marked late. Data syncs automatically."}
         </p>
       </div>
 

@@ -1,0 +1,36 @@
+@startuml
+title Hình 6.3 — Activity Diagram: Check-in GPS
+start
+:Nhân viên vào /attendance/check-in;
+:Browser xin quyền Geolocation;
+if (Cho phép GPS?) then (Từ chối)
+  :Hiển thị lỗi:\n"Bạn đã từ chối quyền GPS";
+  stop
+else (Cho phép)
+endif
+:Lấy tọa độ (lat, lng);
+:Tính khoảng cách đến văn phòng\n(Haversine formula);
+if (Khoảng cách ≤ 500m?) then (Không)
+  :Hiển thị badge đỏ:\n"Ngoài khu vực (~Xm)"\nKhóa nút Check-in;
+  :Cập nhật vị trí mỗi 5 giây;
+  stop
+else (Có)
+endif
+:Hiển thị badge xanh:\n"Trong khu vực"\nMở khóa nút Check-in;
+if (Đã check-in hôm nay?) then (Rồi)
+  :Hiển thị timer đang làm việc;
+  stop
+else (Chưa)
+endif
+:Nhấn nút Check-in;
+:Gọi checkIn() API;
+:Ghi checkIn timestamp;
+:Tính lateMinutes = max(0, checkIn - 07:30);
+if (lateMinutes > 0?) then (Có)
+  :status = "Đi muộn";
+else (Không)
+  :status = "Đúng giờ";
+endif
+:Bắt đầu Timer đếm giờ làm;
+stop
+@enduml

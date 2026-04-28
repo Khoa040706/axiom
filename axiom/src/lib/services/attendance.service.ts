@@ -51,9 +51,9 @@ export const attendanceService = {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Giờ chuẩn: 8:00
+    // Giờ chuẩn: 7:30 (giờ hành chính)
     const standardStart = new Date(today)
-    standardStart.setHours(8, 0, 0, 0)
+    standardStart.setHours(7, 30, 0, 0)
     const lateMinutes = Math.max(
       0,
       Math.floor((checkIn.getTime() - standardStart.getTime()) / 60000)

@@ -14,6 +14,7 @@ import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getPayrollByPeriod, calculatePayrollBatch, confirmPayment } from "@/lib/actions/payroll.actions"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { tDept } from "@/lib/i18n-maps"
+import { AvatarImg } from "@/components/ui/avatar-img"
 
 // ─── Types ─────────────────────────────────────────────────────────────
 interface Employee {
@@ -111,8 +112,8 @@ function calcPayroll(emp: Employee, cfg: PayrollConfig) {
 }
 
 // ─── Formatters ─────────────────────────────────────────────────────────
-function fmt(v: number): string {
-  return Math.round(Math.abs(v)).toLocaleString("vi-VN") + " đ"
+function _fmt(v: number, vi = true): string {
+  return Math.round(Math.abs(v)).toLocaleString("vi-VN") + (vi ? " đ" : " VND")
 }
 function fmtShort(v: number, vi = true): string {
   if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + (vi ? "tr" : "M")
@@ -123,16 +124,7 @@ function fmtShort(v: number, vi = true): string {
 const EmpAvatar = memo(function EmpAvatar({
   name, avatarPath, size = 32,
 }: { name: string; avatarPath?: string | null; size?: number }) {
-  const [imgErr, setImgErr] = useState(false)
-  const src = (avatarPath && !imgErr) ? avatarPath : "/images/avatarmacdinh.jpg"
-  return (
-    <img
-      src={src}
-      alt={name}
-      onError={() => setImgErr(true)}
-      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-    />
-  )
+  return <AvatarImg src={avatarPath} name={name} alt={name} size={size} />
 })
 
 // ─── Toast ─────────────────────────────────────────────────────────────
@@ -343,12 +335,28 @@ export default function PayrollPage() {
   const th = getTheme(dark)
   const vi = lang === "vi"
   const { isMobile } = useBreakpoint()
+  // Local fmt wrapper capturing `vi` from context — all 15+ call sites auto-translated
+  const fmt = (v: number) => _fmt(v, vi)
 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [dbPayrolls, setDbPayrolls] = useState<any[]>([])
   const [loadingDB, setLoadingDB] = useState(true)
-  const [config, setConfig]       = useState<PayrollConfig>(DEFAULT_CONFIG)
-  const [configDraft, setConfigDraft] = useState<PayrollConfig>(DEFAULT_CONFIG)
+  const [config, setConfig] = useState<PayrollConfig>(() => {
+    if (typeof window === "undefined") return DEFAULT_CONFIG
+    try {
+      const raw = localStorage.getItem("axiom_payroll_config")
+      if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) }
+    } catch {}
+    return DEFAULT_CONFIG
+  })
+  const [configDraft, setConfigDraft] = useState<PayrollConfig>(() => {
+    if (typeof window === "undefined") return DEFAULT_CONFIG
+    try {
+      const raw = localStorage.getItem("axiom_payroll_config")
+      if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) }
+    } catch {}
+    return DEFAULT_CONFIG
+  })
 
   // ── 12 tháng gần nhất (tự động theo thời gian thực) ─────────────────
   const MONTHS = useMemo(() => {
@@ -371,6 +379,7 @@ export default function PayrollPage() {
       en: now.toLocaleString("en-US", { month: "short" }) + " " + now.getFullYear() }
   })
   const [selected, setSelected] = useState<Employee | null>(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [calculating, setCalculating] = useState(false)
   const [toast, setToast] = useState<{type:"success"|"error"|"info"; msg:string}|null>(null)
   const [showConfig, setShowConfig] = useState(false)
@@ -440,8 +449,8 @@ export default function PayrollPage() {
   // ── Danh sách phòng ban để filter ───────────────────────
   const deptOptions = useMemo(() => {
     const unique = Array.from(new Set(employees.map(e => e.dept).filter(Boolean)))
-    return unique.sort().map(d => ({ value: d, label: d }))
-  }, [employees])
+    return unique.sort().map(d => ({ value: d, label: tDept(d, vi) }))
+  }, [employees, vi])
 
   // ── Lọc theo phòng ban + sort ───────────────────────────
   const filteredPayroll = useMemo(() => {
@@ -480,9 +489,11 @@ export default function PayrollPage() {
     setCalculating(true)
     const res = await calculatePayrollBatch(activeMonth.month, activeMonth.year)
     if (res.success) {
+      const d = (res as any).data ?? {}
+      const done = d.success ?? "?", total = (d.success ?? 0) + (d.failed ?? 0)
       showToast("success", vi
-        ? ((res as any).message ?? `Đã tính lương cho ${activeMonth.vi}!`)
-        : ((res as any).message ?? `Payroll calculated for ${activeMonth.en}!`))
+        ? `Đã tính lương ${done}/${total || done} nhân viên`
+        : `Calculated payroll for ${done}/${total || done} employees`)
       await loadDB()   // reload từ DB — hiển thị số chính xác
     } else {
       showToast("error", vi
@@ -512,6 +523,7 @@ export default function PayrollPage() {
 
   const handleSaveConfig = () => {
     setConfig({ ...configDraft })
+    try { localStorage.setItem("axiom_payroll_config", JSON.stringify(configDraft)) } catch {}
     setShowConfig(false)
     showToast("info", vi?"Đã lưu cấu hình. Bảng lương đã cập nhật theo công thức mới.":"Config saved. Payroll recalculated.")
   }
@@ -567,9 +579,9 @@ export default function PayrollPage() {
       { label: vi?"Phụ cấp miễn thuế":"Tax-exempt allowance",       val: emp.taxExemptAllowance,  type:"bonus" },
       ...(emp.taxableAllowance > 0 ? [{ label: vi?"Phụ cấp chịu thuế":"Taxable allowance",       val: emp.taxableAllowance, type:"bonus" as const }] : []),
       { label: vi?"━━ TỔNG GROSS + PHỤ CẤP":"━━ GROSS + ALLOWANCES", val: c.totalGross + c.totalAllowance, type:"total" },
-      { label: vi?`BHXH (${config.bhxh}% × ngày công)`:  `BHXH (${config.bhxh}%)`,               val: -c.bhxhAmt,              type:"deduct" },
-      { label: vi?`BHYT (${config.bhyt}% × ngày công)`:  `BHYT (${config.bhyt}%)`,               val: -c.bhytAmt,              type:"deduct" },
-      { label: vi?`BHTN (${config.bhtn}% × ngày công)`:  `BHTN (${config.bhtn}%)`,               val: -c.bhtnAmt,              type:"deduct" },
+      { label: vi?`BHXH (${config.bhxh}% × ngày công)`:  `Social Ins. (${config.bhxh}%)`,          val: -c.bhxhAmt,              type:"deduct" },
+      { label: vi?`BHYT (${config.bhyt}% × ngày công)`:  `Health Ins. (${config.bhyt}%)`,          val: -c.bhytAmt,              type:"deduct" },
+      { label: vi?`BHTN (${config.bhtn}% × ngày công)`:  `Unemp. Ins. (${config.bhtn}%)`,          val: -c.bhtnAmt,              type:"deduct" },
       { label: vi?"Giảm trừ bản thân":"Self deduction",             val: config.selfDeduction,    type:"info"   },
       ...(emp.dependents > 0 ? [{ label: vi?`Giảm trừ ${emp.dependents} người phụ thuộc`:`${emp.dependents} dependents`, val: emp.dependents * config.depDeduction, type:"info" as const }] : []),
       { label: vi?"Thu nhập tính thuế (TNTT)":"Taxable income",      val: c.taxableIncome,        type:"info"   },
@@ -591,13 +603,6 @@ export default function PayrollPage() {
           </p>
         </div>
         <div style={{ display:"flex", gap:10 }}>
-          <button onClick={() => setShowConfig(true)} style={{
-            display:"flex", alignItems:"center", gap:6, padding:"9px 16px", borderRadius:10,
-            border:`1.5px solid ${th.cardBorder}`, background:th.cardBg, color:th.text1,
-            fontSize:13, cursor:"pointer", fontFamily:"inherit", fontWeight:600,
-          }}>
-            <Calculator size={14}/>{vi?"Cấu hình công thức":"Formula Config"}
-          </button>
           <button onClick={handleAutoCalc} disabled={calculating} style={{
             display:"flex", alignItems:"center", gap:7, padding:"9px 18px", borderRadius:10,
             background:"linear-gradient(135deg,#D0211C,#991414)", color:"#fff", border:"none",
@@ -619,7 +624,7 @@ export default function PayrollPage() {
       <div className="rg-4" style={{ marginBottom: 20 }}>
         {statCards.map(s => (
           <div key={s.label} style={{ background:th.cardBg, borderRadius:14, padding:"16px 18px",
-            border:`1px solid ${th.cardBorder}`, borderLeft:`4px solid ${s.accent}`,
+            borderTop:`1px solid ${th.cardBorder}`, borderRight:`1px solid ${th.cardBorder}`, borderBottom:`1px solid ${th.cardBorder}`, borderLeft:`4px solid ${s.accent}`,
             display:"flex", alignItems:"center", gap:14, boxShadow:"0 2px 8px rgba(0,0,0,0.06)",
             position:"relative", overflow:"hidden" }}>
             <div style={{ position:"absolute", top:-20, right:-20, width:80, height:80, borderRadius:"50%", background:`${s.accent}15`, pointerEvents:"none" }}/>
@@ -733,10 +738,10 @@ export default function PayrollPage() {
           <tbody>
             {pageRows.map(({ emp, calc }) => (
               <tr key={emp.id}
-                style={{ cursor:"pointer", background: selected?.id===emp.id ? (dark?"rgba(208,33,28,0.1)":"#FFF5F5") : "transparent", transition:"background .1s" }}
+                style={{ cursor:"pointer", backgroundColor: selected?.id===emp.id ? (dark?"rgba(208,33,28,0.1)":"#FFF5F5") : "transparent", transition:"background-color .1s" }}
                 onClick={() => setSelected(emp)}
-                onMouseEnter={e => { if(selected?.id!==emp.id)(e.currentTarget as HTMLElement).style.background = dark?"rgba(255,255,255,0.03)":"#FAFAFA" }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = selected?.id===emp.id ? (dark?"rgba(208,33,28,0.1)":"#FFF5F5") : "transparent" }}
+                onMouseEnter={e => { if(selected?.id!==emp.id)(e.currentTarget as HTMLElement).style.backgroundColor = dark?"rgba(255,255,255,0.03)":"#FAFAFA" }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = selected?.id===emp.id ? (dark?"rgba(208,33,28,0.1)":"#FFF5F5") : "transparent" }}
               >
                 {/* Employee */}
                 <td style={td}>
@@ -793,7 +798,7 @@ export default function PayrollPage() {
                 {/* PIT */}
                 <td style={td}>
                   {calc.pit > 0
-                    ? <><span style={{ color:"#D97706", fontWeight:700 }}>-{fmt(calc.pit)}</span><div style={{ fontSize:10.5, color:th.text2 }}>TNTT: {fmt(calc.taxableIncome)}</div></>
+                    ? <><span style={{ color:"#D97706", fontWeight:700 }}>-{fmt(calc.pit)}</span><div style={{ fontSize:10.5, color:th.text2 }}>{vi?"TNTT":"TI"}: {fmt(calc.taxableIncome)}</div></>
                     : <span style={{ color:th.text2, fontSize:12 }}>{vi?"Miễn thuế":"Tax-free"}</span>}
                 </td>
                 {/* Net */}
@@ -807,7 +812,7 @@ export default function PayrollPage() {
                 {/* Actions */}
                 <td style={td} onClick={e => e.stopPropagation()}>
                   <div style={{ display:"flex", gap:6 }}>
-                    <button onClick={() => setSelected(emp)} title={vi?"Chi tiết":"Details"}
+                    <button onClick={() => { setSelected(emp); setShowDetailModal(true) }} title={vi?"Chi tiết":"Details"}
                       style={{ width:30, height:30, borderRadius:7, border:"none", background:"#EFF6FF", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
                       <Eye size={13} color="#1D4ED8"/>
                     </button>
@@ -870,7 +875,7 @@ export default function PayrollPage() {
       </div>
 
       {/* ── Bottom: Payslip + Formula ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+      <div className="rg-2">
 
         {/* Payslip detail */}
         <div style={{ background:th.cardBg, borderRadius:14, border:`1px solid ${th.cardBorder}`, overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -925,9 +930,9 @@ export default function PayrollPage() {
             <div style={{ background:th.tableHead, borderRadius:10, padding:"11px 14px" }}>
               <div style={{ fontWeight:700, fontSize:12.5, color:th.text1, marginBottom:7 }}>🛡️ {vi?"Bảo hiểm bắt buộc (NLĐ đóng)":"Mandatory Insurance"}</div>
               {[
-                { name:"BHXH", rate:`${config.bhxh}%`, note:vi?"Hưu trí, Thai sản, Ốm đau":"Pension, Maternity, Sickness" },
-                { name:"BHYT", rate:`${config.bhyt}%`, note:vi?"Khám chữa bệnh":"Medical" },
-                { name:"BHTN", rate:`${config.bhtn}%`, note:vi?"Trợ cấp thất nghiệp":"Unemployment" },
+                { name:vi?"BHXH":"SI", rate:`${config.bhxh}%`, note:vi?"Hưu trí, Thai sản, Ốm đau":"Pension, Maternity, Sickness" },
+                { name:vi?"BHYT":"HI", rate:`${config.bhyt}%`, note:vi?"Khám chữa bệnh":"Medical" },
+                { name:vi?"BHTN":"UI", rate:`${config.bhtn}%`, note:vi?"Trợ cấp thất nghiệp":"Unemployment" },
               ].map(b => (
                 <div key={b.name} style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:th.text2, marginBottom:3 }}>
                   <span><b style={{ color:th.text1 }}>{b.name}</b> — {b.note}</span>
@@ -944,16 +949,16 @@ export default function PayrollPage() {
             <div style={{ background:th.tableHead, borderRadius:10, padding:"11px 14px" }}>
               <div style={{ fontWeight:700, fontSize:12.5, color:th.text1, marginBottom:7 }}>📊 {vi?"Thuế TNCN — 5 Bậc Lũy Tiến 2026":"PIT — 5 Progressive Brackets 2026"}</div>
               {[
-                 { bracket:vi?"Bậc 1":"Bracket 1", range:vi?"≤ 10 triệu":"≤ 10M",          rate:"5%",  formula:"0.05 × TNTT" },
-                 { bracket:vi?"Bậc 2":"Bracket 2", range:vi?"10 – 30 triệu":"10 – 30M",       rate:"10%", formula:"0.1×TNTT − 0.5tr" },
-                 { bracket:vi?"Bậc 3":"Bracket 3", range:vi?"30 – 60 triệu":"30 – 60M",       rate:"20%", formula:"0.2×TNTT − 3.5tr" },
-                 { bracket:vi?"Bậc 4":"Bracket 4", range:vi?"60 – 100 triệu":"60 – 100M",      rate:"30%", formula:"0.3×TNTT − 9.5tr" },
-                 { bracket:vi?"Bậc 5":"Bracket 5", range:vi?"> 100 triệu":"> 100M",          rate:"35%", formula:"0.35×TNTT − 14.5tr" },
+                 { bracket:vi?"Bậc 1":"Bracket 1", range:vi?"≤ 10 triệu":"≤ 10M",          rate:"5%",  formula:"0.05 × TNTT",      formulaEn:"0.05 × TI" },
+                 { bracket:vi?"Bậc 2":"Bracket 2", range:vi?"10 – 30 triệu":"10 – 30M",       rate:"10%", formula:"0.1×TNTT − 0.5tr", formulaEn:"0.1×TI − 0.5M" },
+                 { bracket:vi?"Bậc 3":"Bracket 3", range:vi?"30 – 60 triệu":"30 – 60M",       rate:"20%", formula:"0.2×TNTT − 3.5tr", formulaEn:"0.2×TI − 3.5M" },
+                 { bracket:vi?"Bậc 4":"Bracket 4", range:vi?"60 – 100 triệu":"60 – 100M",      rate:"30%", formula:"0.3×TNTT − 9.5tr", formulaEn:"0.3×TI − 9.5M" },
+                 { bracket:vi?"Bậc 5":"Bracket 5", range:vi?"> 100 triệu":"> 100M",          rate:"35%", formula:"0.35×TNTT − 14.5tr", formulaEn:"0.35×TI − 14.5M" },
               ].map((b,i) => (
                 <div key={i} style={{ display:"flex", gap:8, fontSize:11.5, marginBottom:3, alignItems:"center" }}>
                   <span style={{ background:"#D0211C", color:"#fff", borderRadius:4, padding:"1px 5px", fontSize:10, fontWeight:700, flexShrink:0 }}>{b.rate}</span>
                   <span style={{ color:th.text2, flex:1 }}>{b.range}</span>
-                  <span style={{ color:th.text2, fontFamily:"monospace", fontSize:10.5 }}>{b.formula}</span>
+                  <span style={{ color:th.text2, fontFamily:"monospace", fontSize:10.5 }}>{vi ? b.formula : b.formulaEn}</span>
                 </div>
               ))}
               <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${th.tableBorder}`, fontSize:11.5, color:"#3B82F6" }}>
@@ -982,68 +987,113 @@ export default function PayrollPage() {
         </div>
       </div>
 
-      {/* ══════════ MODAL: Config ══════════ */}
-      {showConfig && (
-        <>
-          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(4px)", zIndex:9000 }} onClick={() => setShowConfig(false)}/>
-          <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", padding:16, zIndex:9001 }}>
-            <div style={{ background:th.cardBg, borderRadius:20, width:"min(500px,95vw)", boxShadow:"0 24px 60px rgba(0,0,0,0.35)", animation:"fadeDown .2s ease" }}
-              onClick={e => e.stopPropagation()}>
-              <div style={{ padding:"20px 24px", borderBottom:`1px solid ${th.tableBorder}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#D0211C,#991414)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff" }}>
-                    <Calculator size={17}/>
-                  </div>
+      {/* ── MODAL: Payslip Detail ── */}
+      {showDetailModal && selected && (() => {
+        const c = calcPayroll(selected, config)
+        const rows = payslipRows(selected, c)
+        return (
+          <>
+            <div onClick={() => setShowDetailModal(false)}
+              style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:9000, backdropFilter:"blur(2px)" }}/>
+            <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", zIndex:9001, padding:16, pointerEvents:"none" }}>
+              <div onClick={e => e.stopPropagation()}
+                style={{ background:th.cardBg, borderRadius:20, width:"min(520px,95vw)", maxHeight:"88vh",
+                  overflow:"hidden", display:"flex", flexDirection:"column",
+                  boxShadow:"0 24px 60px rgba(0,0,0,0.35)", animation:"fadeDown .2s ease",
+                  pointerEvents:"auto" }}>
+
+                {/* Modal header */}
+                <div style={{ background:"linear-gradient(135deg,#D0211C,#991414)", padding:"18px 22px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexShrink:0 }}>
                   <div>
-                    <div style={{ fontWeight:800, fontSize:15, color:th.text1 }}>{vi?"Cấu hình công thức tính lương":"Payroll Configuration"}</div>
-                    <div style={{ fontSize:11.5, color:th.text2 }}>{vi?"Theo Luật Lao động VN 2026":"VN Labor Law 2026"}</div>
-                  </div>
-                </div>
-                <button onClick={() => setShowConfig(false)} style={{ width:30, height:30, borderRadius:7, border:`1px solid ${th.cardBorder}`, background:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:th.text2 }}>
-                  <X size={15}/>
-                </button>
-              </div>
-              <div style={{ padding:"22px 24px", display:"grid", gap:14 }}>
-                {[
-                  { key:"bhxh",          label:vi?"BH Xã hội (BHXH) — NLĐ đóng":"BHXH (Employee share)",    unit:"%"       },
-                  { key:"bhyt",          label:vi?"BH Y tế (BHYT) — NLĐ đóng":"BHYT (Employee share)",       unit:"%"       },
-                  { key:"bhtn",          label:vi?"BH Thất nghiệp (BHTN)":"BHTN",                              unit:"%"       },
-                  { key:"selfDeduction", label:vi?"Giảm trừ bản thân (VND/tháng)":"Self deduction (VND/mo)", unit:" VND"    },
-                  { key:"depDeduction",  label:vi?"Giảm trừ người phụ thuộc (VND/người/tháng)":"Dependent deduction", unit:" VND" },
-                ].map(f => (
-                  <div key={f.key}>
-                    <div style={{ fontSize:12.5, color:th.text2, fontWeight:600, marginBottom:5 }}>{f.label}</div>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <input type="number" step={f.unit==="%"?0.5:500_000}
-                        value={(configDraft as any)[f.key]}
-                        onChange={e => setConfigDraft(c => ({ ...c, [f.key]: parseFloat(e.target.value)||0 }))}
-                        style={{ ...inputStyle, flex:1 }}
-                        onFocus={e => (e.target.style.borderColor="#D0211C")}
-                        onBlur={e => (e.target.style.borderColor=th.inputBorder)}
-                      />
-                      <span style={{ fontSize:13, color:th.text2, minWidth:40 }}>{f.unit}</span>
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.7)", fontWeight:600, textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>
+                      📄 {vi ? "Phiếu lương chi tiết" : "Payslip Details"}
+                    </div>
+                    <div style={{ fontSize:18, fontWeight:800, color:"#fff" }}>{selected.name}</div>
+                    <div style={{ fontSize:12, color:"rgba(255,255,255,0.75)", marginTop:3, display:"flex", gap:12 }}>
+                      <span>🏢 {selected.dept}</span>
+                      <span>🆔 {selected.id}</span>
+                      <span>📅 {vi ? `Tháng ${activeMonth.month}/${activeMonth.year}` : `${activeMonth.month}/${activeMonth.year}`}</span>
                     </div>
                   </div>
-                ))}
-
-                <div style={{ background:dark?"rgba(59,130,246,0.1)":"#EFF6FF", borderRadius:10, padding:"11px 14px", fontSize:12, color:dark?"#93C5FD":"#1D4ED8", display:"flex", gap:7 }}>
-                  <Info size={14} style={{ flexShrink:0 }}/>
-                  {vi?"Biểu thuế TNCN 5 bậc (5%→35%) là quy định nhà nước, không thể chỉnh.":"The 5-bracket PIT is fixed by VN law and cannot be changed."}
+                  <button onClick={() => setShowDetailModal(false)}
+                    style={{ width:34, height:34, borderRadius:9, border:"none", background:"rgba(255,255,255,0.18)",
+                      cursor:"pointer", color:"#fff", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    ✕
+                  </button>
                 </div>
 
-                <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:4 }}>
-                  <button onClick={() => setConfigDraft(DEFAULT_CONFIG)} style={{ padding:"9px 18px", borderRadius:9, border:`1.5px solid ${th.cardBorder}`, background:"none", cursor:"pointer", color:th.text2, fontSize:13, fontWeight:600, fontFamily:"inherit" }}>
-                    {vi?"Mặc định (VN 2026)":"Reset Default"}
-                  </button>
-                  <button onClick={handleSaveConfig} style={{ padding:"9px 22px", borderRadius:9, border:"none", background:"linear-gradient(135deg,#D0211C,#991414)", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, fontFamily:"inherit", boxShadow:"0 4px 12px rgba(208,33,28,0.3)" }}>
-                    {vi?"Lưu & Tính lại":"Save & Recalculate"}
+                {/* Scrollable body */}
+                <div style={{ overflowY:"auto", padding:"16px 22px 20px", flex:1 }}>
+                  {rows.map((r, i) => (
+                    <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                      padding:"8px 0",
+                      borderBottom: r.type==="total"
+                        ? `2px double ${th.tableBorder}`
+                        : `1px solid ${th.tableBorder}`,
+                      background: r.type==="total" ? (dark?"rgba(208,33,28,0.06)":"#FFF5F5") : "transparent",
+                      borderRadius: r.type==="total" ? 6 : 0,
+                      paddingLeft: r.type==="total" ? 6 : 0,
+                      paddingRight: r.type==="total" ? 6 : 0,
+                    }}>
+                      <span style={{ fontSize:12.5,
+                        color: r.type==="total" ? th.text1 : r.type==="info" ? "#3B82F6" : th.text2,
+                        fontWeight: r.type==="total" ? 700 : 400 }}>
+                        {r.label}
+                      </span>
+                      <span style={{ fontSize:13, fontWeight:700,
+                        color: r.type==="bonus" ? "#10B981"
+                             : r.type==="deduct" ? "#EF4444"
+                             : r.type==="info"   ? "#3B82F6"
+                             : r.type==="total"  ? th.text1
+                             : th.text1 }}>
+                        {r.type==="info" ? fmt(r.val)
+                          : r.val < 0 ? `-${fmt(-r.val)}`
+                          : `${r.type==="bonus"&&r.val>0?"+":""}${fmt(r.val)}`}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Net total */}
+                  <div style={{ marginTop:16, background:"linear-gradient(135deg,rgba(5,150,105,0.1),rgba(5,150,105,0.05))",
+                    border:"2px solid rgba(5,150,105,0.25)", borderRadius:12, padding:"14px 16px",
+                    display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div>
+                      <div style={{ fontSize:11, color:"#059669", fontWeight:700, textTransform:"uppercase", letterSpacing:0.8, marginBottom:2 }}>
+                        {vi ? "Lương NET về tay" : "Take-home Net Salary"}
+                      </div>
+                      <div style={{ fontSize:11.5, color:th.text2 }}>
+                        {vi
+                          ? `Ngày công: ${selected.workDays}/${selected.standardDays} · Phụ thuộc: ${selected.dependents}`
+                          : `Work days: ${selected.workDays}/${selected.standardDays} · Dependents: ${selected.dependents}`}
+                      </div>
+                    </div>
+                    <div style={{ fontSize:24, fontWeight:900, color:"#059669" }}>{fmt(c.net)}</div>
+                  </div>
+                </div>
+
+                {/* Footer actions */}
+                <div style={{ padding:"12px 22px", borderTop:`1px solid ${th.tableBorder}`, display:"flex", gap:8, flexShrink:0 }}>
+                  {selected.status==="pending" && (
+                    <button onClick={() => { handleConfirmPay(selected.id); setShowDetailModal(false) }}
+                      style={{ flex:1, padding:"9px", borderRadius:9, border:"none",
+                        background:"linear-gradient(135deg,#059669,#047857)", color:"#fff",
+                        fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                        display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                      <Send size={13}/> {vi ? "Xác nhận chi lương" : "Confirm Payment"}
+                    </button>
+                  )}
+                  <button onClick={() => setShowDetailModal(false)}
+                    style={{ flex:1, padding:"9px", borderRadius:9,
+                      border:`1px solid ${th.cardBorder}`, background:"none",
+                      color:th.text2, fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>
+                    {vi ? "Đóng" : "Close"}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )
+      })()}
 
       <Toast toast={toast}/>
       <style>{`

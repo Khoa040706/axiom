@@ -22,19 +22,10 @@ import {
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { matchAny } from "@/lib/utils/search"
 import { tDept, tPos, tCareerDetail } from "@/lib/i18n-maps"
-import { useState as useStateImg } from "react"
+import { AvatarImg } from "@/components/ui/avatar-img"
 
 function EmpAvatar({ name, avatarPath, size = 36 }: { name: string; avatarPath?: string | null; size?: number }) {
-  const [imgErr, setImgErr] = useStateImg(false)
-  const src = (avatarPath && !imgErr) ? avatarPath : "/images/avatarmacdinh.jpg"
-  return (
-    <img
-      src={src}
-      alt={name}
-      onError={() => setImgErr(true)}
-      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-    />
-  )
+  return <AvatarImg src={avatarPath} name={name} alt={name} size={size} />
 }
 
 /* ── Icon & Color Maps ── */

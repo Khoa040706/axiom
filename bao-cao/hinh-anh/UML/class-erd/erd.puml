@@ -1,0 +1,166 @@
+@startuml
+title Hình 4.14 — Entity Relationship Diagram\nCơ sở dữ liệu Axiom HRM
+skinparam entity {
+  BackgroundColor #FEF2F2
+  BorderColor #D0211C
+}
+skinparam linetype ortho
+hide circle
+
+entity "USER" as user {
+  * **id** : String <<PK>>
+  --
+  username : String <<UNIQUE>>
+  passwordHash : String
+  role : Enum
+  isActive : Boolean
+  personalEmail : String
+  employeeId : String <<FK>>
+}
+
+entity "EMPLOYEE" as emp {
+  * **id** : String <<PK>>
+  --
+  code : String <<UNIQUE>>
+  fullName : String
+  gender : String
+  dateOfBirth : Date
+  email : String
+  phone : String
+  departmentId : String <<FK>>
+  positionId : String <<FK>>
+  hireDate : Date
+  status : String
+  taxCode : String
+  numDependents : Int
+}
+
+entity "DEPARTMENT" as dept {
+  * **id** : String <<PK>>
+  --
+  name : String <<UNIQUE>>
+  description : String
+  isActive : Boolean
+}
+
+entity "POSITION" as pos {
+  * **id** : String <<PK>>
+  --
+  name : String <<UNIQUE>>
+  isActive : Boolean
+}
+
+entity "CONTRACT" as contract {
+  * **id** : String <<PK>>
+  --
+  employeeId : String <<FK>>
+  contractType : String
+  baseSalary : Decimal
+  salaryGrade : Float
+  allowance : Decimal
+  startDate : Date
+  endDate : Date
+  status : String
+}
+
+entity "CAREER_HISTORY" as career {
+  * **id** : String <<PK>>
+  --
+  employeeId : String <<FK>>
+  eventType : String
+  eventDate : Date
+  oldDeptId : String <<FK>>
+  newDeptId : String <<FK>>
+  oldPosId : String <<FK>>
+  newPosId : String <<FK>>
+  oldSalary : Decimal
+  newSalary : Decimal
+}
+
+entity "ATTENDANCE" as att {
+  * **id** : String <<PK>>
+  --
+  employeeId : String <<FK>>
+  workDate : Date
+  checkIn : DateTime
+  checkOut : DateTime
+  status : String
+  lateMinutes : Int
+  otHours : Float
+}
+
+entity "LEAVE_REQUEST" as leave {
+  * **id** : String <<PK>>
+  --
+  employeeId : String <<FK>>
+  leaveType : String
+  startDate : Date
+  endDate : Date
+  totalDays : Int
+  status : String
+  reason : String
+  approvedBy : String <<FK>>
+}
+
+entity "LEAVE_BALANCE" as balance {
+  * **id** : String <<PK>>
+  --
+  employeeId : String <<FK>>
+  year : Int
+  leaveType : String
+  totalDays : Int
+  usedDays : Int
+}
+
+entity "BUSINESS_TRIP" as trip {
+  * **id** : String <<PK>>
+  --
+  employeeId : String <<FK>>
+  destination : String
+  startDate : Date
+  endDate : Date
+  purpose : String
+  allowance : Decimal
+  status : String
+  approvedBy : String <<FK>>
+}
+
+entity "PAYROLL" as payroll {
+  * **id** : String <<PK>>
+  --
+  employeeId : String <<FK>>
+  payMonth : Int
+  payYear : Int
+  workDays : Int
+  otHours : Float
+  grossSalary : Decimal
+  bhxh : Decimal
+  bhyt : Decimal
+  bhtn : Decimal
+  pit : Decimal
+  netSalary : Decimal
+  status : String
+}
+
+entity "PAYSLIP" as payslip {
+  * **id** : String <<PK>>
+  --
+  payrollId : String <<FK>>
+  employeeId : String <<FK>>
+  issuedDate : Date
+  isViewed : Boolean
+}
+
+user |o--|| emp
+emp }o--|| dept
+emp }o--|| pos
+emp ||--o{ contract
+emp ||--o{ career
+emp ||--o{ att
+emp ||--o{ leave
+emp ||--o{ balance
+emp ||--o{ trip
+emp ||--o{ payroll
+payroll ||--|| payslip
+
+@enduml
