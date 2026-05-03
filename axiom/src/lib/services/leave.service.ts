@@ -111,7 +111,7 @@ export const leaveService = {
     return prisma.leaveBalance.findMany({
       where: { year },
       include: {
-        employee: { select: { id: true, code: true, fullName: true } },
+        employee: { select: { id: true, code: true, fullName: true, department: { select: { name: true } } } },
       },
       orderBy: { employee: { fullName: "asc" } },
     })

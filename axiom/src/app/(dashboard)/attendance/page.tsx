@@ -9,9 +9,9 @@ import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { useSession } from "next-auth/react"
 import { DEPT_VI_TO_EN } from "@/lib/i18n-maps"
 
-const MONTHS_VI = ["Tháng 1/2026","Tháng 2/2026","Tháng 3/2026"]
-const MONTHS_EN = ["January 2026","February 2026","March 2026"]
-const MONTH_NUM  = [1, 2, 3]
+const MONTHS_VI = ["Tháng 1/2026","Tháng 2/2026","Tháng 3/2026","Tháng 4/2026"]
+const MONTHS_EN = ["January 2026","February 2026","March 2026","April 2026"]
+const MONTH_NUM  = [1, 2, 3, 4]
 
 export default function AttendancePage() {
   const { dark, lang } = useDashboard()
@@ -20,10 +20,13 @@ export default function AttendancePage() {
   const { isMobile } = useBreakpoint()
   const MONTHS = vi ? MONTHS_VI : MONTHS_EN
   const { data: session } = useSession()
+  const userRole = (session?.user as any)?.role ?? ""
+  const userDept = (session?.user as any)?.department ?? ""
+  const isManager = userRole === "Manager"
   const exporterName = (session?.user as any)?.name ?? (vi ? "Người dùng" : "User")
 
   const [showFilter, setShowFilter] = useState(false)
-  const [monthIdx, setMonthIdx]     = useState(2)
+  const [monthIdx, setMonthIdx]     = useState(MONTH_NUM.length - 1)
   const [q, setQ]                   = useState("")
   const [muonF, setMuonF]           = useState<"all"|"yes"|"no">("all")
   const [otF, setOtF]               = useState<"all"|"yes"|"no">("all")
@@ -51,8 +54,14 @@ export default function AttendancePage() {
     ])
 
     if (monthRes.success && monthRes.data) {
+      // Manager chỉ thấy nhân viên thuộc phòng mình
+      const allRecs = (monthRes.data as any[]).filter(rec => {
+        if (!isManager) return true
+        const deptName = rec.employee?.department?.name ?? ""
+        return deptName === "Công nghệ thông tin" || deptName === "Phòng Công nghệ"
+      })
       const empMap = new Map<number, any>()
-      for (const rec of monthRes.data as any[]) {
+      for (const rec of allRecs) {
         const empId = rec.employeeId
         if (!empMap.has(empId)) {
           empMap.set(empId, {
@@ -70,7 +79,7 @@ export default function AttendancePage() {
       setStaff(Array.from(empMap.values()))
       // Lưu raw records để dùng trong modal
       const empRaw = new Map<number, any[]>()
-      for (const rec of monthRes.data as any[]) {
+      for (const rec of allRecs) {
         const empId = rec.employeeId
         if (!empRaw.has(empId)) empRaw.set(empId, [])
         empRaw.get(empId)!.push(rec)
@@ -79,7 +88,13 @@ export default function AttendancePage() {
     }
 
     if (todayRes.success && todayRes.data) {
-      setToday((todayRes.data as any[]).map(rec => {
+      // Manager chỉ thấy nhân viên phòng mình
+      const todayRecs = (todayRes.data as any[]).filter(rec => {
+        if (!isManager) return true
+        const deptName = rec.employee?.department?.name ?? ""
+        return deptName === "Công nghệ thông tin" || deptName === "Phòng Công nghệ"
+      })
+      setToday(todayRecs.map(rec => {
         const checkIn  = rec.checkIn  ? new Date(rec.checkIn)  : null
         const checkOut = rec.checkOut ? new Date(rec.checkOut) : null
 

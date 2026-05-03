@@ -106,7 +106,7 @@ export default function ManagerDashboard() {
     if (attendRes.success) {
       // Build attendance chart từ records thực của manager
       const recs = (attendRes.data ?? []) as any[]
-      const ontime = recs.filter((r:any) => r.status === "Đúng giờ" || (r.lateMinutes === 0)).length
+      const ontime = recs.filter((r:any) => (r.status === "Đi làm" || r.status === "Đi muộn") && (r.lateMinutes ?? 0) === 0).length
       const late   = recs.filter((r:any) => r.lateMinutes > 0).length
       setDeptAttend([
         { cat: vi?"Đúng giờ":"On Time",  count: ontime, fill:"#10B981" },
@@ -139,7 +139,7 @@ export default function ManagerDashboard() {
       <div className="page-header" style={{ marginBottom: 22 }}>
         <div>
           <h1 style={{ fontSize:22, fontWeight:800, color:th.text1, margin:0 }}>
-            {vi?"Dashboard — Trưởng phòng":"Department Manager Dashboard"}
+            {vi?"Dashboard — Trưởng phòng Công nghệ Thông tin":"IT Department Manager Dashboard"}
           </h1>
           <p style={{ fontSize:13, color:th.text2, margin:"4px 0 0" }}>{vi?"Quản lý nhân sự phòng ban của bạn":"Manage your department team"}</p>
         </div>

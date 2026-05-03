@@ -36,18 +36,39 @@ Nhóm áp dụng phương pháp phát triển **Agile - Scrum** với các sprin
 
 ### Bảng 3.2 — Phân công công việc
 
-| Mô-đun | Thành viên phụ trách | Mô tả |
-|--------|---------------------|-------|
-| Authentication & RBAC | Thành viên 1 | NextAuth, middleware, phân quyền |
-| Quản lý nhân viên & Hợp đồng | Thành viên 1 | CRUD Employee, Contract, CareerHistory |
-| Chấm công & GPS | Thành viên 2 | Check-in/out, Haversine, timer |
-| Nghỉ phép & Công tác phí | Thành viên 2 | LeaveRequest, BusinessTrip |
-| Tính lương & Phiếu lương | Thành viên 3 | Payroll service, PDF export |
-| Dashboard & Báo cáo | Thành viên 3 | Director/HR/Accountant dashboard, Recharts |
-| Database & Prisma schema | Thành viên 1 | Schema design, migration, seed |
-| UI/UX & Responsive | Thành viên 2 | CSS, dark mode, mobile layout |
-| Kiểm thử | Cả nhóm | Test case, bug fix |
-| Tài liệu & Báo cáo | Cả nhóm | SRS, báo cáo đồ án |
+#### Tổng quan phân công
+
+| Thành viên | MSSV | Số task | Tỷ lệ | Vai trò chính |
+|------------|------|:---:|:---:|---------------|
+| **TV1** | 52400017 | 38 | ~50% | Backend core, Auth, Payroll, RBAC, Dashboard logic, Security, i18n |
+| **TV2** | 52400133 | 20 | ~25% | Frontend UI, Employee pages, Contract, Attendance, Positions, Profile, Layout |
+| **TV3** | 52400004 | 20 | ~25% | Leave, Business Trip, Career History, Export (PDF/Excel), Setup Email |
+
+#### Phân công theo mô-đun
+
+| Mô-đun | Thành viên | MSSV | Chức năng chính |
+|--------|-----------|------|-----------------|
+| **Authentication & Bảo mật** | TV1 | 52400017 | NextAuth v5 Credentials, bcrypt hash, JWT session, Edge Middleware, forgot-password API, setup-email flow |
+| **Quản lý tài khoản (Admin)** | TV1 | 52400017 | Tạo/xóa user, reset mật khẩu, toggle active, đổi role có ràng buộc, getAllUsers |
+| **Phân quyền RBAC** | TV1 | 52400017 | 6 vai trò (Admin/Director/HRManager/Accountant/Manager/Employee), sidebar động, redirect theo role, data-level filter |
+| **Quản lý nhân viên** | TV1 + TV2 | 52400017 + 52400133 | Backend: CRUD Employee (Zod validation, soft/hard delete, reinstate). Frontend: bảng danh sách, filter, form modal |
+| **Quản lý hợp đồng** | TV1 + TV2 | 52400017 + 52400133 | Backend: tạo/chấm dứt hợp đồng, cảnh báo hết hạn 30 ngày. Frontend: bảng danh sách, filter trạng thái |
+| **Hồ sơ cá nhân & Avatar** | TV2 | 52400133 | Trang Profile: tab thông tin/đổi mật khẩu/avatar crop. Canvas drag-to-pan, zoom, export base64 |
+| **Chấm công** | TV1 + TV2 | 52400017 + 52400133 | Backend: check-in/out timestamp, upsert, getByMonth. Frontend: UI nút check-in/out, bảng tháng, filter phòng ban |
+| **Nghỉ phép** | TV1 + TV3 | 52400017 + 52400004 | Backend filter phân quyền (TV1). Frontend: tạo đơn, duyệt/từ chối, quỹ phép, progress bar (TV3) |
+| **Công tác** | TV3 | 52400004 | Tạo đề xuất, duyệt/từ chối, danh sách filter — toàn bộ module |
+| **Lịch sử công tác** | TV3 | 52400004 | Tạo/xóa sự kiện (thăng chức, khen thưởng, kỷ luật, tăng lương), timeline view, stat cards |
+| **Tính lương (Payroll)** | TV1 | 52400017 | `payrollService.calculate()`: Gross/Net, BHXH/BHYT/BHTN, thuế TNCN lũy tiến 7 bậc, batch tính hàng loạt |
+| **Phiếu lương & Cấu hình** | TV1 + TV2 | 52400017 + 52400133 | Backend: createOrUpdate payslip, confirmPayment. Frontend: bảng lương, modal chi tiết, config page |
+| **Dashboard & Analytics** | TV1 + TV2 | 52400017 + 52400133 | Backend: 5 Promise.allSettled cho Director dashboard, KPI kế toán, stats tổng hợp (TV1). Frontend: 6 biểu đồ, stat cards (TV2) |
+| **Xuất báo cáo PDF/Excel** | TV3 | 52400004 | API routes: dashboard-pdf, payslip-pdf, report-excel, excel danh sách nhân viên |
+| **Phòng ban & Chức vụ** | TV2 | 52400133 | Trang positions: bảng chức vụ, cấp bậc, khung lương. API departments |
+| **Đa ngôn ngữ VI/EN** | TV1 | 52400017 | i18n maps: `tLeaveType()`, `tDept()`, `tLeaveReason()` toàn hệ thống |
+| **Dark/Light mode & Responsive** | TV2 | 52400133 | `dashboard-context.tsx`, `useBreakpoint()`, mobile sidebar, table scroll, CSS variables |
+| **Trang đăng nhập** | TV1 | 52400017 | Canvas star particles, floating cards animation, gradient sweep button, bilingual toggle |
+| **Database & Prisma** | TV1 | 52400017 | Schema design, migrations, seed data (30 nhân viên demo) |
+| **Tài liệu & Báo cáo** | TV3 | 52400004 | SRS, báo cáo đồ án, SETUP.md, tài khoản demo |
+
 
 ---
 
@@ -55,21 +76,22 @@ Nhóm áp dụng phương pháp phát triển **Agile - Scrum** với các sprin
 
 ### Bảng 3.3 — Kế hoạch theo tuần
 
-| Tuần | Thời gian | Nội dung công việc | Người thực hiện |
-|------|----------|-------------------|----------------|
-| 1 | 01/03 – 07/03 | Phân tích yêu cầu, thiết kế ERD, Prisma schema | Cả nhóm |
-| 2 | 08/03 – 14/03 | Authentication, RBAC, quản lý nhân viên (CRUD) | Thành viên 1, 2 |
-| 3 | 15/03 – 21/03 | Hợp đồng, lịch sử công tác, phân hệ Leave | Thành viên 1, 2 |
-| 4 | 22/03 – 28/03 | Chấm công GPS, timer, công tác phí | Thành viên 2, 3 |
-| 5 | 29/03 – 04/04 | Payroll service, tính lương, phiếu lương PDF | Thành viên 3 |
-| 6 | 05/04 – 11/04 | Dashboard Director, HR, Accountant, Recharts | Thành viên 1, 3 |
-| 7 | 12/04 – 18/04 | Seed data, responsive, dark mode, UI polish | Cả nhóm |
-| 8 | 19/04 – 25/04 | Kiểm thử toàn hệ thống, bug fix | Cả nhóm |
-| 9 | 26/04 – 30/04 | Hoàn thiện báo cáo, chuẩn bị bảo vệ | Cả nhóm |
+| Tuần | Thời gian | Nội dung công việc | Người thực hiện | Kết quả |
+|------|----------|--------------------|----------------|---------|
+| 1 | 01/03 – 07/03 | Phân tích yêu cầu, thiết kế ERD, Prisma schema, docker-compose, khởi tạo Next.js project | Cả nhóm | Schema DB hoàn chỉnh, môi trường dev chạy được |
+| 2 | 08/03 – 14/03 | Authentication (NextAuth v5, bcrypt, JWT), Edge Middleware, setup-email flow, trang đăng nhập premium | TV1 (52400017) | Đăng nhập/đăng xuất, forgot-password, bảo vệ route |
+| 3 | 15/03 – 21/03 | RBAC 6 vai trò, sidebar động, CRUD nhân viên (backend + frontend), quản lý tài khoản Admin | TV1 + TV2 (52400017 + 52400133) | Phân quyền hoàn chỉnh, trang nhân viên hoạt động |
+| 4 | 22/03 – 28/03 | Quản lý hợp đồng, lịch sử công tác, chấm công (check-in/out backend), profile & avatar crop | TV1 + TV2 (52400017 + 52400133) | Hợp đồng, career history, check-in/out lưu DB |
+| 5 | 29/03 – 04/04 | UI chấm công tháng, nghỉ phép (toàn bộ module: tạo đơn, duyệt, quỹ phép), công tác phí | TV2 + TV3 (52400133 + 52400004) | Bảng chấm công, leave management hoạt động |
+| 6 | 05/04 – 11/04 | Payroll engine (Gross→Net, BHXH, thuế TNCN lũy tiến), batch tính lương, phiếu lương | TV1 (52400017) | Tính lương tự động chính xác, payslip PDF |
+| 7 | 12/04 – 18/04 | Dashboard Director (6 biểu đồ), HR, Accountant, Manager, Employee; xuất báo cáo PDF/Excel | TV1 + TV2 + TV3 | Tất cả 6 dashboard hoạt động, export PDF/Excel |
+| 8 | 19/04 – 25/04 | i18n VI/EN toàn hệ thống, dark/light mode, responsive mobile, UI polish, seed data 30 NV | Cả nhóm | Giao diện hoàn thiện, song ngữ, mobile-ready |
+| 9 | 26/04 – 30/04 | Kiểm thử toàn hệ thống, fix bug console warnings, hoàn thiện báo cáo, chuẩn bị bảo vệ | Cả nhóm | Hệ thống ổn định, tài liệu đầy đủ |
 
 *(Xem Hình 3.1 — Gantt Chart tổng quan dự án)*
 
 > **[HÌNH 3.1]** Gantt Chart dự án — Biểu đồ thể hiện timeline 9 tuần, phân chia milestone và người phụ trách từng giai đoạn.
+
 
 ---
 

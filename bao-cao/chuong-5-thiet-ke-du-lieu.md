@@ -143,20 +143,163 @@ Hệ thống Axiom HRM sử dụng cơ sở dữ liệu quan hệ PostgreSQL v�
 | status | String | DEFAULT "Chờ duyệt" | Trạng thái |
 | notes | String | NULL | Ghi chú |
 
-## 5.3 Quan hệ giữa các bảng
+## 5.3 Sơ đồ thực thể quan hệ (ERD)
 
+```plantuml
+@startuml Axiom_HRM_ERD
+!theme plain
+skinparam linetype ortho
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #1E3A5F
+  HeaderBackgroundColor #1D4ED8
+  HeaderFontColor #FFFFFF
+}
+
+title Hình 5.1 — Sơ đồ thực thể quan hệ (ERD) hệ thống Axiom HRM
+
+class User {
+  +id : String <<PK>>
+  +username : String <<UNIQUE>>
+  +passwordHash : String
+  +role : Enum
+  +personalEmail : String
+  +isActive : Boolean
+  +employeeId : Int <<FK>>
+}
+
+class Employee {
+  +id : Int <<PK>>
+  +code : String <<UNIQUE>>
+  +fullName : String
+  +departmentId : Int <<FK>>
+  +positionId : Int <<FK>>
+  +hireDate : DateTime
+  +status : String
+  +numDependents : Int
+}
+
+class Department {
+  +id : Int <<PK>>
+  +name : String <<UNIQUE>>
+  +code : String
+  +managerId : Int <<FK>>
+}
+
+class Position {
+  +id : Int <<PK>>
+  +name : String
+  +code : String
+}
+
+class Contract {
+  +id : Int <<PK>>
+  +employeeId : Int <<FK>>
+  +contractType : String
+  +startDate : DateTime
+  +endDate : DateTime
+  +baseSalary : Decimal
+  +salaryGrade : Decimal
+  +allowance : Decimal
+  +status : String
+}
+
+class Attendance {
+  +id : Int <<PK>>
+  +employeeId : Int <<FK>>
+  +workDate : DateTime
+  +checkIn : DateTime
+  +checkOut : DateTime
+  +status : String
+  +lateMinutes : Int
+  +otHours : Decimal
+}
+
+class LeaveRequest {
+  +id : Int <<PK>>
+  +employeeId : Int <<FK>>
+  +leaveType : String
+  +startDate : DateTime
+  +endDate : DateTime
+  +totalDays : Int
+  +status : String
+  +approverId : Int <<FK>>
+}
+
+class LeaveBalance {
+  +id : Int <<PK>>
+  +employeeId : Int <<FK>>
+  +year : Int
+  +totalDays : Int
+  +usedDays : Int
+}
+
+class BusinessTrip {
+  +id : Int <<PK>>
+  +employeeId : Int <<FK>>
+  +destination : String
+  +startDate : DateTime
+  +endDate : DateTime
+  +allowance : Decimal
+  +status : String
+  +approvedBy : Int <<FK>>
+}
+
+class CareerHistory {
+  +id : Int <<PK>>
+  +employeeId : Int <<FK>>
+  +eventType : String
+  +eventDate : DateTime
+  +oldDepartment : String
+  +newDepartment : String
+  +oldSalary : Decimal
+  +newSalary : Decimal
+}
+
+class Payroll {
+  +id : Int <<PK>>
+  +employeeId : Int <<FK>>
+  +payMonth : Int
+  +payYear : Int
+  +grossSalary : Decimal
+  +bhxh : Decimal
+  +bhyt : Decimal
+  +bhtn : Decimal
+  +taxAmount : Decimal
+  +netSalary : Decimal
+  +status : String
+}
+
+class Payslip {
+  +id : Int <<PK>>
+  +payrollId : Int <<FK, UNIQUE>>
+  +employeeId : Int <<FK>>
+  +issuedDate : DateTime
+  +issuedBy : String
+}
+
+' ── Quan hệ ──────────────────────────────
+User "1" o-- "0..1" Employee       : employeeId >
+Employee "1" *-- "0..*" Contract   : 1:N >
+Employee "1" *-- "0..*" Attendance : 1:N >
+Employee "1" *-- "0..*" LeaveRequest : 1:N >
+Employee "1" *-- "1" LeaveBalance  : 1:1/năm >
+Employee "1" *-- "0..*" BusinessTrip : 1:N >
+Employee "1" *-- "0..*" CareerHistory : 1:N >
+Employee "1" *-- "0..*" Payroll    : 1:N >
+Employee "N" *-- "1" Department    : N:1 >
+Employee "N" *-- "1" Position      : N:1 >
+Department "1" o-- "0..1" Employee : managerId >
+Payroll "1" *-- "1" Payslip        : 1:1 >
+LeaveRequest "N" o-- "1" Employee  : approverId >
+BusinessTrip "N" o-- "1" User      : approvedBy >
+
+@enduml
 ```
-User ──────────────── Employee (1:1, optional)
-Employee ──────────── Department (N:1)
-Employee ──────────── Position (N:1)
-Employee ──────────── Contract (1:N)
-Employee ──────────── Attendance (1:N)
-Employee ──────────── LeaveRequest (1:N)
-Employee ──────────── LeaveBalance (1:1 per year)
-Employee ──────────── BusinessTrip (1:N)
-Employee ──────────── Payroll (1:N)
-Payroll ───────────── Payslip (1:1)
-```
+
+
 
 ## 5.4 Công thức tính lương (Logic nghiệp vụ)
 

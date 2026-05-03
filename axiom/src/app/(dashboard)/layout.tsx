@@ -183,7 +183,7 @@ function Inner({ children }: { children: React.ReactNode }) {
         name: su.name ?? "User",
         email: su.email ?? "",
         role: su.role ?? "Employee",
-        roleLabel: su.role === "Admin" ? "Quản trị viên" : su.role === "HRManager" ? "Trưởng phòng Nhân sự" : su.role === "Accountant" ? "Kế toán" : su.role === "Director" ? "Giám đốc" : su.role === "Manager" ? "Trưởng phòng" : "Nhân viên",
+        roleLabel: su.role === "Admin" ? "Quản trị viên" : su.role === "HRManager" ? "Trưởng phòng Nhân sự" : su.role === "Accountant" ? "Kế toán" : su.role === "Director" ? "Giám đốc" : su.role === "Manager" ? "Trưởng phòng Công nghệ Thông tin" : "Nhân viên",
         roleLabelEn: su.role ?? "Employee",
         department: "AXIOM HRM",
         dashboardPath: su.dashboardPath ?? "/dashboard",
@@ -220,6 +220,11 @@ function Inner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     reloadUser()
   }, [reloadUser])
+
+  // ── Auto-sync fake data: cập nhật chấm công + lương ảo hàng ngày cho 57 NV (không block UI) ──
+  useEffect(() => {
+    fetch("/api/sync-fake-data").catch(() => {})
+  }, [])
 
   // Cập nhật notifications theo role thực khi session load xong
   useEffect(() => {

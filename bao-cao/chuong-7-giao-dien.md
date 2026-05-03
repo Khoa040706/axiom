@@ -99,6 +99,16 @@
 >
 > Mô tả: 4 thẻ KPI nhân sự, biểu đồ cột nhân lực theo phòng ban, 6 quick action tiles, bảng đơn nghỉ phép chờ duyệt với nút Duyệt/Từ chối tác động thật.
 
+### Bảng 7.X1 — Mô tả giao diện Dashboard HR Manager
+
+| Thành phần | Mô tả |
+|-----------|-------|
+| KPI Row | 4 thẻ: Tổng nhân viên, Đơn nghỉ chờ, HĐ sắp hết hạn, Thử việc |
+| Biểu đồ cột | Nhân lực theo phòng ban (BarChart, Recharts) |
+| Quick Action | 6 tile: Thêm nhân viên, Duyệt nghỉ phép, Chấm công, HĐ, Phiếu lương, Báo cáo |
+| Bảng đơn nghỉ | Danh sách đơn chờ duyệt, nút Duyệt/Từ chối tác động thật vào DB |
+| Nút Xuất PDF | Xuất báo cáo chấm công tháng |
+
 ---
 
 ## 7.6 Dashboard Accountant
@@ -107,6 +117,16 @@
 >
 > Mô tả: 4 thẻ KPI tài chính (Gross / Net / BHXH / Thuế), biểu đồ đường lương Net, bảng chi tiết các khoản khấu trừ bắt buộc (BHXH/BHYT/BHTN/Thuế), 3 quick action tiles.
 
+### Bảng 7.X2 — Mô tả giao diện Dashboard Accountant
+
+| Thành phần | Mô tả |
+|-----------|-------|
+| KPI Row | 4 thẻ: Tổng Gross, Tổng Net, Tổng BHXH, Tổng Thuế TNCN tháng này |
+| Biểu đồ đường | Xu hướng tổng Net 6 tháng gần nhất (LineChart) |
+| Bảng khấu trừ | Chi tiết BHXH(8%), BHYT(1.5%), BHTN(1%), Thuế TNCN theo luỹ tiến |
+| Quick Action | 3 tile: Tính lương, Xem phiếu lương, Cấu hình tham số |
+| Nút Xuất Excel | Xuất báo cáo tài chính tháng |
+
 ---
 
 ## 7.7 Dashboard Manager
@@ -114,6 +134,15 @@
 > **[HÌNH 7.6]** Dashboard Manager (Trưởng phòng) — Route: `/dashboard-manager`
 >
 > Mô tả: 4 thẻ KPI phòng ban, biểu đồ cột chấm công tháng này, danh sách đơn nghỉ phép phòng chờ duyệt.
+
+### Bảng 7.X3 — Mô tả giao diện Dashboard Manager (Trưởng phòng)
+
+| Thành phần | Mô tả |
+|-----------|-------|
+| KPI Row | 4 thẻ: Nhân viên trong phòng, Đơn nghỉ chờ duyệt, Đi muộn tháng này, HĐ sắp hết hạn |
+| Biểu đồ cột | Chấm công phòng ban tháng hiện tại (Đi làm / Đi muộn / Vắng) |
+| Bảng đơn nghỉ | Đơn nghỉ phép của nhân viên phòng mình, nút Duyệt/Từ chối |
+| Phạm vi dữ liệu | Chỉ hiển thị nhân viên thuộc phòng ban của Manager (data-level filter) |
 
 ---
 

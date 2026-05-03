@@ -28,20 +28,20 @@ const STATUS_EN: Record<EventStatus, { label: string; color: string; bg: string;
 
 /* ── Shared events data ────────────────────────────── */
 export const COMPANY_EVENTS_VI: EventData[] = [
-  { emoji: "🏖️", title: "Nghỉ lễ Giỗ Tổ Hùng Vương",        desc: "Toàn thể nhân viên được nghỉ theo lịch nhà nước",          date: "18/04/2026",       status: "upcoming" },
+  { emoji: "🏖️", title: "Nghỉ lễ Giỗ Tổ Hùng Vương",        desc: "Toàn thể nhân viên được nghỉ theo lịch nhà nước",          date: "26/04/2026",       status: "past" },
   { emoji: "🎆", title: "Nghỉ lễ 30/4 – Giải phóng miền Nam", desc: "Nghỉ lễ Ngày Giải phóng miền Nam, thống nhất đất nước",  date: "30/04/2026",       status: "upcoming" },
   { emoji: "🌸", title: "Nghỉ lễ Quốc tế Lao động 1/5",       desc: "Nghỉ lễ Ngày Quốc tế Lao động – toàn công ty nghỉ",      date: "01/05/2026",       status: "upcoming" },
   { emoji: "🎉", title: "Ngày thành lập công ty",               desc: "Kỷ niệm 5 năm thành lập AXIOM Corporation",              date: "20/06/2026",       status: "upcoming" },
-  { emoji: "📊", title: "Họp tổng kết Q1 2026",                desc: "Báo cáo kết quả kinh doanh quý 1 tại hội trường",        date: "15/04/2026",       status: "upcoming" },
+  { emoji: "📊", title: "Họp tổng kết Q1 2026",                desc: "Báo cáo kết quả kinh doanh quý 1 tại hội trường",        date: "10/04/2026",       status: "past" },
   { emoji: "🎓", title: "Đào tạo kỹ năng mềm",                 desc: "Khóa đào tạo cho nhân viên mới Q1",                      date: "20/03 – 25/03/2026", status: "past" },
   { emoji: "💼", title: "Đánh giá hiệu suất Q4 2025",          desc: "Kỳ đánh giá KPI toàn công ty đã hoàn tất",              date: "15/01/2026",       status: "past" },
 ]
 export const COMPANY_EVENTS_EN: EventData[] = [
-  { emoji: "🏖️", title: "Hung Kings Commemoration",         desc: "Public holiday – Hung Kings Commemoration Day",            date: "Apr 18, 2026",    status: "upcoming" },
+  { emoji: "🏖️", title: "Hung Kings Commemoration",         desc: "Public holiday – Hung Kings Commemoration Day",            date: "Apr 26, 2026",    status: "past" },
   { emoji: "🎆", title: "Liberation Day – Apr 30",           desc: "National holiday – Reunification of Vietnam",              date: "Apr 30, 2026",    status: "upcoming" },
   { emoji: "🌸", title: "International Labour Day – May 1", desc: "Public holiday – International Workers' Day",              date: "May 01, 2026",    status: "upcoming" },
   { emoji: "🎉", title: "Company Anniversary",               desc: "5th anniversary of AXIOM Corporation",                    date: "Jun 20, 2026",    status: "upcoming" },
-  { emoji: "📊", title: "Q1 2026 Review Meeting",            desc: "Quarterly business review at conference room",             date: "Apr 15, 2026",    status: "upcoming" },
+  { emoji: "📊", title: "Q1 2026 Review Meeting",            desc: "Quarterly business review at conference room",             date: "Apr 10, 2026",    status: "past" },
   { emoji: "🎓", title: "Soft Skills Training",              desc: "Training program for new Q1 employees",                   date: "Mar 20–25, 2026", status: "past" },
   { emoji: "💼", title: "Q4 2025 Performance Review",        desc: "Company-wide KPI evaluation completed",                   date: "Jan 15, 2026",    status: "past" },
 ]

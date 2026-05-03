@@ -31,7 +31,7 @@ const ROLES = [
   { value: "HRManager",  vi: "Trưởng phòng Nhân sự",  en: "HR Manager",         color: "#0891B2" },
   { value: "Accountant", vi: "Kế toán",                en: "Accountant",         color: "#059669" },
   { value: "Director",   vi: "Giám đốc",              en: "Director",           color: "#B45309" },
-  { value: "Manager",    vi: "Trưởng phòng",           en: "Department Manager", color: "#9333EA" },
+  { value: "Manager",    vi: "Trưởng phòng CNTT",      en: "IT Manager",         color: "#9333EA" },
   { value: "Employee",   vi: "Nhân viên",             en: "Employee",           color: "#64748B" },
 ]
 

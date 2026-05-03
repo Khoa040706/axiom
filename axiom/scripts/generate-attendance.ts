@@ -36,7 +36,7 @@ async function generateAttendance(month: number, year: number) {
   console.log(`\n🚀 Tạo dữ liệu chấm công: Tháng ${month}/${year}`)
 
   const employees = await prisma.employee.findMany({
-    where: { status: "Đang làm" },
+    where: { status: { in: ["Đang làm", "Thử việc"] } },
     select: { id: true, code: true, fullName: true },
   })
 

@@ -126,6 +126,7 @@ export default function LeavePage() {
   const sessionUserId = useUserId()
   const userRole = session?.user?.role ?? "Employee"
   const isManager = ["Admin", "HRManager", "Manager", "Director"].includes(userRole)
+  const isOnlyDeptManager = userRole === "Manager" // Trưởng phòng chỉ thấy phòng mình
 
   const [leaves, setLeaves]       = useState<LeaveRequest[]>([])
   const [quota, setQuota]         = useState<any[]>([])
@@ -180,6 +181,10 @@ export default function LeavePage() {
       if (!isManager && sessionEmployeeId) {
         allLeaves = allLeaves.filter((l: any) => l.employeeId === sessionEmployeeId)
       }
+      // Trưởng phòng chỉ thấy đơn của nhân viên phòng mình
+      if (isOnlyDeptManager) {
+        allLeaves = allLeaves.filter((l: any) => l.department === "Công nghệ thông tin" || l.department === "Phòng Công nghệ")
+      }
       setLeaves(allLeaves)
     }
     if (quotaRes.success && quotaRes.data) {
@@ -189,10 +194,15 @@ export default function LeavePage() {
         used:  q.usedDays,
         left:  q.totalDays - q.usedDays,
         employeeId: q.employeeId,
+        department: q.employee?.department?.name ?? "",
       }))
       // Nhân viên chỉ thấy quota của bản thân
       if (!isManager && sessionEmployeeId) {
         allQuota = allQuota.filter((q: any) => q.employeeId === sessionEmployeeId)
+      }
+      // Trưởng phòng chỉ thấy quota phòng mình
+      if (isOnlyDeptManager) {
+        allQuota = allQuota.filter((q: any) => q.department === "Công nghệ thông tin" || q.department === "Phòng Công nghệ")
       }
       setQuota(allQuota)
     }
@@ -534,7 +544,7 @@ export default function LeavePage() {
               {quota
                 .slice(quotaPage * QUOTA_PER_PAGE, (quotaPage + 1) * QUOTA_PER_PAGE)
                 .map(q => (
-                  <div key={q.name} style={{ background:th.tableHead, borderRadius:12, padding:"14px 16px" }}>
+                  <div key={q.employeeId} style={{ background:th.tableHead, borderRadius:12, padding:"14px 16px" }}>
                     <div style={{ fontWeight:600, color:th.text1, fontSize:13, marginBottom:8 }}>{q.name}</div>
                     <div style={{ display:"flex", gap:16, fontSize:12, color:th.text2, marginBottom:8 }}>
                       <span>{vi?"Tổng phép":"Total"} <b style={{ color:th.text1 }}>{q.total}</b></span>

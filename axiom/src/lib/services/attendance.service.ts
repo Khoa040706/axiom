@@ -41,7 +41,7 @@ export const attendanceService = {
         ...(employeeId ? { employeeId } : {}),
       },
       include: {
-        employee: { select: { id: true, code: true, fullName: true } },
+        employee: { select: { id: true, code: true, fullName: true, department: { select: { name: true } } } },
       },
     })
   },

@@ -406,7 +406,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="page-pad" style={{ maxWidth:1200 }}>
+    <div className="page-pad">
       <style>{`
         @keyframes spin { to { transform:rotate(360deg) } }
         @keyframes up   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }

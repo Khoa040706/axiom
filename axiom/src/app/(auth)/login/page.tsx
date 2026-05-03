@@ -597,7 +597,7 @@ export default function LoginPage() {
             {/* ── Red top accent bar (static) ── */}
             <div style={{
               height: 3,
-              background: "linear-gradient(90deg,#FF6659,#D32F2F,#9A0007,#FF4444,#FF6659)",
+              backgroundImage: "linear-gradient(90deg,#FF6659,#D32F2F,#9A0007,#FF4444,#FF6659)",
               backgroundSize: "300% 100%",
               animation: "gradMove 2s linear infinite",
             }} />
@@ -749,7 +749,7 @@ export default function LoginPage() {
                     )}
                     <button id="login-submit" type="submit" disabled={loading} style={{
                       width: "100%", height: 46, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      background: "linear-gradient(135deg,#FF6659 0%,#D32F2F 35%,#9A0007 65%,#FF6659 100%)",
+                      backgroundImage: "linear-gradient(135deg,#FF6659 0%,#D32F2F 35%,#9A0007 65%,#FF6659 100%)",
                       backgroundSize: "300% 100%", animation: loading ? "none" : "gradMove 2.5s linear infinite",
                       color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: "inherit",
                       cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 4px 18px rgba(154,0,7,.3)",
@@ -796,7 +796,7 @@ export default function LoginPage() {
                       <div style={{ fontSize: 12.5, color: text2, lineHeight: 1.6, marginBottom: 20, transition: "color .4s" }}>{t.fpSuccessSub}</div>
                       <button onClick={goLogin} style={{
                         width: "100%", height: 42,
-                        background: "linear-gradient(135deg,#FF6659,#D32F2F,#9A0007)",
+                        backgroundImage: "linear-gradient(135deg,#FF6659,#D32F2F,#9A0007)",
                         backgroundSize: "300% 100%", animation: "gradMove 2.5s linear infinite",
                         color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700,
                         fontFamily: "inherit", cursor: "pointer", boxShadow: "0 4px 18px rgba(154,0,7,.3)",
@@ -854,9 +854,10 @@ export default function LoginPage() {
                         )}
                         <button id="fp-submit" type="submit" disabled={fpLoading || !emailValid} style={{
                           width: "100%", height: 44, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                          background: emailValid
+                          backgroundImage: emailValid
                             ? "linear-gradient(135deg,#FF6659 0%,#D32F2F 35%,#9A0007 65%,#FF6659 100%)"
-                            : (dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"),
+                            : "none",
+                          backgroundColor: emailValid ? "transparent" : (dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"),
                           backgroundSize: "300% 100%", animation: (emailValid && !fpLoading) ? "gradMove 2.5s linear infinite" : "none",
                           color: emailValid ? "#fff" : text2, border: "none", borderRadius: 10,
                           fontSize: 13, fontWeight: 700, fontFamily: "inherit",

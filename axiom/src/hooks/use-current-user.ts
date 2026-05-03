@@ -22,7 +22,7 @@ const ROLE_LABEL: Record<string, { vi: string; en: string }> = {
   HRManager:  { vi: "Trưởng phòng Nhân sự",   en: "HR Manager" },
   Accountant: { vi: "Kế toán",                 en: "Accountant" },
   Director:   { vi: "Giám đốc",               en: "Director" },
-  Manager:    { vi: "Trưởng phòng",            en: "Department Manager" },
+  Manager:    { vi: "Trưởng phòng Công nghệ Thông tin", en: "IT Department Manager" },
   Employee:   { vi: "Nhân viên",              en: "Employee" },
 }
 

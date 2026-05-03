@@ -69,7 +69,7 @@ const DEFAULT_USERS: MockUser[] = [
   {
     id: "TP001", username: "quanly", password: "quanly",
     name: "Nguyễn Văn Quản Lý", email: "quanly@gmail.com", phone: "0933 456 789",
-    role: "truongphong", roleLabel: "Trưởng phòng", roleLabelEn: "Department Manager",
+    role: "truongphong", roleLabel: "Trưởng phòng Công nghệ Thông tin", roleLabelEn: "IT Department Manager",
     department: "Phòng Công nghệ", dashboardPath: "/dashboard-manager",
     isActive: true, createdAt: new Date(2024, 2, 1).toISOString(),
   },
@@ -255,7 +255,7 @@ export function createUser(data: {
     giamdoc:          { vi: "Giám đốc",                en: "Director" },
     truongphong_ns:   { vi: "Trưởng phòng Nhân sự",   en: "HR Manager" },
     ketoan:           { vi: "Kế toán",                 en: "Accountant" },
-    truongphong:      { vi: "Trưởng phòng",            en: "Department Manager" },
+    truongphong:      { vi: "Trưởng phòng Công nghệ Thông tin", en: "IT Department Manager" },
     nhanvien:         { vi: "Nhân viên",               en: "Employee" },
   }
 
@@ -303,7 +303,7 @@ export function updateUserRole(userId: string, role: Role): MockUser | null {
     giamdoc:          { vi: "Giám đốc",                en: "Director" },
     truongphong_ns:   { vi: "Trưởng phòng Nhân sự",   en: "HR Manager" },
     ketoan:           { vi: "Kế toán",                 en: "Accountant" },
-    truongphong:      { vi: "Trưởng phòng",            en: "Department Manager" },
+    truongphong:      { vi: "Trưởng phòng Công nghệ Thông tin", en: "IT Department Manager" },
     nhanvien:         { vi: "Nhân viên",               en: "Employee" },
   }
   const users = getUsersDB()

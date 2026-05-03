@@ -2,24 +2,7 @@
 
 ## 2.1 Tài liệu SRS (Software Requirement Specification)
 
-### Bảng 2.1 Lịch sử thay đổi tài liệu
 
-| Phiên bản | Ngày | Người thực hiện | Mô tả thay đổi |
-|-----------|------|----------------|----------------|
-| 1.0 | 01/03/2026 | Nhóm 3 | Tạo tài liệu ban đầu |
-| 1.1 | 10/03/2026 | Nhóm 3 | Cập nhật Use Case chấm công GPS |
-| 1.2 | 20/04/2026 | Nhóm 3 | Hoàn thiện phân hệ Payroll và phiếu lương |
-| 2.0 | 27/04/2026 | Nhóm 3 | Hoàn thiện toàn bộ tài liệu |
-
-### Bảng 2.2 Quy ước tài liệu
-
-| Ký hiệu | Ý nghĩa |
-|---------|---------|
-| **[F]** | Yêu cầu chức năng (Functional Requirement) |
-| **[NF]** | Yêu cầu phi chức năng (Non-functional Requirement) |
-| **UC-xx** | Use Case số xx |
-| **BR-xx** | Business Rule số xx |
-| **Cao / Trung / Thấp** | Mức độ ưu tiên |
 
 ### Bảng 2.3 Mức độ ưu tiên
 
@@ -85,26 +68,26 @@ Axiom HRM là một hệ thống phần mềm mới, được phát triển như
 
 | Mã | Tính năng | Vai trò | Ưu tiên |
 |----|----------|---------|---------| 
-| F-01 | Đăng nhập / Đăng xuất | Tất cả | Cao |
-| F-02 | Quản lý hồ sơ nhân viên (CRUD) | Admin, HR | Cao |
-| F-03 | Quản lý hợp đồng lao động | Admin, HR | Cao |
-| F-04 | Quản lý lịch sử công tác | Admin, HR | Trung |
-| F-05 | Check-in / Check-out GPS | Employee | Cao |
-| F-06 | Xem bảng chấm công tháng | HR, Manager, Employee | Cao |
-| F-07 | Đăng ký nghỉ phép | Employee | Cao |
-| F-08 | Duyệt / Từ chối đơn nghỉ phép | HR, Manager | Cao |
-| F-09 | Quản lý quỹ phép năm | HR | Trung |
-| F-10 | Đăng ký công tác phí | Employee | Trung |
-| F-11 | Duyệt công tác phí | HR, Manager | Trung |
-| F-12 | Cấu hình tham số lương | Accountant, Admin | Cao |
-| F-13 | Tính lương tự động | Accountant | Cao |
-| F-14 | Xem / Tải phiếu lương PDF | Employee, Accountant | Cao |
-| F-15 | Dashboard Director | Director | Cao |
-| F-16 | Dashboard HR | HR | Cao |
-| F-17 | Dashboard Accountant | Accountant | Trung |
-| F-18 | Quản lý tài khoản & phân quyền | Admin | Cao |
-| F-19 | Xuất báo cáo Excel/PDF | Director, HR, Accountant | Trung |
-| F-20 | Hồ sơ cá nhân | Tất cả | Thấp |
+| FR-01 | Đăng nhập / Đăng xuất | Tất cả | Cao |
+| FR-02 | Quản lý hồ sơ nhân viên (CRUD) | Admin, HR | Cao |
+| FR-03 | Quản lý hợp đồng lao động | Admin, HR | Cao |
+| FR-04 | Quản lý lịch sử công tác | Admin, HR | Trung |
+| FR-05 | Check-in / Check-out GPS | Employee | Cao |
+| FR-06 | Xem bảng chấm công tháng | HR, Manager, Employee | Cao |
+| FR-07 | Đăng ký nghỉ phép | Employee | Cao |
+| FR-08 | Duyệt / Từ chối đơn nghỉ phép | HR, Manager | Cao |
+| FR-09 | Quản lý quỹ phép năm | HR | Trung |
+| FR-10 | Đăng ký công tác phí | Employee | Trung |
+| FR-11 | Duyệt công tác phí | HR, Manager | Trung |
+| FR-12 | Cấu hình tham số lương | Accountant, Admin | Cao |
+| FR-13 | Tính lương tự động | Accountant | Cao |
+| FR-14 | Xem / Tải phiếu lương PDF | Employee, Accountant | Cao |
+| FR-15 | Dashboard Director | Director | Cao |
+| FR-16 | Dashboard HR | HR | Cao |
+| FR-17 | Dashboard Accountant | Accountant | Trung |
+| FR-18 | Quản lý tài khoản & phân quyền | Admin | Cao |
+| FR-19 | Xuất báo cáo Excel/PDF | Director, HR, Accountant | Trung |
+| FR-20 | Hồ sơ cá nhân | Tất cả | Thấp |
 
 ---
 
@@ -131,28 +114,28 @@ Axiom HRM là một hệ thống phần mềm mới, được phát triển như
 
 | Mã | Yêu cầu | Chỉ tiêu |
 |----|---------|---------|
-| NF-01 | Thời gian phản hồi trang | < 2 giây với kết nối Internet bình thường |
-| NF-02 | Tính toán lương | Hoàn thành trong < 30 giây cho 100 nhân viên |
-| NF-03 | Xuất PDF phiếu lương | < 5 giây mỗi phiếu |
+| NFR-01 | Thời gian phản hồi trang | < 2 giây với kết nối Internet bình thường |
+| NFR-02 | Tính toán lương | Hoàn thành trong < 30 giây cho 100 nhân viên |
+| NFR-03 | Xuất PDF phiếu lương | < 5 giây mỗi phiếu |
 
 #### Bảng 2.7 — Yêu cầu bảo mật
 
 | Mã | Yêu cầu |
 |----|---------|
-| NF-04 | Xác thực session-based qua NextAuth.js; session hết hạn sau 24 giờ |
-| NF-05 | Phân quyền RBAC: mỗi route được bảo vệ theo role tương ứng |
-| NF-06 | Mật khẩu được hash bằng bcrypt trước khi lưu vào CSDL |
-| NF-07 | Giao tiếp qua HTTPS; chặn truy cập trái phép bằng middleware |
-| NF-08 | Nhân viên chỉ xem được dữ liệu của bản thân |
+| NFR-04 | Xác thực session-based qua NextAuth.js; session hết hạn sau 24 giờ |
+| NFR-05 | Phân quyền RBAC: mỗi route được bảo vệ theo role tương ứng |
+| NFR-06 | Mật khẩu được hash bằng bcrypt trước khi lưu vào CSDL |
+| NFR-07 | Giao tiếp qua HTTPS; chặn truy cập trái phép bằng middleware |
+| NFR-08 | Nhân viên chỉ xem được dữ liệu của bản thân |
 
 #### Bảng 2.8 — Yêu cầu khả năng sử dụng
 
 | Mã | Yêu cầu |
 |----|---------|
-| NF-09 | Giao diện responsive: hoạt động trên màn hình từ 320px trở lên |
-| NF-10 | Hỗ trợ Dark Mode và Light Mode |
-| NF-11 | Đa ngôn ngữ: Tiếng Việt và Tiếng Anh, chuyển đổi không cần tải lại trang |
-| NF-12 | Các thông báo lỗi phải rõ ràng, dễ hiểu cho người dùng cuối |
+| NFR-09 | Giao diện responsive: hoạt động trên màn hình từ 320px trở lên |
+| NFR-10 | Hỗ trợ Dark Mode và Light Mode |
+| NFR-11 | Đa ngôn ngữ: Tiếng Việt và Tiếng Anh, chuyển đổi không cần tải lại trang |
+| NFR-12 | Các thông báo lỗi phải rõ ràng, dễ hiểu cho người dùng cuối |
 
 #### Bảng 2.9 — Quy tắc nghiệp vụ
 
@@ -226,3 +209,4 @@ Axiom HRM là một hệ thống phần mềm mới, được phát triển như
 [Hệ thống] Ghi checkIn timestamp, tính lateMinutes
 [Hệ thống] Status = "Đi làm" (nếu đúng giờ) hoặc "Đi muộn" (nếu trễ)
 ```
+

@@ -16,11 +16,14 @@ import { AvatarImg } from "@/components/ui/avatar-img"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 
 const STATUS_MAP = {
+  "Đi làm":  { vi: "Đúng giờ",  en: "On Time",   bg: "#D1FAE5", c: "#065F46" },
   "Đúng giờ": { vi: "Đúng giờ",  en: "On Time",   bg: "#D1FAE5", c: "#065F46" },
   "Đi muộn":  { vi: "Đi muộn",   en: "Late",       bg: "#FEF3C7", c: "#92400E" },
   "Ra sớm":   { vi: "Ra sớm",    en: "Early",      bg: "#DBEAFE", c: "#1E40AF" },
   "Nửa ngày": { vi: "Nửa ngày",  en: "Half Day",   bg: "#EDE9FE", c: "#5B21B6" },
   "Vắng mặt": { vi: "Vắng mặt",  en: "Absent",     bg: "#FEE2E2", c: "#991B1B" },
+  "Vắng":     { vi: "Vắng mặt",  en: "Absent",     bg: "#FEE2E2", c: "#991B1B" },
+  "Nghỉ phép": { vi: "Nghỉ phép", en: "On Leave",   bg: "#DBEAFE", c: "#1E40AF" },
 }
 
 function padZ(n: number) { return String(n).padStart(2, "0") }
@@ -34,7 +37,7 @@ function formatDuration(seconds: number) {
 // ── Cấu hình GPS văn phòng ────────────────────────────────────────
 const OFFICE_LAT  = 10.731805820306546
 const OFFICE_LNG  = 106.69911295227274
-const MAX_RADIUS_M = 500   // bán kính tối đa (mét)
+const MAX_RADIUS_M = 50000   // bán kính tối đa (mét) — 50km cho demo
 
 /** Haversine formula — tính khoảng cách (mét) giữa 2 tọa độ GPS */
 function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -118,7 +121,7 @@ export default function CheckInPage() {
       const myRecs = (res.data as any[]).filter((r: any) => r.employeeId === employeeId)
       // Lấy 7 bản ghi MỚI NHẤT (sort asc từ DB, reverse để mới nhất lên đầu)
       setHistory(myRecs.slice(-7).reverse())
-      const ontime = myRecs.filter((r: any) => r.status === "Đi làm" || r.status === "Ra sớm").length
+      const ontime = myRecs.filter((r: any) => r.status === "Đi làm" && (r.lateMinutes ?? 0) === 0).length
       const late   = myRecs.filter((r: any) => r.status === "Đi muộn").length
       setMonthStats({ total: myRecs.length, ontime, late })
     })
@@ -135,6 +138,8 @@ export default function CheckInPage() {
   }
 
   // Load trạng thái check-in hôm nay từ DB (khôi phục sau khi reload/tắt app)
+  // ⚠️ Seed data có thể tạo sẵn checkIn/checkOut cho hôm nay dù chưa tới giờ
+  //    → bỏ qua nếu thời gian nằm ở tương lai
   const loadToday = useCallback(async () => {
     if (!employeeId) return
     const res = await getTodayAttendance(employeeId)
@@ -142,11 +147,26 @@ export default function CheckInPage() {
     const rec = (res.data as any[])[0]
     if (rec.checkIn) {
       const ci = normalizeTime(new Date(rec.checkIn))
+      const rightNow = new Date()
+
+      // Nếu giờ check-in nằm ở tương lai (seed data) → coi như chưa check-in
+      if (ci.getTime() > rightNow.getTime() + 60000) {
+        // +60s tolerance để tránh race condition
+        setAttendanceId(rec.id) // vẫn lưu ID để check-in thật ghi đè (upsert)
+        return
+      }
+
       setCheckInTime(ci)
       setAttendanceId(rec.id)
       setCheckedIn(true)
+
       if (rec.checkOut) {
         const co = normalizeTime(new Date(rec.checkOut))
+        // Nếu giờ check-out nằm ở tương lai → coi như chưa check-out
+        if (co.getTime() > rightNow.getTime() + 60000) {
+          // Đã check-in nhưng chưa check-out → đang làm việc
+          return
+        }
         setCheckOutTime(co)
         setCheckedOut(true)
         // Tính elapsed: nếu co > ci thì dùng, ngược lại để 0
@@ -197,7 +217,7 @@ export default function CheckInPage() {
     setLoading(true)
     const res = await doCheckIn(employeeId)
     if (res.success && res.data) {
-      const t = new Date((res.data as any).checkIn ?? new Date())
+      const t = normalizeTime(new Date((res.data as any).checkIn ?? new Date()))
       setCheckInTime(t)
       setAttendanceId((res.data as any).id)
       setCheckedIn(true)
@@ -213,7 +233,7 @@ export default function CheckInPage() {
     setLoading(true)
     const res = await doCheckOut(attendanceId)
     if (res.success && res.data) {
-      const t = new Date((res.data as any).checkOut ?? new Date())
+      const t = normalizeTime(new Date((res.data as any).checkOut ?? new Date()))
       setCheckOutTime(t)
       setCheckedOut(true)
       showToast("info", vi ? `👋 Check-out lúc ${padZ(t.getHours())}:${padZ(t.getMinutes())}. Hẹn gặp lại!` : `👋 Checked out at ${padZ(t.getHours())}:${padZ(t.getMinutes())}!`)

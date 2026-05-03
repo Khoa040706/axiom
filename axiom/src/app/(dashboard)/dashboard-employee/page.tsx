@@ -68,9 +68,9 @@ export default function EmployeeDashboard() {
 
 
   // Tính stats chấm công
-  const ontimeCount = attendance.filter(a => a.status === "Đúng giờ" || a.status === "Ra sớm").length
+  const ontimeCount = attendance.filter(a => a.status === "Đi làm" && (a.lateMinutes ?? 0) === 0).length
   const ontimeRate  = attendance.length ? Math.round((ontimeCount / attendance.length) * 100) : 0
-  const totalLeaveLeft = leaveBalance.reduce((s, b) => s + (b.remaining ?? 0), 0)
+  const totalLeaveLeft = leaveBalance.reduce((s, b) => s + (Number(b.totalDays ?? 0) - Number(b.usedDays ?? 0)), 0)
   const netSalary = payroll ? Number(payroll.netSalary ?? 0) : 0
 
   return (
@@ -144,8 +144,8 @@ export default function EmployeeDashboard() {
                         {" — "}{vi?"Ra:":"Out:"} <b style={{ color: th.text1 }}>{co ? `${String(co.getHours()).padStart(2,"0")}:${String(co.getMinutes()).padStart(2,"0")}` : "—"}</b>
                       </span>
                     </div>
-                    <span style={{ background: a.status==="Đúng giờ"?"#D1FAE5":"#FEF3C7", color: a.status==="Đúng giờ"?"#065F46":"#92400E", borderRadius: 8, padding: "2px 10px", fontSize: 11.5, fontWeight: 700 }}>
-                      {a.status === "Đúng giờ" ? (vi?"Đúng giờ":"On time") : (vi?"Muộn":"Late")}
+                    <span style={{ background: (a.status==="Đi làm" && (a.lateMinutes??0)===0)?"#D1FAE5":"#FEF3C7", color: (a.status==="Đi làm" && (a.lateMinutes??0)===0)?"#065F46":"#92400E", borderRadius: 8, padding: "2px 10px", fontSize: 11.5, fontWeight: 700 }}>
+                      {(a.status === "Đi làm" && (a.lateMinutes??0)===0) ? (vi?"Đúng giờ":"On time") : (vi?"Muộn":"Late")}
                     </span>
                   </div>
                 )
@@ -186,7 +186,7 @@ export default function EmployeeDashboard() {
                 <div key={l.leaveType} style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 5 }}>
                     <span style={{ fontWeight: 600, color: th.text1 }}>{leaveLabel}</span>
-                    <span style={{ color: th.text2, fontSize: 12 }}>{vi?"Còn:":"Left:"} <b style={{ color: "#10B981" }}>{l.remaining}</b>/{l.totalDays} {vi?"ngày":"days"}</span>
+                    <span style={{ color: th.text2, fontSize: 12 }}>{vi?"Còn:":"Left:"} <b style={{ color: "#10B981" }}>{Number(l.totalDays ?? 0) - Number(l.usedDays ?? 0)}</b>/{Number(l.totalDays)} {vi?"ngày":"days"}</span>
                   </div>
                   <div style={{ background: th.tableBorder, borderRadius: 4, height: 7 }}>
                     <div style={{ width: `${l.totalDays ? (l.usedDays/l.totalDays)*100 : 0}%`, background: "#D0211C", height: "100%", borderRadius: 4 }}/>
@@ -211,13 +211,13 @@ export default function EmployeeDashboard() {
           ) : (
             <>
               {[
-                { label: vi?"Lương Gross":"Gross Salary",      val: Number(payroll.basicSalary ?? 0), color: th.text1, sign: "+" },
-                { label: vi?"Phụ cấp":"Allowance",             val: Number(payroll.allowances ?? 0),  color: "#10B981", sign: "+" },
-                { label: vi?"Tăng ca":"Overtime",              val: Number(payroll.overtimePay ?? 0), color: "#8B5CF6", sign: "+" },
+                { label: vi?"Lương Gross":"Gross Salary",      val: Number(payroll.grossSalary ?? 0), color: th.text1, sign: "+" },
+                { label: vi?"Phụ cấp":"Allowance",             val: Number(payroll.allowance ?? 0),   color: "#10B981", sign: "+" },
+                { label: vi?"Tăng ca":"Overtime",              val: Number(payroll.otPay ?? 0),       color: "#8B5CF6", sign: "+" },
                 { label: vi?"BHXH (8%)":"Social Ins. (8%)",           val: Number(payroll.bhxh ?? 0),         color: "#EF4444", sign: "-" },
                 { label: vi?"BHYT (1.5%)":"Health Ins. (1.5%)",       val: Number(payroll.bhyt ?? 0),         color: "#EF4444", sign: "-" },
                 { label: vi?"BHTN (1%)":"Unemp. Ins. (1%)",           val: Number(payroll.bhtn ?? 0),         color: "#EF4444", sign: "-" },
-                { label: vi?"Thuế TNCN":"PIT",                 val: Number(payroll.pit ?? 0),          color: "#D97706", sign: "-" },
+                { label: vi?"Thuế TNCN":"PIT",                 val: Number(payroll.taxAmount ?? 0),   color: "#D97706", sign: "-" },
               ].map(r => (
                 <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${th.tableBorder}`, fontSize: 12.5 }}>
                   <span style={{ color: th.text2 }}>{r.label}</span>
