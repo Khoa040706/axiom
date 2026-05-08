@@ -7,10 +7,10 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:100vh;}
-.card{background:#fff;border-radius:16px;box-shadow:0 6px 40px rgba(0,0,0,0.12),0 0 0 1px rgba(0,0,0,0.06);overflow:hidden;max-width:1400px;margin:0 auto;}
+.card{background:#fff;border-radius:16px;box-shadow:0 6px 40px rgba(0,0,0,0.12),0 0 0 1px rgba(0,0,0,0.06);overflow:visible;max-width:1400px;margin:0 auto;}
 
 /* Title */
-.title-sec{text-align:center;padding:22px 40px 16px;border-bottom:2px solid #E2E8F0;background:#fff;}
+.title-sec{text-align:center;padding:22px 40px 16px;border-bottom:2px solid #E2E8F0;background:#fff;border-radius:16px 16px 0 0;}
 .title-sec h1{font-size:20px;font-weight:800;color:#1E293B;letter-spacing:-0.3px;}
 .title-sec p{font-size:11.5px;color:#64748B;margin-top:5px;font-style:italic;}
 
@@ -49,7 +49,7 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 /* Milestone row */
 .ms-row{min-height:64px;}
 .ms-row .lbl{color:#B45309;font-weight:700;font-size:12px;background:#FFFBEB;}
-.ms-row .bars{background:#FFFBEB;min-height:64px;position:relative;overflow:visible;}
+.ms-row .bars{background:#FFFBEB;min-height:64px;position:relative;overflow:visible;clip-path:none;}
 
 /* Milestone marker */
 .ms-wrap{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;z-index:10;}
@@ -60,7 +60,7 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 .badge{position:absolute;top:4px;background:#DBEAFE;color:#1D4ED8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid #93C5FD;z-index:4;white-space:nowrap;}
 
 /* Legend */
-.legend{display:flex;align-items:center;gap:18px;padding:13px 16px 13px 230px;border-top:2px solid #E2E8F0;background:#F8FAFC;flex-wrap:wrap;}
+.legend{display:flex;align-items:center;gap:18px;padding:13px 16px 13px 230px;border-top:2px solid #E2E8F0;background:#F8FAFC;flex-wrap:wrap;border-radius:0 0 16px 16px;}
 .leg{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#374151;font-weight:500;}
 .lsq{width:16px;height:10px;border-radius:3px;}
 .ldiam{width:10px;height:10px;background:#F59E0B;transform:rotate(45deg);flex-shrink:0;}
@@ -107,11 +107,11 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
       <div class="ms-lbl">✓ Payroll engine</div>
       <div class="ms-gem"></div>
     </div>
-    <div class="ms-wrap" style="left:88.89%">
+    <div class="ms-wrap" style="left:86%">
       <div class="ms-lbl">✓ UI/UX hoàn thiện</div>
       <div class="ms-gem"></div>
     </div>
-    <div class="ms-wrap" style="left:98.8%">
+    <div class="ms-wrap" style="left:99.5%;transform:translate(-100%,-50%)">
       <div class="ms-lbl">🚀 Demo &amp; Nộp BC</div>
       <div class="ms-gem"></div>
     </div>
