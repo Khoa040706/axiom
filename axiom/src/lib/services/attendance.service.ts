@@ -51,13 +51,16 @@ export const attendanceService = {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Giờ chuẩn: 7:30 (giờ hành chính)
+    // Giờ chuẩn: 7:30 (giờ hành chính), trễ nếu sau 8:05
     const standardStart = new Date(today)
     standardStart.setHours(7, 30, 0, 0)
+    const lateThreshold = new Date(today)
+    lateThreshold.setHours(8, 5, 0, 0)
     const lateMinutes = Math.max(
       0,
       Math.floor((checkIn.getTime() - standardStart.getTime()) / 60000)
     )
+    const isLate = checkIn.getTime() > lateThreshold.getTime()
 
     return prisma.attendance.upsert({
       where: { employeeId_workDate: { employeeId, workDate: today } },
@@ -65,10 +68,18 @@ export const attendanceService = {
         employeeId,
         workDate: today,
         checkIn,
-        status: "Đi làm",
+        status: isLate ? "Đi muộn" : "Đi làm",
         lateMinutes,
       },
-      update: { checkIn, lateMinutes },
+      // ⚠️ Quan trọng: xóa checkOut cũ (từ seed/sync) + reset OT/early
+      update: {
+        checkIn,
+        checkOut: null,
+        lateMinutes,
+        status: isLate ? "Đi muộn" : "Đi làm",
+        otHours: 0,
+        earlyMinutes: 0,
+      },
     })
   },
 

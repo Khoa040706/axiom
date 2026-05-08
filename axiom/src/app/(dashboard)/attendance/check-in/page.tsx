@@ -158,13 +158,20 @@ export default function CheckInPage() {
         return
       }
 
-      // ── Phát hiện dữ liệu fake/seed: nếu checkIn ≈ checkOut (< 2 phút) thì bỏ qua ──
+      // ── Phát hiện dữ liệu fake/seed ──
       if (rec.checkOut) {
         const co = normalizeTime(new Date(rec.checkOut))
         const diffMs = Math.abs(co.getTime() - ci.getTime())
+        // Seed: checkIn ≈ checkOut (< 2 phút) → coi như chưa check-in
         if (diffMs < 120000) {
-          // Seed data tạo checkIn = checkOut cùng lúc → coi như chưa check-in
           setAttendanceId(rec.id)
+          return
+        }
+        // checkOut TRƯỚC checkIn → dữ liệu cũ (seed), bỏ qua checkOut
+        if (co.getTime() < ci.getTime()) {
+          setCheckInTime(ci)
+          setAttendanceId(rec.id)
+          setCheckedIn(true)
           return
         }
         // Nếu giờ check-out nằm ở tương lai → coi như chưa check-out
