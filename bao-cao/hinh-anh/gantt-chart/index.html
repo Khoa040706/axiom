@@ -55,8 +55,7 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 .ms-wrap{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;z-index:10;}
 .ms-lbl{background:#fff;border:1.5px solid #FCD34D;border-radius:5px;padding:3px 8px;font-size:9px;color:#92400E;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.12);letter-spacing:0.1px;}
 .ms-gem{width:13px;height:13px;background:#F59E0B;transform:rotate(45deg);box-shadow:0 2px 8px rgba(245,158,11,0.5);flex-shrink:0;}
-/* Reversed: gem on top, label below (used for last milestone to avoid overlap) */
-.ms-wrap.reversed{flex-direction:column-reverse;}
+
 
 /* Phụ BA badge */
 .badge{position:absolute;top:4px;background:#DBEAFE;color:#1D4ED8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid #93C5FD;z-index:4;white-space:nowrap;}
@@ -115,11 +114,7 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
       <div class="ms-lbl">✓ UI/UX hoàn thiện</div>
       <div class="ms-gem"></div>
     </div>
-    <!-- Demo: gem TRÊN, label DƯỚI (reversed) → tránh chồng milestone trước -->
-    <div class="ms-wrap reversed" style="left:100%;transform:translate(-100%,-50%)">
-      <div class="ms-lbl">🚀 Demo &amp; Nộp BC</div>
-      <div class="ms-gem"></div>
-    </div>
+
   </div>
 </div>
 
