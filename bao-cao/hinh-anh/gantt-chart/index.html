@@ -51,13 +51,18 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 .ms-row .lbl{color:#B45309;font-weight:700;font-size:12px;background:#FFFBEB;}
 .ms-row .bars{background:#FFFBEB;min-height:64px;position:relative;overflow:visible;}
 
-/* Milestone marker */
+/* Milestone marker — default: label on top, gem below */
 .ms-wrap{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;z-index:10;}
 .ms-lbl{background:#fff;border:1.5px solid #FCD34D;border-radius:5px;padding:3px 8px;font-size:9px;color:#92400E;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.12);letter-spacing:0.1px;}
 .ms-gem{width:13px;height:13px;background:#F59E0B;transform:rotate(45deg);box-shadow:0 2px 8px rgba(245,158,11,0.5);flex-shrink:0;}
+/* Reversed: gem on top, label below (used for last milestone to avoid overlap) */
+.ms-wrap.reversed{flex-direction:column-reverse;}
 
 /* Phụ BA badge */
 .badge{position:absolute;top:4px;background:#DBEAFE;color:#1D4ED8;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid #93C5FD;z-index:4;white-space:nowrap;}
+
+/* Dashed connector: continuous line at 94.4% (center of T9) from BA→Tester */
+.conn::before{content:'';position:absolute;left:94.4%;width:0;border-left:1.5px dashed #6B7280;opacity:0.6;z-index:5;pointer-events:none;top:0;bottom:0;}
 
 /* Legend */
 .legend{display:flex;align-items:center;gap:18px;padding:13px 16px 13px 230px;border-top:2px solid #E2E8F0;background:#F8FAFC;flex-wrap:wrap;border-radius:0 0 16px 16px;}
@@ -105,18 +110,20 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
       <div class="ms-lbl">✓ Payroll engine</div>
       <div class="ms-gem"></div>
     </div>
+    <!-- UI/UX: label TRÊN, gem DƯỚI (mặc định) -->
     <div class="ms-wrap" style="left:88.89%">
       <div class="ms-lbl">✓ UI/UX hoàn thiện</div>
       <div class="ms-gem"></div>
     </div>
-    <div class="ms-wrap" style="left:100%;transform:translate(-100%,-50%)">
+    <!-- Demo: gem TRÊN, label DƯỚI (reversed) → tránh chồng milestone trước -->
+    <div class="ms-wrap reversed" style="left:100%;transform:translate(-100%,-50%)">
       <div class="ms-lbl">🚀 Demo &amp; Nộp BC</div>
-      <div class="ms-gem" style="margin-left:auto"></div>
+      <div class="ms-gem"></div>
     </div>
   </div>
 </div>
 
-<!-- DEV -->
+<!-- ═══════════════ DEV ═══════════════ -->
 <div class="row role-row">
   <div class="lbl" style="color:#DC2626;">Dev — 52400017</div>
   <div class="bars"><div class="bar dev main-bar"></div></div>
@@ -131,7 +138,7 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 <div class="row task-row"><div class="lbl">Export &amp; UI/UX</div><div class="bars"><div class="bar dev" style="left:78.2%;width:10.6%"></div></div></div>
 <div class="row task-row"><div class="lbl">Fix bug &amp; Seed data</div><div class="bars"><div class="bar dev" style="left:89.3%;width:10.2%"></div></div></div>
 
-<!-- BA -->
+<!-- ═══════════════ BA ═══════════════ -->
 <div class="row role-row">
   <div class="lbl" style="color:#2563EB;">BA — 52400004</div>
   <div class="bars"><div class="bar ba main-bar"></div></div>
@@ -142,23 +149,26 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 <div class="row task-row"><div class="lbl">Use Case Leave &amp; Business Trip</div><div class="bars"><div class="bar ba" style="left:44.9%;width:10.6%"></div></div></div>
 <div class="row task-row"><div class="lbl">Use Case Payroll &amp; Dashboard</div><div class="bars"><div class="bar ba" style="left:56%;width:21.7%"></div></div></div>
 <div class="row task-row"><div class="lbl">Tài liệu hướng dẫn sử dụng</div><div class="bars"><div class="bar ba" style="left:78.2%;width:10.6%"></div></div></div>
-<div class="row task-row"><div class="lbl">Báo cáo Chương 1-9 &amp; Slide</div><div class="bars"><div class="bar ba" style="left:89.3%;width:10.2%"></div></div></div>
+<!-- BA last row — connector starts here -->
+<div class="row task-row"><div class="lbl">Báo cáo Chương 1-9 &amp; Slide</div><div class="bars conn"><div class="bar ba" style="left:89.3%;width:10.2%"></div></div></div>
 
-<!-- TESTER -->
+<!-- ═══════════════ TESTER ═══════════════ -->
+<!-- Mỗi row giữa BA-last và Tester-last đều có class "conn" → đường nét đứt liền mạch -->
 <div class="row role-row">
   <div class="lbl" style="color:#16A34A;">Tester — 52400133</div>
-  <div class="bars"><div class="bar tst main-bar"></div></div>
+  <div class="bars conn"><div class="bar tst main-bar"></div></div>
 </div>
-<div class="row task-row"><div class="lbl">Kế hoạch test &amp; Setup môi trường</div><div class="bars"><div class="bar tst" style="left:.5%;width:21.7%"></div></div></div>
-<div class="row task-row"><div class="lbl">Test Auth &amp; Employee</div><div class="bars"><div class="bar tst" style="left:11.7%;width:21.7%"></div></div></div>
-<div class="row task-row"><div class="lbl">Test Contract &amp; Attendance</div><div class="bars"><div class="bar tst" style="left:33.9%;width:10.6%"></div></div></div>
-<div class="row task-row"><div class="lbl">Test Leave &amp; Business Trip</div><div class="bars"><div class="bar tst" style="left:44.9%;width:10.6%"></div></div></div>
-<div class="row task-row"><div class="lbl">Test Payroll (tính thuế 7 bậc)</div><div class="bars"><div class="bar tst" style="left:56%;width:10.6%"></div></div></div>
-<div class="row task-row"><div class="lbl">Test Dashboard &amp; Career History</div><div class="bars"><div class="bar tst" style="left:67.1%;width:10.6%"></div></div></div>
-<div class="row task-row"><div class="lbl">Regression Test &amp; Export</div><div class="bars"><div class="bar tst" style="left:78.2%;width:21.4%"></div></div></div>
+<div class="row task-row"><div class="lbl">Kế hoạch test &amp; Setup môi trường</div><div class="bars conn"><div class="bar tst" style="left:.5%;width:21.7%"></div></div></div>
+<div class="row task-row"><div class="lbl">Test Auth &amp; Employee</div><div class="bars conn"><div class="bar tst" style="left:11.7%;width:21.7%"></div></div></div>
+<div class="row task-row"><div class="lbl">Test Contract &amp; Attendance</div><div class="bars conn"><div class="bar tst" style="left:33.9%;width:10.6%"></div></div></div>
+<div class="row task-row"><div class="lbl">Test Leave &amp; Business Trip</div><div class="bars conn"><div class="bar tst" style="left:44.9%;width:10.6%"></div></div></div>
+<div class="row task-row"><div class="lbl">Test Payroll (tính thuế 7 bậc)</div><div class="bars conn"><div class="bar tst" style="left:56%;width:10.6%"></div></div></div>
+<div class="row task-row"><div class="lbl">Test Dashboard &amp; Career History</div><div class="bars conn"><div class="bar tst" style="left:67.1%;width:10.6%"></div></div></div>
+<div class="row task-row"><div class="lbl">Regression Test &amp; Export</div><div class="bars conn"><div class="bar tst" style="left:78.2%;width:21.4%"></div></div></div>
+<!-- Tester last row — connector ends here -->
 <div class="row task-row">
   <div class="lbl">Báo cáo KT + Phụ BA viết BC</div>
-  <div class="bars">
+  <div class="bars conn">
     <div class="bar tst" style="left:89.3%;width:10.2%"></div>
     <div class="badge" style="left:89.3%">🤝 Phụ BA</div>
   </div>
