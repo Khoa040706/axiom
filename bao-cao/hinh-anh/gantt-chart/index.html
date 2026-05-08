@@ -49,7 +49,7 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 /* Milestone row */
 .ms-row{min-height:64px;}
 .ms-row .lbl{color:#B45309;font-weight:700;font-size:12px;background:#FFFBEB;}
-.ms-row .bars{background:#FFFBEB;min-height:64px;position:relative;overflow:visible;clip-path:none;}
+.ms-row .bars{background:#FFFBEB;min-height:64px;position:relative;overflow:visible;}
 
 /* Milestone marker */
 .ms-wrap{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;z-index:10;}
@@ -76,8 +76,6 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
   <h1>Hình 3.1 — Gantt Chart dự án AXIOM HRM (9 tuần)</h1>
   <p>Timeline theo 3 vai trò &nbsp;·&nbsp; Sprint 1 tuần &nbsp;·&nbsp; Agile–Scrum</p>
 </div>
-
-<!-- Chart -->
 
 <!-- Header -->
 <div class="row hdr-row">
@@ -107,13 +105,13 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
       <div class="ms-lbl">✓ Payroll engine</div>
       <div class="ms-gem"></div>
     </div>
-    <div class="ms-wrap" style="left:86%">
+    <div class="ms-wrap" style="left:88.89%">
       <div class="ms-lbl">✓ UI/UX hoàn thiện</div>
       <div class="ms-gem"></div>
     </div>
-    <div class="ms-wrap" style="left:99.5%;transform:translate(-100%,-50%)">
+    <div class="ms-wrap" style="left:100%;transform:translate(-100%,-50%)">
       <div class="ms-lbl">🚀 Demo &amp; Nộp BC</div>
-      <div class="ms-gem"></div>
+      <div class="ms-gem" style="margin-left:auto"></div>
     </div>
   </div>
 </div>
@@ -144,7 +142,7 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 <div class="row task-row"><div class="lbl">Use Case Leave &amp; Business Trip</div><div class="bars"><div class="bar ba" style="left:44.9%;width:10.6%"></div></div></div>
 <div class="row task-row"><div class="lbl">Use Case Payroll &amp; Dashboard</div><div class="bars"><div class="bar ba" style="left:56%;width:21.7%"></div></div></div>
 <div class="row task-row"><div class="lbl">Tài liệu hướng dẫn sử dụng</div><div class="bars"><div class="bar ba" style="left:78.2%;width:10.6%"></div></div></div>
-<div class="row task-row" id="ba-last"><div class="lbl">Báo cáo Chương 1-9 &amp; Slide</div><div class="bars"><div class="bar ba" style="left:89.3%;width:10.2%"></div></div></div>
+<div class="row task-row"><div class="lbl">Báo cáo Chương 1-9 &amp; Slide</div><div class="bars"><div class="bar ba" style="left:89.3%;width:10.2%"></div></div></div>
 
 <!-- TESTER -->
 <div class="row role-row">
@@ -158,11 +156,11 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 <div class="row task-row"><div class="lbl">Test Payroll (tính thuế 7 bậc)</div><div class="bars"><div class="bar tst" style="left:56%;width:10.6%"></div></div></div>
 <div class="row task-row"><div class="lbl">Test Dashboard &amp; Career History</div><div class="bars"><div class="bar tst" style="left:67.1%;width:10.6%"></div></div></div>
 <div class="row task-row"><div class="lbl">Regression Test &amp; Export</div><div class="bars"><div class="bar tst" style="left:78.2%;width:21.4%"></div></div></div>
-<div class="row task-row" id="tst-last">
+<div class="row task-row">
   <div class="lbl">Báo cáo KT + Phụ BA viết BC</div>
-  <div class="bars" id="tst-bars">
+  <div class="bars">
     <div class="bar tst" style="left:89.3%;width:10.2%"></div>
-    <div class="badge" id="phu-ba-badge" style="left:89.3%">🤝 Phụ BA</div>
+    <div class="badge" style="left:89.3%">🤝 Phụ BA</div>
   </div>
 </div>
 
@@ -177,35 +175,6 @@ body{font-family:'Inter',sans-serif;background:#EEF2F7;padding:36px;min-height:1
 </div>
 
 </div><!-- end card -->
-
-<!-- SVG Connector between BA last row and Tester last row -->
-<svg id="connector-svg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:999" xmlns="http://www.w3.org/2000/svg">
-  <line id="conn-line" x1="0" y1="0" x2="0" y2="0"
-        stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.8"/>
-</svg>
-
-<script>
-window.addEventListener('load', function() {
-  var baRow   = document.getElementById('ba-last');
-  var tstRow  = document.getElementById('tst-last');
-  var barsBA  = baRow.querySelector('.bars');
-  var barsTST = tstRow.querySelector('.bars');
-
-  var r1 = barsBA.getBoundingClientRect();
-  var r2 = barsTST.getBoundingClientRect();
-
-  // X = 94.4% of bars width (center of T9 bar)
-  var x = r1.left + r1.width * 0.944;
-  var y1 = r1.bottom;
-  var y2 = r2.top;
-
-  var line = document.getElementById('conn-line');
-  line.setAttribute('x1', x);
-  line.setAttribute('y1', y1);
-  line.setAttribute('x2', x);
-  line.setAttribute('y2', y2);
-});
-</script>
 
 </body>
 </html>
