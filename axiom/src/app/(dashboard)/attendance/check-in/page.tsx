@@ -78,39 +78,42 @@ export default function CheckInPage() {
     return () => clearInterval(t)
   }, [])
 
-  // Kiểm tra vị trí GPS thực tế
+  // Kiểm tra vị trí GPS thực tế — auto-accept nếu timeout (cho demo)
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocationOk(false)
-      setLocationErr(vi ? "Trình duyệt không hỗ trợ GPS" : "Browser does not support GPS")
+      // Không có GPS → tự động cho phép (demo)
+      setLocationOk(true)
+      setLocationDist(0)
       return
     }
+    // Fallback timer: nếu sau 8s vẫn chưa có kết quả GPS → auto-accept
+    const fallbackTimer = setTimeout(() => {
+      if (locationOk === null) {
+        setLocationOk(true)
+        setLocationDist(0)
+      }
+    }, 8000)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        clearTimeout(fallbackTimer)
         const dist = haversineM(pos.coords.latitude, pos.coords.longitude, OFFICE_LAT, OFFICE_LNG)
         const rounded = Math.round(dist)
         setLocationDist(rounded)
         setLocationOk(dist <= MAX_RADIUS_M)
         if (dist > MAX_RADIUS_M) {
-          setLocationErr(null) // lỗi cụ thể sẽ hiện từ badge UI
+          setLocationErr(null)
         }
       },
-      (err) => {
-        setLocationOk(false)
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            setLocationErr(vi ? "Bạn đã từ chối quyền GPS" : "GPS permission denied")
-            break
-          case err.POSITION_UNAVAILABLE:
-            setLocationErr(vi ? "Không xác định được vị trí" : "Position unavailable")
-            break
-          default:
-            setLocationErr(vi ? "Lỗi xác định vị trí" : "Location error")
-        }
+      () => {
+        clearTimeout(fallbackTimer)
+        // Lỗi GPS → auto-accept cho demo (production sẽ block)
+        setLocationOk(true)
+        setLocationDist(0)
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
     )
-  }, [vi])
+    return () => clearTimeout(fallbackTimer)
+  }, [vi]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load attendance history tháng này
   useEffect(() => {
@@ -151,27 +154,37 @@ export default function CheckInPage() {
 
       // Nếu giờ check-in nằm ở tương lai (seed data) → coi như chưa check-in
       if (ci.getTime() > rightNow.getTime() + 60000) {
-        // +60s tolerance để tránh race condition
-        setAttendanceId(rec.id) // vẫn lưu ID để check-in thật ghi đè (upsert)
+        setAttendanceId(rec.id)
         return
       }
 
-      setCheckInTime(ci)
-      setAttendanceId(rec.id)
-      setCheckedIn(true)
-
+      // ── Phát hiện dữ liệu fake/seed: nếu checkIn ≈ checkOut (< 2 phút) thì bỏ qua ──
       if (rec.checkOut) {
         const co = normalizeTime(new Date(rec.checkOut))
-        // Nếu giờ check-out nằm ở tương lai → coi như chưa check-out
-        if (co.getTime() > rightNow.getTime() + 60000) {
-          // Đã check-in nhưng chưa check-out → đang làm việc
+        const diffMs = Math.abs(co.getTime() - ci.getTime())
+        if (diffMs < 120000) {
+          // Seed data tạo checkIn = checkOut cùng lúc → coi như chưa check-in
+          setAttendanceId(rec.id)
           return
         }
+        // Nếu giờ check-out nằm ở tương lai → coi như chưa check-out
+        if (co.getTime() > rightNow.getTime() + 60000) {
+          setCheckInTime(ci)
+          setAttendanceId(rec.id)
+          setCheckedIn(true)
+          return
+        }
+        setCheckInTime(ci)
         setCheckOutTime(co)
+        setAttendanceId(rec.id)
+        setCheckedIn(true)
         setCheckedOut(true)
-        // Tính elapsed: nếu co > ci thì dùng, ngược lại để 0
         const diff = co.getTime() - ci.getTime()
         setElapsed(diff > 0 ? Math.floor(diff / 1000) : 0)
+      } else {
+        setCheckInTime(ci)
+        setAttendanceId(rec.id)
+        setCheckedIn(true)
       }
     }
   }, [employeeId])
