@@ -216,7 +216,7 @@ export async function GET(
     )
 
     const buffer = await renderToBuffer(doc)
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="PhieuLuong_${empCode}_T${month}_${year}.pdf"`,
