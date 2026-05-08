@@ -502,12 +502,26 @@ async function main() {
   console.log("📋 8. Tạo đơn nghỉ phép mẫu...")
   const leaveTypes = ["Nghỉ phép năm", "Nghỉ bệnh", "Việc riêng"]
   const leaveStatuses = ["Chờ duyệt", "Chờ duyệt", "Đã duyệt", "Đã duyệt", "Từ chối", "Chờ duyệt", "Chờ duyệt", "Đã duyệt"]
+  // Ngày nghỉ trải từ tháng 4 → tháng 5/2026 — hợp lý với thời điểm hiện tại
+  const leaveStartDates = [
+    new Date(2026, 3, 7),   // 07/04/2026
+    new Date(2026, 3, 14),  // 14/04/2026
+    new Date(2026, 3, 21),  // 21/04/2026
+    new Date(2026, 3, 28),  // 28/04/2026
+    new Date(2026, 4, 5),   // 05/05/2026
+    new Date(2026, 4, 12),  // 12/05/2026
+    new Date(2026, 4, 15),  // 15/05/2026
+    new Date(2026, 4, 19),  // 19/05/2026
+  ]
   for (let i = 0; i < 8; i++) {
-    const empItem = allEmployees[8 + (i * 5) % 50] // lấy từ NV chính thức
-    const startDate = new Date(2026, 2, 10 + i * 2)
+    const empItem = allEmployees[8 + (i * 5) % 50]
+    const startDate = leaveStartDates[i]
     const endDate = new Date(startDate)
     endDate.setDate(endDate.getDate() + 1 + Math.floor(Math.random() * 2))
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000)
+    // Ngày nộp đơn = 3-5 ngày trước ngày nghỉ
+    const createdAt = new Date(startDate)
+    createdAt.setDate(createdAt.getDate() - 3 - Math.floor(Math.random() * 3))
     await prisma.leaveRequest.create({
       data: {
         employeeId: empItem.emp.id,
@@ -517,6 +531,7 @@ async function main() {
         totalDays,
         reason: `Đơn nghỉ phép mẫu #${i + 1}`,
         status: leaveStatuses[i],
+        createdAt,
       },
     })
   }

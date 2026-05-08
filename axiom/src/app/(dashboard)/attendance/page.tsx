@@ -9,9 +9,15 @@ import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { useSession } from "next-auth/react"
 import { DEPT_VI_TO_EN } from "@/lib/i18n-maps"
 
-const MONTHS_VI = ["Tháng 1/2026","Tháng 2/2026","Tháng 3/2026","Tháng 4/2026"]
-const MONTHS_EN = ["January 2026","February 2026","March 2026","April 2026"]
-const MONTH_NUM  = [1, 2, 3, 4]
+// Tự động sinh danh sách tháng từ T1 → tháng hiện tại
+const CURRENT_YEAR = new Date().getFullYear()
+const CURRENT_MONTH = new Date().getMonth() + 1 // 1-12
+const MONTHS_VI = Array.from({ length: CURRENT_MONTH }, (_, i) => `Tháng ${i + 1}/${CURRENT_YEAR}`)
+const MONTHS_EN = Array.from({ length: CURRENT_MONTH }, (_, i) => {
+  const names = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+  return `${names[i]} ${CURRENT_YEAR}`
+})
+const MONTH_NUM = Array.from({ length: CURRENT_MONTH }, (_, i) => i + 1)
 
 export default function AttendancePage() {
   const { dark, lang } = useDashboard()

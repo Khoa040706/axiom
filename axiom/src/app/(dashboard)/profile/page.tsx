@@ -10,7 +10,7 @@ import { AvatarImg } from "@/components/ui/avatar-img"
 import {
   User, Lock, Camera, Save, Eye, EyeOff, CheckCircle, XCircle,
   Phone, Mail, Building2, Briefcase, Shield, ChevronRight, ArrowLeft,
-  ZoomIn, ZoomOut, Move, RotateCcw, Crop,
+  ZoomIn, ZoomOut, Move, RotateCcw, Crop, Trash2,
 } from "lucide-react"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 
@@ -479,6 +479,34 @@ export default function ProfilePage() {
     setAvatarSaving(false)
   }
 
+  // ── Delete avatar (revert to default) ──────────────────────
+  const handleDeleteAvatar = async () => {
+    if (!employeeId) return
+    if (!avatarPreview) { showToast("error", vi ? "Chưa có ảnh đại diện để xóa" : "No avatar to delete"); return }
+    const confirmed = window.confirm(vi ? "Bạn có chắc muốn xóa ảnh đại diện? Ảnh sẽ trở về mặc định." : "Delete your avatar? It will revert to default.")
+    if (!confirmed) return
+    setAvatarSaving(true)
+    try {
+      const res = await fetch("/api/upload-avatar", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setAvatarPreview(null)
+        setAvatarChanged(false)
+        showToast("success", vi ? "Đã xóa ảnh đại diện!" : "Avatar removed!")
+        window.dispatchEvent(new Event("axiom-user-updated"))
+      } else {
+        showToast("error", json.error ?? "Lỗi xóa ảnh")
+      }
+    } catch {
+      showToast("error", vi ? "Lỗi kết nối server" : "Server error")
+    }
+    setAvatarSaving(false)
+  }
+
   const user = sessionUser
   if (!user) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
@@ -932,7 +960,7 @@ export default function ProfilePage() {
                   </div>
                   <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
 
-                  <div style={{ display: "flex", gap: 12 }}>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                     <button
                       onClick={handleSaveAvatar}
                       disabled={avatarSaving || !avatarChanged}
@@ -953,6 +981,29 @@ export default function ProfilePage() {
                         }}
                       >
                         {vi ? "Huỷ" : "Cancel"}
+                      </button>
+                    )}
+                    {/* Nút xóa ảnh đại diện — chỉ hiện khi có ảnh hiện tại (không phải đang chọn mới) */}
+                    {avatarPreview && !avatarChanged && (
+                      <button
+                        onClick={handleDeleteAvatar}
+                        disabled={avatarSaving}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          padding: "10px 20px", borderRadius: 10,
+                          border: `1.5px solid #FECACA`,
+                          background: dark ? "rgba(239,68,68,0.1)" : "#FEF2F2",
+                          cursor: avatarSaving ? "not-allowed" : "pointer",
+                          fontSize: 14, fontWeight: 600,
+                          color: "#EF4444", fontFamily: "inherit",
+                          transition: "all .15s",
+                          opacity: avatarSaving ? 0.5 : 1,
+                        }}
+                        onMouseEnter={e => { if (!avatarSaving) { e.currentTarget.style.background = "#EF4444"; e.currentTarget.style.color = "#fff" } }}
+                        onMouseLeave={e => { e.currentTarget.style.background = dark ? "rgba(239,68,68,0.1)" : "#FEF2F2"; e.currentTarget.style.color = "#EF4444" }}
+                      >
+                        <Trash2 size={15} />
+                        {vi ? "Xóa ảnh" : "Remove"}
                       </button>
                     )}
                   </div>

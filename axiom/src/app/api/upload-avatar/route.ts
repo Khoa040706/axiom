@@ -67,3 +67,35 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
+// ── DELETE: Xóa avatar → về mặc định ──
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await req.json()
+    const { employeeId } = body as { employeeId: number }
+
+    if (!employeeId) {
+      return NextResponse.json({ success: false, error: "Missing employeeId" }, { status: 400 })
+    }
+
+    // Xóa avatarPath trong DB → component AvatarImg sẽ tự hiển thị avatar mặc định (chữ cái)
+    const { prisma } = await import("@/lib/prisma")
+    await prisma.employee.update({
+      where: { id: employeeId },
+      data: { avatarPath: null },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error("[delete-avatar]", err)
+    return NextResponse.json(
+      { success: false, error: "Delete failed" },
+      { status: 500 }
+    )
+  }
+}
