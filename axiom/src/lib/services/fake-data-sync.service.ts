@@ -191,78 +191,91 @@ export async function ensureFakeDataUpToDate(): Promise<{ synced: boolean; newRe
       currentDate.setDate(currentDate.getDate() + 1)
     }
 
-    // 6. Recalc payroll tháng hiện tại cho 57 NV ảo
+    // 6. Recalc payroll cho TẤT CẢ tháng có data (từ startDate đến tháng hiện tại)
     const now = new Date()
-    const payMonth = now.getMonth() + 1
-    const payYear = now.getFullYear()
-    const monthStart = new Date(payYear, payMonth - 1, 1)
-    const monthEnd = new Date(payYear, payMonth, 1)
+    const currentPayMonth = now.getMonth() + 1
+    const currentPayYear = now.getFullYear()
 
-    for (const emp of employees) {
-      const contract = emp.contracts[0]
-      if (!contract) continue
+    // Tìm tháng bắt đầu cần tính payroll
+    const syncStartMonth = startDate.getMonth() + 1
+    const syncStartYear = startDate.getFullYear()
 
-      // Tổng hợp chấm công tháng hiện tại
-      const attendanceRecords = await prisma.attendance.findMany({
-        where: {
-          employeeId: emp.id,
-          workDate: { gte: monthStart, lt: monthEnd },
-          status: { in: ["Đi làm", "Đi muộn"] },
-        },
-      })
+    // Duyệt từng tháng từ tháng sync đến tháng hiện tại
+    let mYear = syncStartYear
+    let mMonth = syncStartMonth
+    while (mYear < currentPayYear || (mYear === currentPayYear && mMonth <= currentPayMonth)) {
+      const monthStart = new Date(mYear, mMonth - 1, 1)
+      const monthEnd = new Date(mYear, mMonth, 1)
 
-      const workDays = attendanceRecords.length
-      const otHours = attendanceRecords.reduce((s, a) => s + Number(a.otHours || 0), 0)
+      for (const emp of employees) {
+        const contract = emp.contracts[0]
+        if (!contract) continue
 
-      if (workDays === 0) continue
-
-      const baseSalary = Number(contract.baseSalary) * Number(contract.salaryGrade)
-      const allowance = Number(contract.allowance)
-      const deps = emp.numDependents ?? 0
-
-      const calc = calcPayroll({ baseSalary, allowance, otHours, numDependents: deps, workDays })
-
-      try {
-        await prisma.payroll.upsert({
-          where: { employeeId_payMonth_payYear: { employeeId: emp.id, payMonth, payYear } },
-          create: {
-            employeeId: emp.id, payMonth, payYear,
-            workDays, otHours,
-            baseSalary, allowance, otPay: calc.otPay,
-            grossSalary: calc.gross,
-            bhxh: calc.bhxh, bhyt: calc.bhyt, bhtn: calc.bhtn,
-            taxIncome: calc.taxableIncome, taxAmount: calc.pit,
-            deductions: calc.deductions, netSalary: calc.net,
-            status: "Đã tính",
-          },
-          update: {
-            workDays, otHours,
-            otPay: calc.otPay, grossSalary: calc.gross,
-            bhxh: calc.bhxh, bhyt: calc.bhyt, bhtn: calc.bhtn,
-            taxIncome: calc.taxableIncome, taxAmount: calc.pit,
-            deductions: calc.deductions, netSalary: calc.net,
+        const attendanceRecords = await prisma.attendance.findMany({
+          where: {
+            employeeId: emp.id,
+            workDate: { gte: monthStart, lt: monthEnd },
+            status: { in: ["Đi làm", "Đi muộn"] },
           },
         })
 
-        // Tạo Payslip nếu chưa có
-        const payroll = await prisma.payroll.findUnique({
-          where: { employeeId_payMonth_payYear: { employeeId: emp.id, payMonth, payYear } },
-        })
-        if (payroll) {
-          const existingSlip = await prisma.payslip.findFirst({
-            where: { payrollId: payroll.id, employeeId: emp.id },
+        const workDays = attendanceRecords.length
+        const otHours = attendanceRecords.reduce((s, a) => s + Number(a.otHours || 0), 0)
+
+        if (workDays === 0) continue
+
+        const baseSalary = Number(contract.baseSalary) * Number(contract.salaryGrade)
+        const allowance = Number(contract.allowance)
+        const deps = emp.numDependents ?? 0
+
+        const calc = calcPayroll({ baseSalary, allowance, otHours, numDependents: deps, workDays })
+
+        try {
+          await prisma.payroll.upsert({
+            where: { employeeId_payMonth_payYear: { employeeId: emp.id, payMonth: mMonth, payYear: mYear } },
+            create: {
+              employeeId: emp.id, payMonth: mMonth, payYear: mYear,
+              workDays, otHours,
+              baseSalary, allowance, otPay: calc.otPay,
+              grossSalary: calc.gross,
+              bhxh: calc.bhxh, bhyt: calc.bhyt, bhtn: calc.bhtn,
+              taxIncome: calc.taxableIncome, taxAmount: calc.pit,
+              deductions: calc.deductions, netSalary: calc.net,
+              status: "Đã tính",
+            },
+            update: {
+              workDays, otHours,
+              otPay: calc.otPay, grossSalary: calc.gross,
+              bhxh: calc.bhxh, bhyt: calc.bhyt, bhtn: calc.bhtn,
+              taxIncome: calc.taxableIncome, taxAmount: calc.pit,
+              deductions: calc.deductions, netSalary: calc.net,
+            },
           })
-          if (!existingSlip) {
-            await prisma.payslip.create({
-              data: { payrollId: payroll.id, employeeId: emp.id, issuedDate: new Date() },
+
+          // Tạo Payslip nếu chưa có
+          const payroll = await prisma.payroll.findUnique({
+            where: { employeeId_payMonth_payYear: { employeeId: emp.id, payMonth: mMonth, payYear: mYear } },
+          })
+          if (payroll) {
+            const existingSlip = await prisma.payslip.findFirst({
+              where: { payrollId: payroll.id, employeeId: emp.id },
             })
+            if (!existingSlip) {
+              await prisma.payslip.create({
+                data: { payrollId: payroll.id, employeeId: emp.id, issuedDate: new Date() },
+              })
+            }
           }
-        }
-      } catch { /* skip */ }
+        } catch { /* skip */ }
+      }
+
+      // Chuyển sang tháng tiếp theo
+      mMonth++
+      if (mMonth > 12) { mMonth = 1; mYear++ }
     }
 
     lastSyncDate = todayStr
-    console.log(`[fake-data-sync] ✅ Synced: ${newRecords} attendance records, payroll recalculated for T${payMonth}/${payYear}`)
+    console.log(`[fake-data-sync] ✅ Synced: ${newRecords} attendance records, payroll recalculated T${syncStartMonth}/${syncStartYear} → T${currentPayMonth}/${currentPayYear}`)
     return { synced: true, newRecords }
 
   } catch (error) {
