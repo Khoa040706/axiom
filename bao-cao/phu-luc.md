@@ -119,26 +119,34 @@
 
 ---
 
-## Phụ lục C — Tài liệu tham khảo
+# TÀI LIỆU THAM KHẢO
 
-[1] Next.js Documentation, Vercel Inc., truy cập 04/2026, https://nextjs.org/docs
+**Tiếng Việt**
 
-[2] Prisma ORM Documentation, Prisma Data Inc., truy cập 04/2026, https://www.prisma.io/docs
+Quốc hội nước CHXHCN Việt Nam (2019). *Bộ luật Lao động số 45/2019/QH14*, ban hành 20/11/2019.
 
-[3] NextAuth.js v5 Documentation, truy cập 04/2026, https://next-auth.js.org
+Quốc hội nước CHXHCN Việt Nam (2007). *Luật Thuế Thu nhập cá nhân số 04/2007/QH12 và các văn bản sửa đổi, bổ sung*, ban hành 21/11/2007.
 
-[4] Recharts Documentation, truy cập 04/2026, https://recharts.org
+Chính phủ nước CHXHCN Việt Nam (2022). *Nghị định 38/2022/NĐ-CP quy định mức lương tối thiểu đối với người lao động làm việc theo hợp đồng lao động*, ban hành 12/06/2022.
 
-[5] jsPDF Documentation, truy cập 04/2026, https://artskydj.github.io/jsPDF
+Bộ Lao động — Thương binh và Xã hội (2015). *Thông tư 59/2015/TT-BLĐTBXH quy định chi tiết và hướng dẫn thi hành một số điều của Luật BHXH*, ban hành 29/12/2015.
 
-[6] IEEE 830-1998 Standard for Software Requirement Specifications, IEEE Standards Association, 1998
+**Tiếng Anh**
 
-[7] Bộ luật Lao động số 45/2019/QH14, Quốc hội nước CHXHCN Việt Nam, 2019
+IEEE Standards Association (1998). IEEE 830-1998 — Recommended Practice for Software Requirements Specifications.
 
-[8] Luật Thuế Thu nhập cá nhân số 04/2007/QH12 và các văn bản sửa đổi, bổ sung
+Pressman, R. S. (2019). *Software Engineering: A Practitioner's Approach*, 9th Edition. McGraw-Hill.
 
-[9] Nghị định 38/2022/NĐ-CP về mức lương tối thiểu vùng
+Vercel Inc. (2026). Next.js 16 Documentation. https://nextjs.org/docs
 
-[10] Thông tư 59/2015/TT-BLĐTBXH hướng dẫn thực hiện Luật BHXH
+Prisma Data Inc. (2026). Prisma ORM v7 Documentation. https://www.prisma.io/docs
 
-[11] Howard Podeswa, *Business Analyst's Handbook*, Cengage Learning, 2009, ISBN: 978-1598635652
+The PostgreSQL Global Development Group (2026). PostgreSQL 17 Documentation. https://www.postgresql.org/docs/17
+
+NextAuth.js Contributors (2026). Auth.js v5 Documentation. https://authjs.dev
+
+Tailwind Labs (2026). Tailwind CSS v4 Documentation. https://tailwindcss.com/docs
+
+Recharts Contributors (2026). Recharts — Composable charting library for React. https://recharts.org
+
+Muracciole, D. (2026). @react-pdf/renderer — React renderer for creating PDF files. https://react-pdf.org

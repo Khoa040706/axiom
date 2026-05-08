@@ -29,5 +29,7 @@ bao-cao/
 | Chương 7 — Giao diện | ✅ Hoàn thành (cần chụp screenshot) |
 | Chương 8 — Kiểm thử | ✅ Hoàn thành |
 | Chương 9 — Hướng dẫn sử dụng | ✅ Hoàn thành |
+| Chương 10 — Tổng kết dự án | ✅ Hoàn thành |
 | Phụ lục | ✅ Hoàn thành |
+
 

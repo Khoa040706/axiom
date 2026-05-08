@@ -1,17 +1,21 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.1 — Activity Diagram: Đăng nhập
 start
 :Truy cập /login;
 :Nhập username & password;
 :NextAuth xác thực (bcrypt compare);
-if (Thông tin hợp lệ?) then (Sai)
+if (Thông tin hợp lệ?) then (Đúng)
+  if (Tài khoản bị khóa?) then (Khóa)
+    :Báo lỗi: Tài khoản bị khóa;
+    stop
+  else (OK)
+    :Tạo JWT session;
+  endif
+else (Sai)
   :Hiển thị thông báo lỗi;
   stop
-elseif (Tài khoản bị khóa?) then (Khóa)
-  :Báo lỗi: Tài khoản bị khóa;
-  stop
-else (OK)
-  :Tạo JWT session;
 endif
 if (Có personalEmail?) then (Chưa)
   :Redirect /setup-email;

@@ -1,4 +1,6 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.9 — Sequence Diagram: Check-in GPS
 actor "Employee" as E
 participant "Browser" as B

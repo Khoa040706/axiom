@@ -53,7 +53,15 @@ export function useCurrentUser(): MockUser | null {
   }
 
   // Fallback → mock-auth (localStorage)
-  return getCurrentUser()
+  const mockUser = getCurrentUser()
+  if (!mockUser) return null
+  // Re-map label từ ROLE_MAP để tránh stale data trong localStorage
+  const mockRole = Object.entries(ROLE_MAP).find(([, v]) => v === mockUser.role)?.[0]
+  if (mockRole && ROLE_LABEL[mockRole]) {
+    mockUser.roleLabel   = ROLE_LABEL[mockRole].vi
+    mockUser.roleLabelEn = ROLE_LABEL[mockRole].en
+  }
+  return mockUser
 }
 
 /** Lấy employeeId dạng số từ session (dùng cho DB queries) */

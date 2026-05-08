@@ -1,199 +1,116 @@
-# BẢNG PHÂN CÔNG CÔNG VIỆC — NHÓM
+# BẢNG PHÂN CÔNG CÔNG VIỆC — AXIOM HRM
 
-> Môn học: Lập Trình Web & Ứng Dụng  
-> **Nhóm:** 52400017 – 52400133 – 52400004
-
-| Thành viên | MSSV | Vai trò |
-|------------|------|---------|
-| **TV1** | 52400017 | Trưởng nhóm — Backend core, Auth, Payroll, Dashboard, RBAC |
-| **TV2** | 52400133 | Frontend UI, Employee, Contract, Attendance |
-| **TV3** | 52400004 | Leave, Business Trip, Career History, Export, Docs |
+> **Môn học:** Công nghệ Phần mềm  
+> **Nhóm:** 52400017 – 52400133 – 52400004  
+> **Hệ thống:** AXIOM HRM — Quản lý Nhân sự Doanh nghiệp  
+> **Thời gian thực hiện:** 9 tuần (Tuần 1 → Tuần 9)
 
 ---
 
-## ACCOUNT MANAGEMENT — 1.75 điểm
+## PHẦN 1 — THÔNG TIN NHÓM & VAI TRÒ
 
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 1 | Tạo tài khoản cho nhân viên | `createUserInDB()`: tạo User + Employee record, hash bcrypt, validate username trùng | — | — |
-| 2 | Gửi email tự động khi quên mật khẩu | Tích hợp Nodemailer + Gmail SMTP; sinh mật khẩu tạm, build HTML email template chuyên nghiệp | — | — |
-| 3 | Mật khẩu tạm thời có hiệu lực 24 giờ | Logic sinh `generateTempPassword()`, hash + lưu DB, cảnh báo hết hạn trong email | — | — |
-| 4 | Nhân viên mới phải thiết lập Gmail cá nhân | Middleware kiểm tra `personalEmail == null` → redirect về `/setup-email`; chặn truy cập dashboard | — | — |
-| 5 | Đăng nhập bằng mã nhân viên + mật khẩu | NextAuth v5 Credentials provider; `authorize()` → `bcrypt.compare()` → tạo JWT session với role + dashboardPath | — | — |
-| 6 | Quên mật khẩu — gửi mật khẩu tạm qua Gmail | API route `POST /api/forgot-password`: tìm user theo `personalEmail`, generate temp pw, gửi email, cập nhật DB | — | — |
-| 7 | Bắt buộc thiết lập Gmail trước khi truy cập | — | — | Trang `/setup-email`: form nhập Gmail, validate `@gmail.com`, `savePersonalEmailInDB()`, update JWT session |
+| MSSV | Họ và tên | Vai trò | Trách nhiệm chính |
+|------|-----------|---------|-------------------|
+| **52400017** | *(TV1)* | **Dev chính + PM** | Toàn bộ source code (Next.js, Prisma, Auth, Payroll, API...) + quản lý tiến độ nhóm |
+| **52400004** | *(TV3)* | **BA (Business Analyst)** | Phân tích nghiệp vụ, viết SRS, thiết kế Use Case, tài liệu hệ thống |
+| **52400133** | *(TV2)* | **Tester** | Viết test case, kiểm thử chức năng, báo cáo bug, regression test |
 
 ---
 
-## USER MANAGEMENT — 1.75 điểm
+## PHẦN 2 — BẢNG PHÂN CÔNG THEO 9 TUẦN
 
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 8 | Admin: Xem danh sách tài khoản | `getAllUsersFromDB()`: query tất cả users kèm employee info, serialize | — | — |
-| 9 | Admin: Xem chi tiết nhân viên | — | Modal chi tiết: hiển thị đầy đủ thông tin, trạng thái, avatar, phòng ban | — |
-| 10 | Admin: Reset mật khẩu | `adminResetPasswordInDB()`: hash password mới, cập nhật DB không cần mật khẩu cũ | — | — |
-| 11 | Admin: Kích hoạt / Vô hiệu hóa tài khoản | `toggleUserActiveInDB()`: toggle `isActive`, session check server-side | — | — |
-| 12 | Admin: Đổi vai trò (có ràng buộc) | `updateUserRoleInDB()`: kiểm tra Employee chỉ lên Manager, Manager chỉ xuống Employee | — | — |
-| 13 | Admin: Xóa tài khoản | `deleteUserFromDB()`: soft-delete employee liên kết + xóa user record | — | — |
-| 14 | Nhân viên: Xem/cập nhật hồ sơ | — | Trang `/profile`: GET hiển thị thông tin cá nhân; POST cập nhật fullName, email, phone | — |
-
----
-
-## EMPLOYEE MANAGEMENT — 2.0 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 15 | Xem danh sách nhân viên | — | Trang `/employees`: bảng phân trang, filter phòng ban/trạng thái, search realtime | — |
-| 16 | Thêm nhân viên mới | `createEmployee()`: Zod schema validation, parse date, gọi `employeeService.create()` | Form modal tạo nhân viên: input fields, dropdown phòng ban/chức vụ, date picker | — |
-| 17 | Sửa thông tin nhân viên | `updateEmployee()`: Zod partial validation, merge data, gọi `employeeService.update()` | Form modal sửa: pre-fill dữ liệu cũ, validation UI | — |
-| 18 | Xóa nhân viên | `deleteEmployee()` soft-delete + `hardDeleteEmployee()` xóa vĩnh viễn | — | — |
-| 19 | Khôi phục nhân viên đã nghỉ | `reinstateEmployee()`: cập nhật status → "Đang làm" | — | — |
-| 20 | Tìm nhân viên theo mã | `getEmployeeByCode()`: query theo code unique | — | — |
-| 21 | Upload & crop avatar | — | Trang `/profile` tab avatar: Canvas crop modal, drag-to-pan, zoom in/out, export base64 → `updateProfileInDB()` | — |
-| 22 | Đổi mật khẩu cá nhân | `changePasswordInDB()`: verify mật khẩu cũ với `bcrypt.compare()`, hash mới, lưu DB | — | — |
+| Tuần | Giai đoạn | Dev — 52400017 | BA — 52400004 | Tester — 52400133 |
+|------|-----------|----------------|---------------|-------------------|
+| **Tuần 1** | Khởi động & Phân tích | Khởi tạo dự án Next.js, cấu hình Prisma + PostgreSQL, thiết kế DB schema (13 bảng) | Phân tích yêu cầu nghiệp vụ, viết SRS v1, xác định các actor và use case tổng quan | Nghiên cứu hệ thống, thiết lập môi trường test, lập kế hoạch kiểm thử tổng thể |
+| **Tuần 2** | Auth & Account | Cài đặt NextAuth v5, hệ thống 6 vai trò (RBAC), middleware phân quyền, quên mật khẩu qua Gmail SMTP | Viết Use Case chi tiết cho Account Management, User Management; vẽ sơ đồ Activity Diagram đăng nhập | Viết test case cho luồng đăng nhập, đăng xuất, quên mật khẩu; kiểm thử thủ công |
+| **Tuần 3** | Employee & Department | Cài đặt CRUD nhân viên (Zod validation, soft-delete, reinstate), quản lý phòng ban, upload & crop avatar | Phân tích nghiệp vụ quản lý nhân viên, viết Use Case Employee/Department, vẽ Class Diagram | Kiểm thử thêm/sửa/xóa nhân viên, upload avatar, filter phòng ban; báo cáo bug |
+| **Tuần 4** | Contract & Attendance | Cài đặt hợp đồng (tạo, chấm dứt, cảnh báo hết hạn), chấm công (check-in/out realtime, upsert) | Viết Use Case Contract Management và Attendance; phân tích quy trình nghỉ phép | Kiểm thử hợp đồng, chấm công; test edge case trùng ngày, hợp đồng hết hạn |
+| **Tuần 5** | Leave & Business Trip | Cài đặt đơn nghỉ phép (tính ngày làm việc, quỹ phép), công tác (tạo đề xuất, duyệt) | Viết Use Case Leave Management, Business Trip; vẽ Activity Diagram quy trình duyệt đơn | Kiểm thử tạo/duyệt/từ chối đơn nghỉ phép và công tác; test phân quyền dữ liệu |
+| **Tuần 6** | Payroll & Payslip | Cài đặt engine tính lương (BHXH/BHYT/BHTN/thuế TNCN lũy tiến 7 bậc), tính hàng loạt, phiếu lương | Phân tích nghiệp vụ tính lương theo quy định Việt Nam, viết tài liệu công thức và Use Case Payroll | Kiểm thử tính lương từng trường hợp (có OT, có người phụ thuộc, nhiều bậc thuế); báo cáo bug |
+| **Tuần 7** | Dashboard & Career | Cài đặt 6 dashboard theo vai trò (Admin/Giám đốc/Kế toán/HR/Manager/Nhân viên), lịch sử công tác | Viết Use Case Dashboard, Career History; phân tích KPI cho từng dashboard; cập nhật SRS | Kiểm thử toàn bộ dashboard, biểu đồ; test Career History; kiểm tra dữ liệu hiển thị đúng |
+| **Tuần 8** | Export & UI/UX | Cài đặt export Excel/PDF (chấm công, phiếu lương, báo cáo), hoàn thiện song ngữ VI/EN, dark/light mode | Viết tài liệu hướng dẫn sử dụng, cập nhật Use Case export; chuẩn bị nội dung báo cáo đồ án | Regression test toàn bộ hệ thống, kiểm thử export file, test responsive trên các thiết bị |
+| **Tuần 9** | Hoàn thiện & Demo | Fix bug cuối, chuẩn bị seed data demo (63 nhân viên, dữ liệu 6 tháng), auto-sync service | Hoàn thiện báo cáo đồ án (Chương 1–9), kiểm tra UML diagrams, chuẩn bị slide thuyết trình | Kiểm thử lần cuối (final testing), viết báo cáo kiểm thử, chuẩn bị kịch bản demo |
 
 ---
 
-## DEPARTMENT & POSITION — 1.0 điểm
+## PHẦN 3 — PHÂN CÔNG THEO MODULE CHỨC NĂNG
 
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 23 | Xem danh sách phòng ban | `getDepartments()`: API trả về departments kèm headcount | — | — |
-| 24 | Xem danh sách chức vụ | — | Trang `/positions`: bảng chức vụ, search, hiển thị cấp bậc (C-Level/Manager/Staff), khung lương | — |
-| 25 | Phân bổ nhân viên theo phòng ban | — | Hiển thị headcount per department, badge phòng ban cho mỗi nhân viên | — |
-| 26 | Khung lương theo chức vụ | — | Hiển thị salary range (VND/EN) theo từng chức vụ trong bảng | — |
+### 3.1 Phân tích nghiệp vụ (BA — 52400004)
 
----
-
-## CONTRACT MANAGEMENT — 1.25 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 27 | Xem danh sách hợp đồng | — | Trang `/contracts`: bảng hợp đồng, filter trạng thái, search nhân viên | — |
-| 28 | Tạo hợp đồng mới | `createContract()`: Zod validation, parse dates, gọi `contractService.create()` | Form modal tạo hợp đồng | — |
-| 29 | Chấm dứt hợp đồng | `terminateContract()`: cập nhật trạng thái hợp đồng | — | — |
-| 30 | Cảnh báo hợp đồng sắp hết hạn | `getExpiringContracts(30)`: query hợp đồng endDate trong 30 ngày tới | — | — |
-| 31 | Xem hợp đồng theo nhân viên | `getContractsByEmployee()`: query theo employeeId | — | — |
-
----
-
-## ATTENDANCE MANAGEMENT — 1.25 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 32 | Check-in / Check-out realtime | `checkIn()` + `checkOut()`: ghi nhận thời gian, validation trùng ngày | Giao diện nút Check-in/out, hiển thị thời gian realtime | — |
-| 33 | Xem bảng chấm công theo tháng | `getAttendanceByMonth()`: query theo month/year, filter departmentId | Bảng chấm công tháng, dropdown phòng ban, tháng/năm | — |
-| 34 | Xem chấm công hôm nay | `getTodayAttendance()`: query ngày hiện tại | — | — |
-| 35 | Chỉnh sửa / bổ sung chấm công | `upsertAttendance()`: Zod validation, upsert record | — | — |
-| 36 | Xuất báo cáo chấm công Excel | — | — | API `/api/export/excel`: generate Excel file từ attendance data, download |
+| STT | Tài liệu / Sản phẩm | Nội dung | Tuần hoàn thành |
+|-----|---------------------|----------|-----------------|
+| 1 | SRS (Software Requirements Specification) | Mô tả đầy đủ yêu cầu chức năng và phi chức năng của AXIOM HRM | Tuần 1–2 |
+| 2 | Use Case tổng quan | Sơ đồ tổng quan 6 actor × 12 module nghiệp vụ | Tuần 1 |
+| 3 | Use Case chi tiết — Account & User | Đăng nhập, quên mật khẩu, quản lý tài khoản Admin | Tuần 2 |
+| 4 | Use Case chi tiết — Employee & Department | Thêm/sửa/xóa nhân viên, quản lý phòng ban | Tuần 3 |
+| 5 | Activity Diagram — Đăng nhập | Luồng đăng nhập, xác thực, redirect theo vai trò | Tuần 2 |
+| 6 | Activity Diagram — Tính lương | Quy trình tính lương: chấm công → tính gross → trừ bảo hiểm → trừ thuế → net | Tuần 6 |
+| 7 | Activity Diagram — Duyệt nghỉ phép | Luồng tạo đơn → manager duyệt → cập nhật quỹ phép | Tuần 5 |
+| 8 | Class Diagram | Sơ đồ lớp 13 bảng DB: Employee, User, Contract, Attendance, Payroll, Leave... | Tuần 3 |
+| 9 | Use Case chi tiết — Leave & Business Trip | Tạo đơn, duyệt, từ chối, quản lý quỹ phép | Tuần 5 |
+| 10 | Use Case chi tiết — Payroll | Tính lương, xác nhận chi lương, phiếu lương | Tuần 6 |
+| 11 | Use Case chi tiết — Dashboard | 6 loại dashboard, quyền xem dữ liệu theo vai trò | Tuần 7 |
+| 12 | Tài liệu hướng dẫn sử dụng | Hướng dẫn cho từng vai trò người dùng (Admin/HR/Manager/Employee) | Tuần 8 |
+| 13 | Báo cáo đồ án (Chương 1–9) | Giới thiệu, phân tích, thiết kế, cài đặt, kiểm thử, đánh giá | Tuần 9 |
+| 14 | Slide thuyết trình | Tóm tắt dự án, demo flow, kết quả đạt được | Tuần 9 |
 
 ---
 
-## LEAVE MANAGEMENT — 1.5 điểm
+### 3.2 Phát triển hệ thống (Dev — 52400017)
 
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 37 | Tạo đơn nghỉ phép | — | — | `createLeaveRequest()`: Zod validation, tính ngày làm việc (bỏ T7/CN), gọi `leaveService.create()` + Form modal 6 loại nghỉ phép |
-| 38 | Duyệt / Từ chối đơn | — | — | `approveLeave()`: cập nhật status + approvedBy, UI nút Duyệt/Từ chối cho Manager+ |
-| 39 | Xem danh sách đơn nghỉ phép | — | — | Trang `/leave`: bảng đơn, tabs filter (Tất cả/Chờ duyệt/Đã duyệt/Từ chối), stat cards |
-| 40 | Xem chi tiết đơn | — | — | Modal chi tiết: header gradient, thông tin người nộp, lý do, ghi chú, trạng thái |
-| 41 | Quản lý quỹ phép | — | — | `getAllLeaveBalances()`: tổng/đã dùng/còn lại, thanh progress, phân trang 6/page |
-| 42 | Phân quyền dữ liệu nghỉ phép | Middleware filter: nhân viên chỉ thấy đơn bản thân, manager thấy tất cả | — | — |
-
----
-
-## PAYROLL MANAGEMENT — 2.0 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 43 | Tính lương tự động (1 NV) | `payrollService.calculate()`: lương cơ bản + phụ cấp + OT − BHXH − BHYT − BHTN − thuế TNCN lũy tiến. Logic phức tạp nhất hệ thống | — | — |
-| 44 | Tính lương hàng loạt | `calculatePayrollBatch()`: loop tất cả NV active, try-catch từng người, trả về success/failed count | — | — |
-| 45 | Xem bảng lương theo kỳ | `getPayrollByPeriod()`: query theo month/year | Trang `/payroll`: bảng lương, dropdown kỳ, hiển thị gross/net/deductions | — |
-| 46 | Xác nhận chi lương | `confirmPayment()`: update status → "Đã thanh toán" | — | — |
-| 47 | Cấu hình lương | — | Trang `/payroll/config`: form cấu hình tỷ lệ bảo hiểm, thuế, phụ cấp | — |
-| 48 | Tổng quỹ lương | `getPayrollSummary()`: tổng gross, net, deductions theo kỳ | — | — |
-| 49 | Xuất phiếu lương PDF | — | — | API `/api/export/payslip-pdf`: generate PDF phiếu lương chi tiết, layout chuyên nghiệp |
+| STT | Module | Chức năng cài đặt | Công nghệ sử dụng |
+|-----|--------|-------------------|-------------------|
+| 1 | **Cơ sở hạ tầng** | Khởi tạo Next.js 16, cấu hình Prisma ORM + PostgreSQL, thiết kế 13 bảng DB, seed data 63 nhân viên | Next.js, Prisma, PostgreSQL |
+| 2 | **Authentication** | NextAuth v5 Credentials, JWT session, bcrypt hash (salt=10), forgot password qua Nodemailer/Gmail SMTP, trang đăng nhập premium (Canvas particles, animation) | NextAuth v5, bcrypt, Nodemailer |
+| 3 | **RBAC** | 6 vai trò (Admin/Director/HRManager/Accountant/Manager/Employee), middleware bảo vệ route, sidebar động theo role, redirect tự động | Next.js Middleware |
+| 4 | **Account & User** | CRUD tài khoản (tạo, reset password, toggle active, đổi role, xóa), thiết lập Gmail cá nhân, đổi mật khẩu | Prisma, Server Actions |
+| 5 | **Employee Management** | CRUD nhân viên (Zod validation, soft-delete, reinstate), upload & crop avatar (Canvas), quản lý phòng ban | Prisma, Zod, Canvas API |
+| 6 | **Contract Management** | Tạo hợp đồng, chấm dứt, cảnh báo hết hạn 30 ngày, xem theo nhân viên | Prisma, Server Actions |
+| 7 | **Attendance** | Check-in/check-out realtime, bảng chấm công theo tháng, upsert thủ công, xử lý `@db.Time()` | Prisma, Next.js API Routes |
+| 8 | **Leave Management** | Tạo đơn nghỉ phép (6 loại, tính ngày làm việc bỏ T7/CN), duyệt/từ chối, quỹ phép, phân quyền dữ liệu | Prisma, Server Actions |
+| 9 | **Business Trip** | Tạo đề xuất công tác, duyệt/từ chối, danh sách công tác | Prisma, Server Actions |
+| 10 | **Career History** | CRUD lịch sử công tác (9 loại sự kiện: thăng chức, điều chuyển, khen thưởng, kỷ luật...), thống kê | Prisma, Server Actions |
+| 11 | **Payroll Engine** | Engine tính lương theo pháp luật Việt Nam: lương cơ bản + phụ cấp + OT − BHXH(8%) − BHYT(1.5%) − BHTN(1%) − thuế TNCN lũy tiến 7 bậc; tính hàng loạt; xác nhận chi lương | Prisma, TypeScript |
+| 12 | **Payslip** | Tự động tạo phiếu lương sau khi tính, tránh duplicate | Prisma, Server Actions |
+| 13 | **Dashboard** | 6 dashboard theo vai trò: Admin (stat cards + pie chart), Giám đốc (6 biểu đồ line/bar/pie/doughnut), Kế toán (KPI tài chính), HR (headcount), Manager (team overview), Nhân viên (self-service) | Recharts, Prisma |
+| 14 | **Export** | Xuất Excel (chấm công, danh sách NV, báo cáo), xuất PDF (phiếu lương, báo cáo tổng hợp) | SheetJS/xlsx, jsPDF |
+| 15 | **UI/UX** | Song ngữ VI/EN (i18n maps), dark/light mode (context + CSS vars), responsive layout (`useBreakpoint`), floating sidebar với hover animation | React Context, CSS |
+| 16 | **Demo Data** | Script generate 63 NV + dữ liệu 6 tháng (T12/2025→T5/2026), auto-sync service cập nhật hàng ngày | Prisma, tsx scripts |
 
 ---
 
-## PAYSLIP — 0.5 điểm
+### 3.3 Kiểm thử (Tester — 52400133)
 
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 50 | Xem phiếu lương theo NV | — | Trang `/payslips`: modal chi tiết phiếu lương, breakdown từng khoản | — |
-| 51 | Tự động tạo phiếu lương | `payslipService.createOrUpdate()`: tạo/cập nhật payslip sau khi tính lương xong (chống duplicate) | — | — |
-
----
-
-## BUSINESS TRIP — 0.75 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 52 | Tạo đề xuất công tác | — | — | `createBusinessTrip()`: destination, dates, purpose, allowance + Form modal tạo |
-| 53 | Duyệt / Từ chối công tác | — | — | `approveBusinessTrip()`: update status + approvedBy |
-| 54 | Xem danh sách công tác | — | — | Trang `/business-trips`: bảng, filter trạng thái/nhân viên, stat cards |
-
----
-
-## CAREER HISTORY — 1.25 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 55 | Xem lịch sử công tác | — | — | Trang `/career-history`: bảng timeline, filter loại sự kiện, search |
-| 56 | Tạo sự kiện công tác | — | — | `createCareerHistory()`: thăng chức, chuyển phòng, khen thưởng, kỷ luật, tăng lương + Form modal |
-| 57 | Xóa sự kiện | — | — | `deleteCareerHistory()` + confirm dialog |
-| 58 | Thống kê overview | — | — | `getCareerOverviewStats()`: stat cards tổng hợp |
-| 59 | Xem lịch sử theo NV | — | — | `getCareerHistoryByEmployee()`: filter theo employeeId |
+| STT | Module | Loại kiểm thử | Nội dung kiểm thử | Tuần |
+|-----|--------|--------------|-------------------|------|
+| 1 | **Authentication** | Functional, Security | Đăng nhập đúng/sai, quên mật khẩu, hết hạn token, redirect theo role | Tuần 2 |
+| 2 | **Account & User** | Functional | Tạo tài khoản, reset password, toggle active, đổi role, xóa tài khoản | Tuần 2–3 |
+| 3 | **Employee Management** | Functional, UI | Thêm/sửa/xóa nhân viên, upload avatar, filter, search, phân trang | Tuần 3 |
+| 4 | **Contract Management** | Functional, Edge Case | Tạo hợp đồng, chấm dứt, cảnh báo hết hạn, hợp đồng trùng | Tuần 4 |
+| 5 | **Attendance** | Functional, Edge Case | Check-in/out, chấm công trùng ngày, bảng theo tháng, chỉnh sửa thủ công | Tuần 4 |
+| 6 | **Leave Management** | Functional, Access Control | Tạo đơn, duyệt, từ chối, quỹ phép, phân quyền (NV chỉ thấy đơn mình) | Tuần 5 |
+| 7 | **Business Trip** | Functional | Tạo/duyệt/từ chối công tác, filter trạng thái | Tuần 5 |
+| 8 | **Payroll** | Functional, Calculation | Tính lương với/không OT, người phụ thuộc, nhiều bậc thuế, xác nhận chi | Tuần 6 |
+| 9 | **Dashboard** | Functional, Data Accuracy | Kiểm tra số liệu đúng theo từng vai trò, biểu đồ hiển thị đúng | Tuần 7 |
+| 10 | **Career History** | Functional | Tạo/xóa sự kiện công tác, filter loại sự kiện, thống kê | Tuần 7 |
+| 11 | **Export** | Functional | Xuất Excel/PDF chấm công, phiếu lương, báo cáo; kiểm tra format file | Tuần 8 |
+| 12 | **UI/UX & Responsive** | UI, Compatibility | Dark/light mode, song ngữ, responsive trên desktop/tablet/mobile, sidebar animation | Tuần 8 |
+| 13 | **Regression Test** | Full System | Kiểm thử lại toàn bộ hệ thống sau khi fix bug, xác nhận không có lỗi hồi quy | Tuần 9 |
+| 14 | **Báo cáo kiểm thử** | Documentation | Tổng hợp kết quả test, danh sách bug đã fix, kết luận chất lượng | Tuần 9 |
 
 ---
 
-## DASHBOARD & REPORTS — 2.5 điểm
+## PHẦN 4 — TỔNG KẾT & TỶ LỆ ĐÓNG GÓP
 
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 60 | Dashboard Admin | `getDashboardStats()`: tổng hợp empStats + pendingLeave + expiringContracts | Giao diện stat cards, biểu đồ tròn/cột | — |
-| 61 | Dashboard Giám đốc (khó nhất) | `getDashboardExtended()`: 5 Promise.allSettled — grossNet, empStatus, contractTypes, leaveTypes, newHires. Xử lý từng phần lỗi độc lập | Giao diện 6 biểu đồ: line, bar, pie, doughnut, area chart | — |
-| 62 | Dashboard Kế toán | `getAccountantDashboardStats()`: KPI tài chính, quỹ lương, chi phí | Giao diện KPI cards, trend charts | — |
-| 63 | Dashboard Nhân sự | — | Trang `/dashboard-hr`: tổng hợp nhân sự, headcount, turnover | — |
-| 64 | Dashboard Trưởng phòng | — | Trang `/dashboard-manager`: team overview, attendance summary | — |
-| 65 | Dashboard Nhân viên | — | Trang `/dashboard-employee`: thông tin cá nhân, lương, nghỉ phép | — |
-| 66 | Xuất báo cáo PDF | — | — | API `/api/export/dashboard-pdf`: generate PDF báo cáo tổng hợp, layout đa trang |
-| 67 | Xuất báo cáo Excel | — | — | API `/api/export/report-excel`: generate Excel báo cáo multi-sheet |
-| 68 | Xuất danh sách NV Excel | — | — | API `/api/export/excel`: generate Excel danh sách nhân viên |
+| Thành viên | MSSV | Vai trò | Số đầu việc | Tỷ lệ đóng góp | Ghi chú |
+|------------|------|---------|:-----------:|:--------------:|---------|
+| **TV1** | **52400017** | Dev chính + PM | 16 module | **~60%** | Toàn bộ backend, frontend, DB, auth, payroll engine, deployment |
+| **TV3** | **52400004** | BA | 14 tài liệu | **~25%** | SRS, Use Case, Activity/Class Diagram, báo cáo, slide |
+| **TV2** | **52400133** | Tester | 14 hạng mục | **~15%** | Test case, kiểm thử chức năng, báo cáo bug, regression test |
+| **Tổng** | | | **44** | **100%** | |
 
----
-
-## RBAC & SECURITY — 1.5 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 69 | Hệ thống 6 vai trò | Cấu hình NextAuth callbacks: jwt + session → inject role, dashboardPath, employeeId | — | — |
-| 70 | Sidebar động theo vai trò | — | `layout.tsx` (53KB): sidebar config per role, active state detection, responsive collapse | — |
-| 71 | Redirect tự động theo vai trò | NextAuth `signIn` callback → trả `dashboardPath` dựa trên role | — | — |
-| 72 | Phân quyền dữ liệu | Server actions filter: `if (!isManager) filter by sessionEmployeeId` — áp dụng toàn bộ modules | — | — |
-| 73 | Ràng buộc thăng/giáng chức | `updateUserRoleInDB()`: logic Employee↔Manager only, block các transition khác | — | — |
-| 74 | Mã hóa + JWT session | bcrypt hash (salt=10) + NextAuth v5 JWT strategy + session serialization | — | — |
-
----
-
-## UI/UX & BỔ SUNG — 1.0 điểm
-
-| STT | Chức năng | TV1 — 52400017 | TV2 — 52400133 | TV3 — 52400004 |
-|-----|-----------|----------------|----------------|----------------|
-| 75 | Song ngữ VI/EN | i18n maps: `tLeaveType()`, `tDept()`, `tLeaveReason()` — toàn hệ thống | — | — |
-| 76 | Dark/Light mode | — | `dashboard-context.tsx`: global theme toggle, CSS variables, realtime switch | — |
-| 77 | Responsive layout | — | Media queries, `useBreakpoint()` hook, mobile sidebar, table scroll | — |
-| 78 | Trang đăng nhập premium | Canvas star particles, 4 floating cards animation, gradient sweep button, bilingual | — | — |
-
----
-
-## TỔNG KẾT PHÂN CÔNG
-
-| Thành viên | Số task | Điểm phụ trách | Tỷ lệ | Vai trò chính |
-|------------|:---:|:---:|:---:|---------------|
-| **TV1 — 52400017** | **38** | **~10.0** | **~50%** | Backend core, Auth, Payroll, RBAC, Dashboard logic, Security, i18n |
-| **TV2 — 52400133** | **20** | **~5.0** | **~25%** | Frontend UI, Employee pages, Contract, Attendance, Positions, Profile, Layout |
-| **TV3 — 52400004** | **20** | **~5.0** | **~25%** | Leave, Business Trip, Career History, Export (PDF/Excel), Setup Email, Docs |
-| **Tổng** | **78** | **20.0** | **100%** | |
-
-> **Ghi chú:** TV1 phụ trách toàn bộ backend core (services, actions, Prisma schema, NextAuth, payroll engine) và các chức năng phức tạp nhất. TV2 và TV3 chia đều phần frontend UI và các module nghiệp vụ còn lại.
+> **Ghi chú:**  
+> - **Dev (52400017)** chịu trách nhiệm toàn bộ source code của hệ thống AXIOM HRM (≈ 50,000+ dòng code).  
+> - **BA (52400004)** đảm bảo tài liệu nghiệp vụ đầy đủ, làm nền tảng cho quá trình phát triển và báo cáo.  
+> - **Tester (52400133)** phát hiện và theo dõi bug xuyên suốt quá trình, đảm bảo chất lượng trước demo.  
+> - Tỷ lệ đóng góp phản ánh đặc thù dự án: Dev đóng vai trò cốt lõi do hệ thống có độ phức tạp kỹ thuật cao.

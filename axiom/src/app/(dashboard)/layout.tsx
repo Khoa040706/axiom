@@ -82,6 +82,7 @@ function getNav(role: string): NavItem[] {
 }
 
 const W = 220
+const W_COLLAPSED = 64
 const W_TABLET = 64
 const HEADER_H = 54
 
@@ -106,6 +107,7 @@ function Inner({ children }: { children: React.ReactNode }) {
   const [showNotif, setShowNotif] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [sidebarHover, setSidebarHover] = useState(false)
   // Thông báo theo role — mỗi tài khoản thấy nội dung phù hợp với công việc của mình
   const [notifications, setNotifications] = useState(() => {
     const role = (() => {
@@ -319,15 +321,17 @@ function Inner({ children }: { children: React.ReactNode }) {
   // ── Sidebar width based on breakpoint ──────────────────────────
   // Mobile: sidebar hidden, shown as overlay when mobileSidebarOpen
   // Tablet: collapsed (icon only, 64px)
-  // Desktop: full (220px)
-  const sidebarW = isMobile ? 0 : isTablet ? W_TABLET : W
-  const mainMargin = sidebarW
+  // Desktop: collapsed (64px) by default, expand on hover (220px)
+  const isCollapsed = isMobile ? false : isTablet ? true : !sidebarHover
+  const sidebarW = isMobile ? W : isTablet ? W_TABLET : (sidebarHover ? W : W_COLLAPSED)
+  // Sidebar has 10px left offset when floating, so main content needs extra margin
+  const mainMargin = isMobile ? 0 : isTablet ? (W_TABLET + 20) : (W_COLLAPSED + 20)
 
   // ── Bottom nav items (mobile only) — first 5 max ───────────────
   const bottomNavItems = navItems.slice(0, 5)
 
   return (
-    <div className={dark ? "dark" : undefined} style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif" }}>
+    <div className={dark ? "dark" : undefined} style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif", background: th.pageBg }}>
 
       {/* ── MOBILE SIDEBAR BACKDROP ── */}
       {isMobile && mobileSidebarOpen && (
@@ -341,46 +345,37 @@ function Inner({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ── SIDEBAR ── */}
-      <aside style={{
-        width: isMobile ? W : sidebarW,
-        flexShrink: 0,
-        background: "linear-gradient(180deg, #991414 0%, #b31a1a 50%, #991414 100%)",
-        display: "flex", flexDirection: "column",
-        position: "fixed", top: 0, left: 0, bottom: 0,
-        zIndex: isMobile ? 160 : 100,
-        borderRight: "1px solid rgba(0,0,0,0.25)",
-        boxShadow: "4px 0 20px rgba(0,0,0,0.35)",
-        // Mobile: slide in/out; Tablet/Desktop: always visible
-        transform: isMobile
-          ? (mobileSidebarOpen ? "translateX(0)" : "translateX(-100%)")
-          : "translateX(0)",
-        transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s",
-        overflow: "hidden",
-      }}>
-        {/* Logo — click về trang chủ */}
-        <Link href={user.dashboardPath ?? "/dashboard"} style={{ textDecoration: "none", display: "block" }}>
-          <div style={{
-            padding: isTablet ? "16px 12px" : "18px 18px 16px",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-            display: "flex", alignItems: "center",
-            gap: isTablet ? 0 : 12,
-            justifyContent: isTablet ? "center" : "flex-start",
-            cursor: "pointer",
-            transition: "background .15s",
-          }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-          >
-            <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={44} height={44}
-              style={{ objectFit: "contain", filter: "brightness(0) invert(1)", flexShrink: 0, opacity: 0.92 }} />
-            {!isTablet && (
-              <div style={{
-                color: "#fff", fontWeight: 800, fontSize: 21, letterSpacing: 3,
-                textShadow: "0 1px 8px rgba(0,0,0,0.4)",
-              }}>AXIOM</div>
-            )}
-          </div>
-        </Link>
+      <aside
+        onMouseEnter={() => { if (!isMobile && !isTablet) setSidebarHover(true) }}
+        onMouseLeave={() => { if (!isMobile && !isTablet) setSidebarHover(false) }}
+        style={{
+          width: sidebarW,
+          flexShrink: 0,
+          background: dark
+            ? "linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)"
+            : "linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)",
+          display: "flex", flexDirection: "column",
+          position: "fixed",
+          top: isMobile ? 0 : (HEADER_H + 10),
+          left: isMobile ? 0 : 10,
+          bottom: isMobile ? 0 : 10,
+          zIndex: isMobile ? 160 : 100,
+          borderRadius: isMobile ? 0 : 20,
+          border: isMobile ? "none" : `1px solid ${dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
+          boxShadow: sidebarHover
+            ? dark
+              ? "6px 0 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05)"
+              : "6px 0 30px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)"
+            : dark
+              ? "2px 0 10px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.03)"
+              : "2px 0 10px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)",
+          transform: isMobile
+            ? (mobileSidebarOpen ? "translateX(0)" : "translateX(-100%)")
+            : "translateX(0)",
+          transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s",
+          overflow: "hidden",
+        }}
+      >
 
         {/* Mobile close button */}
         {isMobile && (
@@ -398,94 +393,114 @@ function Inner({ children }: { children: React.ReactNode }) {
           </button>
         )}
 
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: isTablet ? "12px 8px" : "12px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* ── Cụm chức năng (Top) ── */}
+        <nav style={{ padding: isCollapsed ? "12px 8px" : "12px 10px", display: "flex", flexDirection: "column", gap: 8, transition: "padding .28s" }}>
           {navItems.map(({ href, icon: Icon, vi, en }) => {
             const active = pathname === href || (pathname.startsWith(href + "/") && !navItems.some(n => n.href !== href && pathname.startsWith(n.href)))
+            const label = lang === "vi" ? vi : en
             return (
               <Link key={href} href={href}
                 onMouseEnter={() => setHov(href)} onMouseLeave={() => setHov(null)}
-                title={isTablet ? (lang === "vi" ? vi : en) : undefined}
+                title={isCollapsed ? label : undefined}
                 style={{
                   display: "flex", alignItems: "center",
-                  gap: isTablet ? 0 : 10,
-                  padding: isTablet ? "10px" : "9px 12px",
-                  justifyContent: isTablet ? "center" : "flex-start",
-                  borderRadius: 9, textDecoration: "none",
+                  gap: isCollapsed ? 0 : 10,
+                  padding: isCollapsed ? "8px" : "7px 12px",
+                  justifyContent: isCollapsed ? "center" : "flex-start",
+                  borderRadius: 10, textDecoration: "none",
+                  position: "relative",
                   background: active
-                    ? "rgba(220,50,50,0.28)"
+                    ? "rgba(208,33,28,0.12)"
                     : hov === href
-                      ? "rgba(255,255,255,0.07)"
+                      ? (dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)")
                       : "transparent",
-                  color: active ? "#ffcbcb" : "rgba(255,255,255,0.58)",
+                  color: active
+                    ? "#D0211C"
+                    : dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)",
                   fontSize: 13.5, fontWeight: active ? 600 : 400,
                   transition: "all .15s",
-                  borderLeft: isTablet
-                    ? "3px solid transparent"
+                  borderLeft: isCollapsed
+                    ? "none"
                     : active
-                      ? "3px solid rgba(255,140,140,0.85)"
+                      ? "3px solid #D0211C"
                       : "3px solid transparent",
                 }}
               >
-                <Icon size={isTablet ? 20 : 17} color={active ? "#ffaaaa" : undefined} />
-                {!isTablet && (lang === "vi" ? vi : en)}
+                <Icon size={isCollapsed ? 20 : 17} color={active ? "#D0211C" : (dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)")} style={{ flexShrink: 0 }} />
+                {!isCollapsed && (
+                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+                )}
               </Link>
             )
           })}
         </nav>
 
-        {/* User info at bottom — click to go to profile */}
-        <div style={{
-          padding: isTablet ? "14px 8px" : "14px",
-          borderTop: "1px solid rgba(255,255,255,0.07)",
-          display: "flex", alignItems: "center",
-          gap: isTablet ? 0 : 10,
-          justifyContent: isTablet ? "center" : "flex-start",
-        }}>
-          {/* Avatar + name — click to profile */}
-          <Link href="/profile" style={{
-            display: "flex", alignItems: "center", gap: isTablet ? 0 : 10, textDecoration: "none", flex: 1, minWidth: 0,
-            borderRadius: 9, padding: "4px 6px", transition: "background .15s",
-          }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+        {/* ── Spacer đẩy cụm cá nhân xuống đáy ── */}
+        <div style={{ flex: 1 }} />
+
+        {/* ── Divider ── */}
+        <div style={{ height: 1, background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", margin: "0 12px" }} />
+
+        {/* ── Cụm cá nhân (Bottom) ── */}
+        <div style={{ padding: isCollapsed ? "8px" : "8px 10px", transition: "padding .28s" }}>
+          <Link href="/profile"
+            onMouseEnter={() => setHov("profile")} onMouseLeave={() => setHov(null)}
+            title={isCollapsed ? (lang === "vi" ? "Hồ sơ cá nhân" : "Profile") : undefined}
+            style={{
+              display: "flex", alignItems: "center",
+              gap: isCollapsed ? 0 : 10,
+              padding: isCollapsed ? "10px" : "9px 12px",
+              justifyContent: isCollapsed ? "center" : "flex-start",
+              borderRadius: 10, textDecoration: "none",
+              background: hov === "profile" ? (dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)") : "transparent",
+              color: dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.55)",
+              fontSize: 13.5,
+              transition: "all .15s",
+            }}
           >
             <AvatarImg
               src={avatarUrl}
               alt={user.name}
-              size={36}
-              style={{
-                border: "2px solid rgba(255,200,200,0.4)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-              }}
+              size={isCollapsed ? 28 : 24}
+              style={{ border: "2px solid rgba(255,200,200,0.3)", flexShrink: 0 }}
             />
-            {!isTablet && (
+            {!isCollapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
-                <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 11, whiteSpace: "nowrap" }}>{lang === "vi" ? user.roleLabel : user.roleLabelEn}</div>
+                <div style={{ color: dark ? "rgba(255,255,255,0.88)" : "#1e293b", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
               </div>
             )}
           </Link>
-          {/* Logout button */}
-          {!isTablet && (
-            <button onClick={askLogout} title={lang === "vi" ? "Hỏi thoát" : "Logout"} style={{
-              background: "none", border: "none", cursor: "pointer", flexShrink: 0,
-              padding: 5, borderRadius: 7, display: "flex", alignItems: "center",
-              transition: "background .15s",
+        </div>
+
+        <div style={{ padding: isCollapsed ? "4px 8px 14px" : "4px 10px 14px", transition: "padding .28s" }}>
+          <button onClick={askLogout}
+            onMouseEnter={() => setHov("logout")} onMouseLeave={() => setHov(null)}
+            title={isCollapsed ? (lang === "vi" ? "Đăng xuất" : "Logout") : undefined}
+            style={{
+              width: "100%",
+              display: "flex", alignItems: "center",
+              gap: isCollapsed ? 0 : 10,
+              padding: isCollapsed ? "10px" : "9px 12px",
+              justifyContent: isCollapsed ? "center" : "flex-start",
+              borderRadius: 10, border: "none", cursor: "pointer",
+              background: hov === "logout" ? "rgba(239,68,68,0.12)" : "transparent",
+              color: dark ? "rgba(255,150,150,0.75)" : "rgba(220,38,38,0.8)",
+              fontSize: 13.5, fontFamily: "inherit",
+              transition: "all .15s",
             }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.2)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <LogOut size={15} color="rgba(255,200,200,0.6)" />
-            </button>
-          )}
+          >
+            <LogOut size={isCollapsed ? 20 : 17} style={{ flexShrink: 0 }} />
+            {!isCollapsed && (
+              <span style={{ whiteSpace: "nowrap" }}>{lang === "vi" ? "Đăng xuất" : "Logout"}</span>
+            )}
+          </button>
         </div>
       </aside>
 
       {/* ── TOP HEADER BAR ── */}
       <header style={{
         position: "fixed", top: 0,
-        left: isMobile ? 0 : sidebarW,
+        left: 0,
         right: 0,
         height: HEADER_H,
         background: th.cardBg, borderBottom: `1px solid ${th.cardBorder}`,
@@ -494,18 +509,37 @@ function Inner({ children }: { children: React.ReactNode }) {
         zIndex: 90,
         transition: "background .3s, border-color .3s, left .28s",
       }}>
-        {/* Left: logo+name (mobile) or empty space (desktop — sidebar has logo) */}
+        {/* Left: Logo brand area — pill with red bg wrapping icon + text */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-          {isMobile && (
-            <Link href={user?.dashboardPath ?? "/dashboard"} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-              <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={30} height={30}
-                style={{ objectFit: "contain", flexShrink: 0 }} />
-              <span style={{
-                fontWeight: 800, fontSize: 16, letterSpacing: 2,
-                color: "#D0211C",
-              }}>AXIOM</span>
-            </Link>
-          )}
+          <Link href={user?.dashboardPath ?? "/dashboard"}
+            style={{ textDecoration: "none" }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              background: "linear-gradient(135deg, #D0211C, #e63030)",
+              borderRadius: 12,
+              padding: isMobile ? "7px 10px" : "7px 16px 7px 10px",
+              boxShadow: "0 2px 12px rgba(208,33,28,0.4)",
+              transition: "box-shadow .2s, transform .2s",
+            }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 18px rgba(208,33,28,0.55)"
+                ;(e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 12px rgba(208,33,28,0.4)"
+                ;(e.currentTarget as HTMLElement).style.transform = "translateY(0)"
+              }}
+            >
+              <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={26} height={26}
+                style={{ objectFit: "contain", filter: "brightness(0) invert(1)", flexShrink: 0 }} />
+              {!isMobile && (
+                <span style={{
+                  fontWeight: 800, fontSize: 17, letterSpacing: 3,
+                  color: "#fff", whiteSpace: "nowrap",
+                }}>AXIOM</span>
+              )}
+            </div>
+          </Link>
         </div>
 
         {/* Right controls */}
@@ -793,7 +827,7 @@ function Inner({ children }: { children: React.ReactNode }) {
 
       {/* ── MAIN ── */}
       <main style={{
-        marginLeft: isMobile ? 0 : sidebarW,
+        marginLeft: isMobile ? 0 : mainMargin,
         flex: 1,
         paddingTop: HEADER_H,
         // On mobile, add bottom padding for bottom nav

@@ -1,4 +1,6 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.10 — Sequence Diagram: Tính lương tự động
 actor "Accountant" as ACC
 participant "UI /payroll" as UI

@@ -1,9 +1,8 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.13 — State Diagram: Trạng thái đơn nghỉ phép
-skinparam state {
-  BackgroundColor #FEF2F2
-  BorderColor #D0211C
-}
+
 
 [*] --> ChoDuyet : Nhân viên tạo đơn
 ChoDuyet : status = "Chờ duyệt"

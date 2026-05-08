@@ -1,23 +1,114 @@
 # CHƯƠNG 4. THIẾT KẾ HỆ THỐNG
 
-## 4.1 Use Case Diagram
+## 4.1 Use Case
 
-### 4.1.1 Use Case tổng quát
+### 4.1.1 Xác định tác nhân
 
-Sơ đồ Use Case tổng quát thể hiện toàn bộ các chức năng của hệ thống Axiom HRM và mối quan hệ giữa các tác nhân (Actor) với các Use Case tương ứng.
+Hệ thống AXIOM HRM có **6 tác nhân** (Actor) tương đương với 6 vai trò người dùng. Dưới đây là đặc tả chi tiết từng tác nhân:
 
-> **[HÌNH 4.1]** Sơ đồ Use Case Tổng quát — Thể hiện 6 Actor và toàn bộ các Use Case của hệ thống.
+---
 
-### 4.1.2 Danh sách tác nhân
+**Tác nhân 1: Quản trị viên (Admin)**
 
-| Actor | Mô tả |
-|-------|-------|
-| **Admin** | Quản trị viên hệ thống, có toàn quyền |
-| **Director** | Giám đốc, xem báo cáo tổng hợp KPI |
-| **HRManager** | Trưởng phòng nhân sự, quản lý toàn bộ nhân sự |
-| **Manager** | Trưởng phòng bộ phận, duyệt đơn của nhân viên trong phòng |
-| **Accountant** | Kế toán, quản lý lương và phiếu lương |
-| **Employee** | Nhân viên, sử dụng các chức năng cá nhân |
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Tên tác nhân** | Quản trị viên (Admin) |
+| **Vai trò** | Quản trị hệ thống toàn diện (System Administrator) |
+| **Mô tả** | Admin quản trị toàn bộ hệ thống AXIOM HRM. Có quyền tạo/xóa tài khoản, phân quyền vai trò, quản lý nhân viên, hợp đồng, lịch sử công tác và cấu hình tham số lương. |
+| **Quyền hạn** | Truy cập toàn bộ các module. Không thể thao tác trên tài khoản Admin khác. Quyền đổi role bị giới hạn theo ràng buộc thăng/hạ chức. |
+| **Xác thực** | Đăng nhập bằng username/password. Middleware kiểm tra `session.user.role === "Admin"` trước mọi Server Action quản trị. |
+
+*Bảng 4.1 — Đặc tả tác nhân Admin*
+
+---
+
+**Tác nhân 2: Giám đốc (Director)**
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Tên tác nhân** | Giám đốc (Director) |
+| **Vai trò** | Lãnh đạo cấp cao, theo dõi KPI toàn công ty |
+| **Mô tả** | Director xem các chỉ số kinh doanh và nhân sự tổng hợp. Không thực hiện thao tác nghiệp vụ, chỉ xem báo cáo và xuất dữ liệu. |
+| **Quyền hạn** | Xem Dashboard Director (6 biểu đồ Recharts), xuất báo cáo PDF/Excel. Không thể sửa dữ liệu, tạo hồ sơ hay duyệt đơn. |
+| **Xác thực** | Đăng nhập username/password. Middleware kiểm tra `role === "Director"` để chặn quyền ghi. |
+
+*Bảng 4.2 — Đặc tả tác nhân Director*
+
+---
+
+**Tác nhân 3: Trưởng phòng Nhân sự (HRManager)**
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Tên tác nhân** | Trưởng phòng Nhân sự (HRManager) |
+| **Vai trò** | Quản lý toàn bộ nghị vụ nhân sự |
+| **Mô tả** | HRManager quản lý nhân viên, hợp đồng, chấm công, nghỉ phép, công tác và lịch sử công tác. Là đầu mối xử lý các yêu cầu nhân sự trong công ty. |
+| **Quyền hạn** | CRUD nhân viên, hợp đồng; duyệt đơn nghỉ phép và công tác; xem/sửa bảng chấm công; xem dữ liệu toàn bộ nhân viên không phân biệt phòng ban. |
+| **Xác thực** | Đăng nhập username/password. `role === "HRManager"` kiểm tra ở mọi Server Action liên quan nhân sự. |
+
+*Bảng 4.3 — Đặc tả tác nhân HRManager*
+
+---
+
+**Tác nhân 4: Trưởng phòng bộ phận (Manager)**
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Tên tác nhân** | Trưởng phòng bộ phận (Manager) |
+| **Vai trò** | Quản lý nhân viên trong phòng ban của mình |
+| **Mô tả** | Manager có phạm vi quyền hạn giới hạn trong phòng ban mình phụ trách. Chỉ xem được dữ liệu của nhân viên thuộc phòng của mình. |
+| **Quyền hạn** | Xem bảng chấm công, duyệt đơn nghỉ phép và công tác của nhân viên trong phòng. Không xâm phạm dữ liệu phòng khác. |
+| **Xác thực** | `role === "Manager"`. Mọi query dữ liệu đều được filter thêm `departmentId` của Manager để đảm bảo phân quyền dữ liệu cấp hàng. |
+
+*Bảng 4.4 — Đặc tả tác nhân Manager*
+
+---
+
+**Tác nhân 5: Kế toán (Accountant)**
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Tên tác nhân** | Kế toán (Accountant) |
+| **Vai trò** | Quản lý lương và tài chính nhân sự |
+| **Mô tả** | Accountant chịu trách nhiệm tính lương hàng tháng, xác nhận chi lương và quản lý phiếu lương của toàn bộ nhân viên. |
+| **Quyền hạn** | Tính lương đơn lẻ và hàng loạt, xác nhận chi lương, xem phiếu lương mọi nhân viên, cấu hình tham số lương (cùng Admin), xuất báo cáo lương Excel. |
+| **Xác thực** | `role === "Accountant"`. Payroll Server Actions kiểm tra role trước khi cho phép tính toán hoặc xác nhận. |
+
+*Bảng 4.5 — Đặc tả tác nhân Accountant*
+
+---
+
+**Tác nhân 6: Nhân viên (Employee)**
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Tên tác nhân** | Nhân viên (Employee) |
+| **Vai trò** | Người dùng cuối, sử dụng các chức năng cá nhân |
+| **Mô tả** | Employee sử dụng hệ thống cho các tác vụ hàng ngày: check-in/check-out, gửi đơn nghỉ phép, đăng ký công tác, xem phiếu lương. |
+| **Quyền hạn** | Chỉ xem và thao tác dữ liệu của bản thân. Không xem dữ liệu của nhân viên khác. Mọi route quản trị đều bị Middleware chặn và redirect về dashboard riêng. |
+| **Xác thực** | `role === "Employee"`. API lương và chấm công filter thêm `employeeId` từ session để tránh rò rỉ dữ liệu. |
+
+*Bảng 4.6 — Đặc tả tác nhân Employee*
+
+---
+
+### 4.1.2 Tổng hợp danh sách Use Case
+
+| STT | Mã UC | Tên Use Case | Tác nhân |
+|:---:|:-----:|-------------|----------|
+| 1 | UC-01 | Xác thực (Đăng nhập / Đăng xuất / Quên mật khẩu) | Tất cả |
+| 2 | UC-02 | Quản lý Nhân viên | Admin, HRManager |
+| 3 | UC-03 | Quản lý Hợp đồng lao động | Admin, HRManager |
+| 4 | UC-04 | Chấm công GPS | Employee, HRManager, Manager |
+| 5 | UC-05 | Nghỉ phép | Employee, HRManager, Manager |
+| 6 | UC-06 | Tính lương | Accountant, Admin |
+| 7 | UC-07 | Phiếu lương | Employee, Accountant |
+| 8 | UC-08 | Công tác phí | Employee, HRManager |
+| 9 | UC-09 | Quá trình công tác (Career History) | Admin, HRManager |
+| 10 | UC-10 | Quản lý Tài khoản & Phân quyền (RBAC) | Admin |
+| 11 | UC-11 | Dashboard & Báo cáo | Director, HRManager, Accountant |
+
+*Bảng 4.7 — Tổng hợp danh sách Use Case của hệ thống*
 
 ### 4.1.3 Use Case chi tiết theo phân hệ
 
@@ -208,28 +299,6 @@ Sơ đồ lớp thể hiện cấu trúc các đối tượng trong hệ thống
 | **Payroll** | id, employeeId, payMonth, payYear, workDays, otHours, baseSalary, allowance, otPay, grossSalary, bhxh, bhyt, bhtn, pit, netSalary, status | calculate(), confirmPayment() |
 | **Payslip** | id, payrollId, employeeId, issuedDate, pdfPath, isViewed | create(), markViewed(), exportPDF() |
 
----
 
-## 4.3 ERD (Entity Relationship Diagram)
 
-Sơ đồ ERD thể hiện các thực thể và mối quan hệ giữa chúng trong cơ sở dữ liệu hệ thống Axiom HRM.
-
-> **[HÌNH 4.14]** Sơ đồ ERD — Entity Relationship Diagram thể hiện 13 bảng chính với đầy đủ khóa chính, khóa ngoại và các ràng buộc.
-
-### Các mối quan hệ chính trong ERD
-
-| Quan hệ | Loại | Mô tả |
-|---------|------|-------|
-| Employee — User | 1:1 (optional) | Một nhân viên có thể có 1 tài khoản đăng nhập |
-| Employee — Department | N:1 | Nhiều nhân viên thuộc 1 phòng ban |
-| Employee — Position | N:1 | Nhiều nhân viên có thể cùng chức vụ |
-| Employee — Contract | 1:N | Một nhân viên có nhiều hợp đồng (theo thời gian) |
-| Employee — CareerHistory | 1:N | Một nhân viên có nhiều sự kiện công tác |
-| Employee — Attendance | 1:N | Một nhân viên có nhiều bản ghi chấm công |
-| Employee — LeaveRequest | 1:N | Một nhân viên có nhiều đơn nghỉ phép |
-| Employee — LeaveBalance | 1:N | Một nhân viên có nhiều quỹ phép theo loại/năm |
-| Employee — BusinessTrip | 1:N | Một nhân viên có nhiều chuyến công tác |
-| Employee — Payroll | 1:N | Một nhân viên có nhiều kỳ lương |
-| Payroll — Payslip | 1:1 | Mỗi kỳ lương tương ứng 1 phiếu lương |
-| User — BusinessTrip (approver) | 1:N | Một người duyệt có thể duyệt nhiều chuyến công tác |
 

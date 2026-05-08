@@ -1,4 +1,6 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.3 — Activity Diagram: Check-in GPS
 start
 :Nhân viên vào /attendance/check-in;

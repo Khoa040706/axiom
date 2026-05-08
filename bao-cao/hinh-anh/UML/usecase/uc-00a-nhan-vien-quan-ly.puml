@@ -1,0 +1,87 @@
+@startuml uc-00a-nhan-vien-quan-ly
+title Hình 4.1a — Use Case Tổng quát (Phần 1)\nNhân viên · Manager · Director
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+skinparam packageStyle rectangle
+skinparam linetype ortho
+left to right direction
+
+actor "Employee\n(Nhân viên)" as EMP
+actor "Manager\n(Trưởng phòng)" as MGR
+actor "Director\n(Giám đốc)" as DIR
+
+rectangle "Axiom HRM — Phần 1" {
+
+  package "Xác thực" {
+    usecase "Đăng nhập" as UC_LOGIN
+    usecase "Đăng xuất" as UC_LOGOUT
+    usecase "Quên mật khẩu" as UC_FORGOT
+  }
+
+  package "Chấm công" {
+    usecase "Check-in GPS" as UC_CHECKIN
+    usecase "Check-out" as UC_CHECKOUT
+    usecase "Xem bảng chấm công" as UC_ATT_VIEW
+  }
+
+  package "Nghỉ phép" {
+    usecase "Đăng ký nghỉ phép" as UC_LEAVE_REQ
+    usecase "Duyệt nghỉ phép" as UC_LEAVE_APR
+    usecase "Xem quỹ phép" as UC_LEAVE_BAL
+  }
+
+  package "Công tác phí" {
+    usecase "Đăng ký công tác" as UC_TRIP_REQ
+    usecase "Duyệt công tác" as UC_TRIP_APR
+  }
+
+  package "Phiếu lương" {
+    usecase "Xem phiếu lương" as UC_SLIP_VIEW
+    usecase "Tải PDF phiếu lương" as UC_SLIP_PDF
+  }
+
+  package "Dashboard" {
+    usecase "Dashboard Director" as UC_DASH_DIR
+    usecase "Dashboard Manager" as UC_DASH_MGR
+    usecase "Xuất PDF / Excel" as UC_EXPORT_DIR
+  }
+}
+
+' Auth
+EMP --> UC_LOGIN
+MGR --> UC_LOGIN
+DIR --> UC_LOGIN
+EMP --> UC_LOGOUT
+MGR --> UC_LOGOUT
+DIR --> UC_LOGOUT
+EMP --> UC_FORGOT
+MGR --> UC_FORGOT
+
+' Attendance
+EMP --> UC_CHECKIN
+EMP --> UC_CHECKOUT
+EMP --> UC_ATT_VIEW
+MGR --> UC_ATT_VIEW
+
+' Leave
+EMP --> UC_LEAVE_REQ
+EMP --> UC_LEAVE_BAL
+MGR --> UC_LEAVE_APR
+
+' Business trip
+EMP --> UC_TRIP_REQ
+MGR --> UC_TRIP_APR
+
+' Payslip
+EMP --> UC_SLIP_VIEW
+EMP --> UC_SLIP_PDF
+
+' Dashboard
+DIR --> UC_DASH_DIR
+MGR --> UC_DASH_MGR
+DIR --> UC_EXPORT_DIR
+
+@enduml

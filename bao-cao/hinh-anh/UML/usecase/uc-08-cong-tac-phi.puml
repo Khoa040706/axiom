@@ -1,12 +1,8 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 4.9 — Sơ đồ Use Case UC-08\nPhân hệ Công tác phí
-skinparam usecase {
-  BackgroundColor #FEF2F2
-  BorderColor #D0211C
-  ArrowColor #D0211C
-  ActorBorderColor #991414
-  ActorFontStyle Bold
-}
+
 skinparam packageStyle rectangle
 left to right direction
 

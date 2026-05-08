@@ -1,12 +1,8 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 4.3 — Sơ đồ Use Case UC-02\nPhân hệ Quản lý nhân viên
-skinparam usecase {
-  BackgroundColor #FEF2F2
-  BorderColor #D0211C
-  ArrowColor #D0211C
-  ActorBorderColor #991414
-  ActorFontStyle Bold
-}
+
 skinparam packageStyle rectangle
 left to right direction
 
@@ -17,7 +13,7 @@ rectangle "UC-02 — Phân hệ Quản lý nhân viên" {
   usecase "UC-02.1\nXem danh sách\nnhân viên" as UC1
   usecase "UC-02.2\nThêm nhân viên\nmới" as UC2
   usecase "UC-02.3\nSửa thông tin\nnhân viên" as UC3
-  usecase "UC-02.4\nXóa mềm\nnhân viên" as UC4
+  usecase "UC-02.4\nCho nhân viên\nnghỉ việc" as UC4
   usecase "UC-02.5\nKhôi phục\nnhân viên" as UC5
 
   usecase "Validate\nZod schema" as INC1
@@ -40,14 +36,14 @@ UC1 ..> INC2 : <<include>>
 UC2 ..> INC1 : <<include>>
 UC3 ..> INC1 : <<include>>
 
-note bottom of UC2
+note right of UC2
   Dữ liệu không hợp lệ
   → hiển thị lỗi validation
 end note
 
-note bottom of UC4
-  Soft delete:
-  status → "Đã nghỉ"
+note right of UC4
+  Không xóa khỏi CSDL,
+  chuyển trạng thái → "Đã nghỉ"
 end note
 
 @enduml

@@ -10,186 +10,245 @@ Chương này trình bày thiết kế xử lý của hệ thống Axiom HRM th�
 
 ## 6.1 Activity Diagram
 
-Activity Diagram mô tả luồng hoạt động của các nghiệp vụ chính trong hệ thống. Mỗi sơ đồ thể hiện rõ điểm bắt đầu, điểm kết thúc, các hoạt động tuần tự và các nhánh quyết định (decision node).
+Activity Diagram mô tả luồng hoạt động của các nghiệp vụ chính trong hệ thống. Mỗi sơ đồ thể hiện rõ điểm bắt đầu, điểm kết thúc, các hoạt động tuần tự và các nhánh quyết định (decision node). Kèm theo mỗi sơ đồ là **bảng điểm quyết định** liệt kê tất cả các nhánh rẽ trong luồng.
 
 ### 6.1.1 Activity Diagram — Đăng nhập
 
 > **[Hình 6.1]** Activity Diagram — Luồng đăng nhập hệ thống
 
-**Giải thích:** Người dùng truy cập trang `/login` và nhập mã đăng nhập cùng mật khẩu. Hệ thống gửi thông tin đến NextAuth để xác thực thông qua Credentials Provider. NextAuth truy vấn database lấy bản ghi User, sau đó dùng `bcrypt.compare()` để kiểm tra mật khẩu. Nếu đúng, JWT session được tạo với thông tin role và `dashboardPath`; trình duyệt được redirect về dashboard tương ứng với vai trò. Nếu sai, hiển thị thông báo lỗi và yêu cầu nhập lại — không có cơ chế khóa tài khoản sau N lần sai.
+**Mô tả luồng:** Người dùng truy cập `/login`, nhập username và password. NextAuth xác thực bằng `bcrypt.compare()`. Nếu hợp lệ và tài khoản không bị khóa, JWT session được tạo. Hệ thống kiểm tra `personalEmail` — nếu chưa có thì bắt buộc thiết lập Gmail trước khi vào dashboard. Cuối cùng, redirect về dashboard tương ứng với role.
+
+#### Bảng 6.1 — Điểm quyết định: Đăng nhập
+
+| # | Điều kiện | Nhánh Đúng | Nhánh Sai |
+|---|-----------|------------|-----------|
+| D1 | Thông tin hợp lệ? (bcrypt compare) | Tiếp tục kiểm tra D2 | Hiển thị thông báo lỗi → Kết thúc |
+| D2 | Tài khoản bị khóa? (isActive=false) | Báo lỗi "Tài khoản bị khóa" → Kết thúc | Tạo JWT session → Tiếp tục D3 |
+| D3 | Có personalEmail? | Redirect theo role (D4) | Redirect `/setup-email` → Nhập Gmail → Lưu → D4 |
+| D4 | Role = ? (switch 5 nhánh) | Admin/Director → `/dashboard`; HRManager → `/dashboard-hr`; Manager → `/dashboard-manager`; Accountant → `/dashboard-accountant`; Employee → `/dashboard-employee` | — |
+
+---
 
 ### 6.1.2 Activity Diagram — Đăng xuất
 
 > **[Hình 6.2]** Activity Diagram — Luồng đăng xuất hệ thống
 
-**Giải thích:** Người dùng nhấn nút Đăng xuất từ menu avatar. Hệ thống hiển thị modal xác nhận để tránh đăng xuất nhầm. Sau khi xác nhận, `signOut()` của NextAuth được gọi, JWT session bị hủy phía server. Trình duyệt được redirect về `/login`. Middleware sẽ chặn mọi request tiếp theo từ client này cho đến khi đăng nhập lại.
+**Mô tả luồng:** Người dùng nhấn avatar → chọn "Đăng xuất" → modal xác nhận hiện ra. Nếu xác nhận, `signOut()` của NextAuth được gọi để hủy JWT session, xóa localStorage và redirect về `/login`. Nếu hủy, modal đóng lại.
+
+#### Bảng 6.2 — Điểm quyết định: Đăng xuất
+
+| # | Điều kiện | Nhánh Đúng | Nhánh Sai |
+|---|-----------|------------|-----------|
+| D1 | Xác nhận đăng xuất? | NextAuth `signOut()` → Xóa localStorage → Redirect `/login` | Đóng modal → Quay lại trang hiện tại |
+
+---
 
 ### 6.1.3 Activity Diagram — Chấm công Check-in GPS
 
 > **[Hình 6.3]** Activity Diagram — Luồng chấm công Check-in GPS
 
-**Giải thích:** Đây là luồng phức tạp nhất trong module chấm công. Khi nhân viên mở trang check-in, trình duyệt gọi `navigator.geolocation.getCurrentPosition()` để lấy tọa độ GPS. Nếu người dùng từ chối quyền GPS, nút check-in bị khóa vĩnh viễn và hiển thị thông báo lỗi. Nếu cho phép, hệ thống dùng công thức Haversine để tính khoảng cách (mét) từ vị trí hiện tại đến tọa độ văn phòng. Nếu khoảng cách vượt quá 500m, nút check-in bị vô hiệu hóa và badge "Ngoài khu vực" được hiển thị. Khi đủ điều kiện và nhân viên nhấn Check-in, Server Action ghi timestamp hiện tại vào trường `checkIn`, tính `lateMinutes = max(0, checkInTime - 07:30)`, cập nhật `status` thành "Đi làm" hoặc "Đi muộn", và khởi động bộ đếm thời gian trên giao diện.
+**Mô tả luồng:** Nhân viên mở trang check-in, trình duyệt xin quyền GPS. Nếu được phép, hệ thống tính khoảng cách đến văn phòng bằng Haversine. Chỉ khi ≤ 500m và chưa check-in hôm nay thì nút Check-in mới được mở. Sau khi check-in, hệ thống tính `lateMinutes` so với 07:30 và bắt đầu timer đếm giờ.
+
+#### Bảng 6.3 — Điểm quyết định: Check-in GPS
+
+| # | Điều kiện | Nhánh Đúng | Nhánh Sai |
+|---|-----------|------------|-----------|
+| D1 | Cho phép GPS? | Lấy tọa độ (lat, lng) → Tiếp tục D2 | Hiển thị "Bạn đã từ chối quyền GPS" → Khóa nút → Kết thúc |
+| D2 | Khoảng cách ≤ 500m? | Badge xanh "Trong khu vực" → Mở nút → Tiếp tục D3 | Badge đỏ "Ngoài khu vực (~Xm)" → Khóa nút → Kết thúc |
+| D3 | Đã check-in hôm nay? | Hiển thị timer đang làm → Kết thúc | Cho phép nhấn Check-in → Ghi timestamp → D4 |
+| D4 | lateMinutes > 0? | status = "Đi muộn" | status = "Đúng giờ" |
+
+---
 
 ### 6.1.4 Activity Diagram — Check-out
 
 > **[Hình 6.4]** Activity Diagram — Luồng chấm công Check-out
 
-**Giải thích:** Nhân viên đã check-in trong ngày nhấn nút Check-out. Hệ thống ghi timestamp vào trường `checkOut`, sau đó tính tổng thời gian làm việc thực tế: nếu ca làm việc vượt qua khung nghỉ trưa 11:30–13:00, trừ đi 90 phút. Kết quả `otHours` được tính nếu tổng giờ làm vượt 8 tiếng. Bộ đếm thời gian trên giao diện dừng lại và hiển thị tổng giờ đã làm.
+**Mô tả luồng:** Nhân viên nhấn Check-out. Hệ thống ghi `checkOut` timestamp, tính `netHours = (checkOut − checkIn) − 90 phút nghỉ trưa`. Nếu giờ làm > 8h thì tính OT. Cập nhật bản ghi Attendance và hiển thị tổng giờ.
+
+#### Bảng 6.4 — Điểm quyết định: Check-out
+
+| # | Điều kiện | Nhánh Đúng | Nhánh Sai |
+|---|-----------|------------|-----------|
+| D1 | Đã check-in hôm nay? | Cho phép Check-out → Tiếp tục D2 | Hiển thị lỗi → Kết thúc |
+| D2 | netHours > 8 giờ? | otHours = netHours − 8 | otHours = 0 |
+
+---
 
 ### 6.1.5 Activity Diagram — Đăng ký nghỉ phép
 
 > **[Hình 6.5]** Activity Diagram — Luồng đăng ký đơn nghỉ phép
 
-**Giải thích:** Nhân viên chọn loại nghỉ phép (6 loại: năm, bệnh, việc riêng, thai sản, tang, không lương), chọn ngày bắt đầu và kết thúc, nhập lý do. Hệ thống tự động tính số ngày làm việc thực tế (loại trừ thứ Bảy, Chủ Nhật). Sau khi validation thành công (ngày hợp lệ, không phải cuối tuần), đơn được tạo với trạng thái "Chờ duyệt" và lưu vào database. Nhân viên nhận thông báo xác nhận; Manager/HR nhận task duyệt đơn.
+**Mô tả luồng:** Nhân viên chọn loại nghỉ phép, ngày bắt đầu/kết thúc, nhập lý do. Hệ thống validate ngày và tự động tính `totalDays` (trừ T7, CN). Kiểm tra quỹ phép — nếu đủ thì tạo đơn với status "Chờ duyệt".
+
+#### Bảng 6.5 — Điểm quyết định: Đăng ký nghỉ phép
+
+| # | Điều kiện | Nhánh Đúng | Nhánh Sai |
+|---|-----------|------------|-----------|
+| D1 | Ngày hợp lệ? (startDate ≤ endDate, không quá khứ) | Tính totalDays → Tiếp tục D2 | Hiển thị lỗi ngày → Kết thúc |
+| D2 | Đủ quỹ phép? (LeaveBalance.remaining ≥ totalDays) | Lưu DB: status = "Chờ duyệt" → Thông báo thành công | Cảnh báo "Không đủ quỹ phép" → Kết thúc |
+
+---
 
 ### 6.1.6 Activity Diagram — Duyệt nghỉ phép
 
 > **[Hình 6.6]** Activity Diagram — Luồng duyệt đơn nghỉ phép
 
-**Giải thích:** Manager hoặc HRManager vào trang `/leave` để xem danh sách đơn đang chờ duyệt. Sau khi xem chi tiết, người duyệt chọn "Duyệt" hoặc "Từ chối". Hệ thống gọi `approveLeave(requestId, approverId, approved)`, cập nhật trường `status` và `approverId` trong database. Trạng thái đơn chuyển sang "Đã duyệt" hoặc "Từ chối"; người duyệt nhận toast thông báo thành công.
+**Mô tả luồng:** HR/Manager xem danh sách đơn "Chờ duyệt". Nếu từ chối → cập nhật status. Nếu duyệt → kiểm tra quỹ phép, nếu đủ thì dùng transaction để cập nhật status + trừ `usedDays` trong LeaveBalance.
+
+#### Bảng 6.6 — Điểm quyết định: Duyệt nghỉ phép
+
+| # | Điều kiện | Nhánh Đúng | Nhánh Sai |
+|---|-----------|------------|-----------|
+| D1 | Quyết định duyệt hay từ chối? | Duyệt → Tiếp tục D2 | Từ chối → Cập nhật status = "Từ chối" → Kết thúc |
+| D2 | Quỹ phép đủ? | BEGIN TRANSACTION → status = "Đã duyệt" + trừ usedDays → COMMIT | Trả lỗi "Không thể duyệt" → Kết thúc |
+
+---
 
 ### 6.1.7 Activity Diagram — Tính lương tự động
 
 > **[Hình 6.7]** Activity Diagram — Luồng tính lương tự động hàng tháng
 
-**Giải thích:** Kế toán chọn tháng/năm và nhấn "Tính lương tự động". Hệ thống lấy toàn bộ nhân viên đang làm (status "Đang làm" hoặc "Thử việc"). Với mỗi nhân viên, `payrollService.calculate()` được gọi tuần tự: lấy hợp đồng đang hiệu lực, tổng hợp số ngày công từ bảng Attendance, tính OT, tính Gross, tính các khoản khấu trừ bảo hiểm và thuế TNCN lũy tiến 7 bậc, tính Net. Kết quả được upsert vào bảng Payroll (tránh duplicate) và `payslipService.createOrUpdate()` được gọi để tạo phiếu lương. Bất kỳ lỗi nào cho một nhân viên sẽ được ghi log riêng và không ảnh hưởng đến các nhân viên còn lại.
+**Mô tả luồng:** Kế toán chọn tháng/năm → nhấn "Tính lương tự động". Hệ thống lấy danh sách NV active, lặp qua từng người: kiểm tra hợp đồng, tổng hợp chấm công, tính Gross → BH → Thuế TNCN → Net. Kết quả upsert vào Payroll + tạo Payslip. Lỗi từng NV được log riêng, không dừng batch.
+
+#### Bảng 6.7 — Điểm quyết định: Tính lương tự động
+
+| # | Điều kiện | Nhánh Đúng | Nhánh Sai |
+|---|-----------|------------|-----------|
+| D1 | Còn nhân viên trong danh sách? (loop) | Tiếp tục xử lý NV tiếp theo → D2 | Kết thúc loop → Báo cáo "Đã tính X/Y nhân viên" |
+| D2 | NV có hợp đồng hiệu lực? | Lấy chấm công → Tính Gross/BH/Thuế/Net → Upsert Payroll + Payslip | Bỏ qua, ghi log lỗi → Quay lại D1 |
 
 ---
 
 ## 6.2 Sequence Diagram
 
-Sequence Diagram mô tả chi tiết thứ tự các lời gọi giữa các thành phần theo trục thời gian từ trên xuống dưới. Các thành phần bao gồm: người dùng (Actor), giao diện (Page/Component), Server Action, Service layer, Prisma ORM và PostgreSQL Database.
+Sequence Diagram mô tả chi tiết thứ tự các lời gọi giữa các thành phần theo trục thời gian. Kèm theo mỗi sơ đồ là **bảng thành phần tham gia** và **bảng nhánh xử lý** (alt/opt/loop).
 
 ### 6.2.1 Sequence Diagram — Đăng nhập
 
 > **[Hình 6.8]** Sequence Diagram — Luồng xác thực đăng nhập
 
-**Các thành phần:** Browser → LoginPage → NextAuth Credentials → Prisma → PostgreSQL
+#### Bảng 6.8 — Thành phần tham gia: Đăng nhập
 
-**Giải thích:** Người dùng gửi form đăng nhập, `signIn("credentials", { username, password })` được gọi. NextAuth kích hoạt hàm `authorize()` trong `auth.ts` — đây là file chạy trên Node.js runtime (có bcrypt). Hàm này dùng Prisma truy vấn User theo username; nếu tồn tại, `bcrypt.compare()` kiểm tra mật khẩu. Nếu đúng, hàm trả về object user với `role`, `employeeId`, `dashboardPath`; NextAuth mã hóa thông tin này vào JWT cookie. Middleware (`auth.config.ts` — Edge Runtime, không có bcrypt) đọc JWT để kiểm tra quyền truy cập tất cả các request tiếp theo.
+| Thành phần | Loại | Vai trò |
+|-----------|------|---------|
+| Người dùng | Actor | Nhập username & password |
+| Browser | Client | Gửi form, nhận JWT cookie |
+| Middleware | Edge Runtime | Kiểm tra session + phân quyền route |
+| NextAuth | Server (Node.js) | Xác thực credentials, tạo JWT |
+| PostgreSQL | Database | Lưu trữ User records |
 
-```
-Browser     → LoginPage    : Nhập username + password, Submit
-LoginPage   → NextAuth     : signIn("credentials", { username, password })
-NextAuth    → Prisma       : user.findUnique({ where: { username } })
-Prisma      → PostgreSQL   : SELECT * FROM "User" WHERE username = ?
-PostgreSQL  → Prisma       : User record (id, passwordHash, role, ...)
-Prisma      → NextAuth     : User object
-NextAuth    → NextAuth     : bcrypt.compare(password, passwordHash)
-alt Đúng
-  NextAuth  → Browser      : Set-Cookie: next-auth.session-token (JWT)
-  Browser   → Dashboard    : Redirect đến dashboardPath theo role
-else Sai
-  NextAuth  → LoginPage    : Error "Sai thông tin đăng nhập"
-  LoginPage → Browser      : Hiển thị thông báo lỗi
-end
-```
+**Mô tả luồng:** Người dùng gửi form → `signIn("credentials")` gọi `authorize()` trong `auth.ts`. Prisma truy vấn User theo username → `bcrypt.compare()` kiểm tra mật khẩu → nếu đúng, tạo JWT cookie chứa `role`, `employeeId`, `dashboardPath`. Middleware đọc JWT để phân quyền.
+
+#### Bảng 6.9 — Nhánh xử lý: Đăng nhập
+
+| # | Loại | Điều kiện | Xử lý |
+|---|------|-----------|-------|
+| A1 | alt | Sai thông tin (bcrypt mismatch) | NextAuth trả Error → Browser hiển thị lỗi |
+| A2 | alt | Tài khoản bị khóa (isActive=false) | NextAuth trả Error → Browser hiển thị "Tài khoản bị khóa" |
+| A3 | alt | Hợp lệ | Tạo JWT → Set-Cookie → Redirect theo `dashboardPath` |
+
+---
 
 ### 6.2.2 Sequence Diagram — Check-in GPS
 
 > **[Hình 6.9]** Sequence Diagram — Luồng chấm công Check-in GPS
 
-**Các thành phần:** Employee → Browser → GeolocationAPI → CheckInPage → Server Action → Prisma → PostgreSQL
+#### Bảng 6.10 — Thành phần tham gia: Check-in GPS
 
-**Giải thích:** Sau khi trang check-in tải xong, `useEffect` kích hoạt việc gọi `navigator.geolocation.getCurrentPosition()`. Tọa độ trả về được xử lý client-side bằng hàm `haversineM()` để tính khoảng cách đến văn phòng. Chỉ khi khoảng cách ≤ 500m và nhân viên nhấn nút, Server Action `doCheckIn()` được gọi. Prisma thực hiện `upsert` để tránh duplicate record cùng ngày (UNIQUE constraint trên `employeeId + workDate`). Kết quả trả về bao gồm thời gian check-in và số phút đi muộn để hiển thị trên giao diện.
+| Thành phần | Loại | Vai trò |
+|-----------|------|---------|
+| Employee | Actor | Mở trang check-in, nhấn nút |
+| Browser | Client | Xin quyền GPS, tính Haversine |
+| Geolocation API | Web API | Cung cấp tọa độ GPS thiết bị |
+| Next.js API | Server Action | Xử lý `doCheckIn()`, ghi DB |
+| PostgreSQL | Database | Lưu bản ghi Attendance |
 
-```
-Employee    → Browser         : Mở /attendance/check-in
-Browser     → GeolocationAPI  : getCurrentPosition()
-alt Từ chối GPS
-  GeolocationAPI → Browser   : Error PermissionDenied
-  Browser   → Employee       : "Bạn đã từ chối quyền GPS" + Khóa nút
-else Chấp nhận GPS
-  GeolocationAPI → Browser   : { latitude, longitude }
-  Browser   → Browser        : haversineM(lat, lng, OFFICE_LAT, OFFICE_LNG) → dist
-  alt dist > 500m
-    Browser → Employee       : Badge "Ngoài khu vực (~Xm)" + Khóa nút
-  else dist ≤ 500m
-    Browser → Employee       : Badge "Trong khu vực (~Xm)" + Mở nút
-    Employee → CheckInPage   : Click "Check-in"
-    CheckInPage → ServerAction : doCheckIn(employeeId)
-    ServerAction → Prisma    : attendance.upsert({ checkIn: now(), lateMinutes })
-    Prisma → PostgreSQL      : INSERT/UPDATE attendance
-    PostgreSQL → Prisma      : Updated record
-    Prisma → ServerAction    : { id, checkIn, status, lateMinutes }
-    ServerAction → CheckInPage : { success: true, data }
-    CheckInPage → Employee   : Toast "Check-in thành công lúc HH:MM"
-    CheckInPage → Employee   : Khởi động timer đếm giờ
-  end
-end
-```
+**Mô tả luồng:** Trang check-in gọi `getCurrentPosition()`. Browser tính khoảng cách bằng Haversine. Chỉ khi ≤ 500m, Server Action `doCheckIn()` được gọi → Prisma `upsert` Attendance (tránh duplicate cùng ngày) → tính `lateMinutes` → trả kết quả về UI.
+
+#### Bảng 6.11 — Nhánh xử lý: Check-in GPS
+
+| # | Loại | Điều kiện | Xử lý |
+|---|------|-----------|-------|
+| A1 | alt | Từ chối quyền GPS | Error PermissionDenied → Khóa nút check-in |
+| A2 | alt (nested) | Khoảng cách > 500m | Badge đỏ "Ngoài khu vực" → Khóa nút |
+| A3 | alt (nested) | Khoảng cách ≤ 500m | Badge xanh → Mở nút → Cho phép check-in → Ghi DB → Timer |
+
+---
 
 ### 6.2.3 Sequence Diagram — Tính lương tự động
 
 > **[Hình 6.10]** Sequence Diagram — Luồng tính lương hàng loạt
 
-**Các thành phần:** Accountant → PayrollPage → ServerAction → PayrollService → Prisma → PostgreSQL
+#### Bảng 6.12 — Thành phần tham gia: Tính lương
 
-**Giải thích:** `calculatePayrollBatch()` được thiết kế để tính lương cho tất cả nhân viên active trong một lần gọi. Hệ thống dùng vòng lặp `for...of` (không phải `Promise.all`) để tránh quá tải database. Với mỗi nhân viên, `payrollService.calculate()` truy vấn hợp đồng hiệu lực, tổng hợp attendance tháng đó, thực hiện toàn bộ phép tính lương và upsert kết quả. Lỗi từng nhân viên được bắt bằng `try/catch` riêng, không làm dừng batch. Kết quả cuối trả về số lượng thành công/thất bại.
+| Thành phần | Loại | Vai trò |
+|-----------|------|---------|
+| Accountant | Actor | Chọn tháng/năm, nhấn "Tính lương" |
+| UI /payroll | Client | Giao diện quản lý lương |
+| PayrollService | Service | Tính Gross/BH/Thuế/Net cho từng NV |
+| PostgreSQL | Database | Lưu Payroll + Payslip |
 
-```
-Accountant  → PayrollPage    : Chọn tháng/năm, nhấn "Tính lương tự động"
-PayrollPage → ServerAction   : calculatePayrollBatch(month, year)
-ServerAction → Prisma        : employee.findMany({ status: in ["Đang làm","Thử việc"] })
-Prisma → PostgreSQL          : SELECT employees
-PostgreSQL → Prisma          : [emp1, emp2, ...]
-loop Với mỗi nhân viên
-  ServerAction → PayrollService : calculate(empId, month, year)
-  PayrollService → Prisma    : contract.findFirst({ status: "Hiệu lực" })
-  PayrollService → Prisma    : attendance.findMany({ month, year, empId })
-  PayrollService → PayrollService : tính Gross, BHXH, thuế TNCN, Net
-  PayrollService → Prisma    : payroll.upsert(result)
-  PayrollService → Prisma    : payslip.upsert({ payrollId })
-end
-ServerAction → PayrollPage   : { success: true, message: "Đã tính X/Y nhân viên" }
-PayrollPage → Accountant     : Toast thông báo kết quả
-```
+**Mô tả luồng:** `calculatePayrollBatch()` dùng `for...of` (tuần tự, không `Promise.all`) lặp qua từng NV active. Với mỗi NV: lấy hợp đồng → lấy chấm công → tính toàn bộ → `upsert` Payroll + Payslip. Lỗi từng NV được `try/catch` riêng.
+
+#### Bảng 6.13 — Nhánh xử lý: Tính lương
+
+| # | Loại | Điều kiện | Xử lý |
+|---|------|-----------|-------|
+| L1 | loop | Từng nhân viên trong danh sách | Gọi `calculate()` tuần tự |
+| A1 | alt (trong loop) | NV không có hợp đồng hiệu lực | Ghi log lỗi → Bỏ qua, tiếp tục NV kế |
+| A2 | alt (trong loop) | NV có hợp đồng | Tính Gross → BH → Thuế TNCN → Net → Upsert Payroll + Payslip |
+
+---
 
 ### 6.2.4 Sequence Diagram — Duyệt đơn nghỉ phép
 
 > **[Hình 6.11]** Sequence Diagram — Luồng duyệt đơn nghỉ phép
 
-**Các thành phần:** Manager → LeavePage → ServerAction → Prisma → PostgreSQL
+#### Bảng 6.14 — Thành phần tham gia: Duyệt nghỉ phép
 
-**Giải thích:** Manager truy cập trang `/leave` và xem danh sách đơn ở tab "Chờ duyệt". Sau khi nhấn Duyệt hoặc Từ chối cho một đơn, `approveLeave(requestId, approverId, approved)` được gọi. Server Action cập nhật `status` và `approverId` trong database. Phân quyền được đảm bảo ở cả frontend (chỉ hiển thị nút cho Manager+) và backend (Server Action kiểm tra session role).
+| Thành phần | Loại | Vai trò |
+|-----------|------|---------|
+| HR/Manager | Actor | Xem đơn, nhấn Duyệt/Từ chối |
+| UI /leave | Client | Giao diện quản lý nghỉ phép |
+| LeaveService | Service | Xử lý `approveLeave()` + kiểm tra quỹ phép |
+| PostgreSQL | Database | Cập nhật LeaveRequest + LeaveBalance |
 
-```
-Manager     → LeavePage      : Mở /leave, tab "Chờ duyệt"
-LeavePage   → ServerAction   : getLeaveRequests({ status: "Chờ duyệt" })
-ServerAction → Prisma        : leaveRequest.findMany(filter)
-Prisma → LeavePage           : Danh sách đơn nghỉ phép
-Manager     → LeavePage      : Click "Duyệt" / "Từ chối" cho đơn ID=X
-LeavePage   → ServerAction   : approveLeave(X, managerId, approved=true/false)
-ServerAction → Prisma        : leaveRequest.update({ status, approverId })
-Prisma → PostgreSQL          : UPDATE leaveRequest SET status=... WHERE id=X
-PostgreSQL → Prisma          : Updated record
-Prisma → ServerAction        : Updated leaveRequest
-ServerAction → LeavePage     : { success: true }
-LeavePage → Manager          : Toast "Đã duyệt / Từ chối đơn nghỉ phép"
-```
+**Mô tả luồng:** Manager xem danh sách đơn "Chờ duyệt" → nhấn Duyệt → Server kiểm tra `LeaveBalance` → nếu đủ quỹ phép: `BEGIN TRANSACTION` → cập nhật status + trừ `usedDays` → `COMMIT`. Phân quyền được kiểm tra cả frontend lẫn backend.
+
+#### Bảng 6.15 — Nhánh xử lý: Duyệt nghỉ phép
+
+| # | Loại | Điều kiện | Xử lý |
+|---|------|-----------|-------|
+| A1 | alt | Không đủ quỹ phép | Error → Hiển thị lỗi "Không đủ quỹ phép" |
+| A2 | alt | Đủ quỹ phép | Transaction: UPDATE status='Đã duyệt' + UPDATE usedDays → COMMIT |
+
+---
 
 ### 6.2.5 Sequence Diagram — Xuất phiếu lương PDF
 
 > **[Hình 6.12]** Sequence Diagram — Luồng xuất phiếu lương PDF
 
-**Các thành phần:** Employee → PayslipPage → API Route → Prisma → jsPDF → Browser
+#### Bảng 6.16 — Thành phần tham gia: Xuất PDF
 
-**Giải thích:** Nhân viên nhấn nút "Tải PDF" trên trang phiếu lương. Client gọi `fetch()` đến API route `/api/export/payslip-pdf/[id]`. Server truy vấn đầy đủ thông tin payslip kèm payroll và employee. jsPDF tạo file PDF với layout chuyên nghiệp (thông tin nhân viên, bảng lương chi tiết, chữ ký). Response trả về blob PDF với header `Content-Disposition: attachment`, trình duyệt tự động tải file về.
+| Thành phần | Loại | Vai trò |
+|-----------|------|---------|
+| Employee | Actor | Xem phiếu lương, nhấn "Tải PDF" |
+| UI /payslips | Client | Hiển thị chi tiết phiếu lương |
+| API Route | Server | Endpoint `/api/export/payslip-pdf` |
+| PayslipService | Service | Truy vấn dữ liệu + tạo PDF |
+| PostgreSQL | Database | Lưu Payslip + Payroll + Employee |
 
-```
-Employee    → PayslipPage    : Click "Tải PDF" (payslipId=X, lang="vi")
-PayslipPage → APIRoute       : GET /api/export/payslip-pdf/X?lang=vi
-APIRoute    → Prisma         : payslip.findUnique({ id: X, include: [payroll, employee] })
-Prisma → PostgreSQL          : SELECT payslip JOIN payroll JOIN employee
-PostgreSQL → Prisma          : Dữ liệu đầy đủ
-Prisma → APIRoute            : Payslip object
-APIRoute    → jsPDF          : new jsPDF() → build layout
-APIRoute    → APIRoute       : Điền thông tin NV, bảng lương, khấu trừ, Net
-APIRoute    → Employee       : Response blob PDF (Content-Disposition: attachment)
-Employee    → Browser        : Download "PhieuLuong_[code]_[month]-[year].pdf"
-```
+**Mô tả luồng:** Nhân viên nhấn "Tải PDF" → `fetch()` gọi API Route → Server truy vấn Payslip + Payroll + Employee → jsPDF tạo PDF (header, bảng lương, chữ ký) → Response blob PDF (`Content-Disposition: attachment`) → Browser tải file.
 
----
+#### Bảng 6.17 — Nhánh xử lý: Xuất PDF
+
+| # | Loại | Điều kiện | Xử lý |
+|---|------|-----------|-------|
+| A1 | opt | Payslip không tồn tại | Trả Error 404 → Hiển thị "Chưa có dữ liệu lương" |
+| A2 | opt | markViewed | Khi mở phiếu lương → UPDATE `isViewed = true` |
+
+
 
 ## 6.3 State Diagram
 

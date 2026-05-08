@@ -1,9 +1,8 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.16 — State Diagram: Trạng thái đơn công tác phí
-skinparam state {
-  BackgroundColor #FEF2F2
-  BorderColor #D0211C
-}
+
 
 [*] --> ChoXuLy : Nhân viên tạo đề xuất
 ChoXuLy : status = "Chờ duyệt"

@@ -1,9 +1,8 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.15 — State Diagram: Trạng thái chấm công
-skinparam state {
-  BackgroundColor #FEF2F2
-  BorderColor #D0211C
-}
+
 
 [*] --> ChuaCheckIn : Đầu ngày làm việc
 ChuaCheckIn : Chưa ghi nhận\ncheck-in

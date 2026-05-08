@@ -4,37 +4,105 @@
 
 ### 7.1.1 Design System
 
+Axiom HRM được xây dựng trên một hệ thống thiết kế (Design System) thống nhất nhằm đảm bảo tính nhất quán về màu sắc, typography, spacing và các thành phần UI trên toàn bộ ứng dụng. Design System bao gồm hai phần chính: **Bảng màu (Color Palette)** và **Bộ thành phần UI (UI Components)**.
+
 | Thành phần | Giá trị |
 |-----------|---------|
-| **Màu chủ đạo** | #D0211C (đỏ Axiom) |
+| **Phiên bản** | Axiom HRM v2.0 |
+| **Màu chủ đạo** | #D9211C (Primary Red) |
 | **Font chữ** | Inter, system-ui, sans-serif |
-| **Border radius** | 8px (card), 20px (badge) |
-| **Chế độ** | Light Mode + Dark Mode |
+| **Border radius** | 8px (card, input), 20px (badge, pill) |
+| **Chế độ** | Light Mode + Dark Mode (toggle real-time) |
 | **Ngôn ngữ** | Tiếng Việt (mặc định) + Tiếng Anh |
-| **Responsive** | Mobile (320px+), Tablet, Desktop |
+| **Responsive** | Mobile (320px+), Tablet (768px+), Desktop (1280px+) |
 
-### Bảng 7.1 — Bảng màu hệ thống
+---
 
-| Màu | Hex | Sử dụng |
-|-----|-----|---------|
-| Primary Red | #D0211C | Sidebar, nút chính, accent |
-| Success Green | #10B981 | Trạng thái thành công, lương Net |
-| Warning Amber | #F59E0B | Trạng thái chờ duyệt, cảnh báo |
-| Error Red | #EF4444 | Lỗi, từ chối |
-| Info Blue | #3B82F6 | Thông tin, link |
-| Dark bg | #0F172A | Nền dark mode |
-| Light bg | #F8FAFC | Nền light mode |
+### Bảng 7.1 — Bảng màu hệ thống (Color Palette)
 
-### Bảng 7.2 — Quy ước giao diện
+> **[HÌNH 7.1]** Color Palette — Axiom HRM Design System v1.0
+>
+> Mô tả: Bảng màu chính thức gồm 7 màu nền tảng với hex code và hướng dẫn sử dụng, kèm thang màu tint 5 mức (100%→20%) cho màu Primary Red.
+
+| Token | Màu | Hex | Ứng dụng |
+|-------|-----|-----|-----------|
+| **Primary Red** | 🔴 | `#D9211C` | Sidebar, nút chính (Filled·Primary), logo Axiom, accent toàn hệ thống |
+| **Success** | 🟢 | `#168961` | Nút duyệt (Filled·Success), badge "Đang làm", badge "Đã duyệt", lương Net |
+| **Warning** | 🟡 | `#F59E0B` | Badge "Chờ duyệt", cảnh báo hợp đồng sắp hết hạn, trạng thái Pending |
+| **Error** | 🔴 | `#EF4444` | Nút từ chối (Outline·Danger), badge "Từ chối", thông báo lỗi |
+| **Info** | 🔵 | `#3B82F6` | Link, nút chỉnh sửa, thông tin bổ sung |
+| **Dark** | ⚫ | `#0F172A` | Nền dark mode, text heading H1 |
+| **Light** | ⚪ | `#F8FAFC` | Nền light mode, background card |
+
+**Thang màu Primary Red (Tint Scale):**
+
+| Mức | Hex tương đương | Ứng dụng |
+|-----|----------------|----------|
+| 100% | `#D9211C` | Màu gốc — sidebar, nút chính |
+| 80% | ~`#E04D4A` | Hover state của nút primary |
+| 60% | ~`#E87876` | Active state, highlight |
+| 40% | ~`#F0A4A2` | Nền badge trạng thái nhạt |
+| 20% | ~`#F8D1D1` | Nền highlight row, tooltip |
+
+---
+
+### Bảng 7.2 — Bộ thành phần UI (UI Components)
+
+> **[HÌNH 7.2]** Design System — Axiom HRM UI Components Reference
+>
+> Mô tả: Tài liệu tham chiếu thành phần UI gồm 4 nhóm: Typography (H1/H2/Body/Caption), Buttons (Filled/Outline/Ghost), Status Badges (6 trạng thái), và Inputs (Text Input/Dropdown/Toggle).
+
+#### Typography
+
+| Cấp | Kích thước | Độ đậm | Màu | Ứng dụng |
+|-----|-----------|--------|-----|----------|
+| **H1** | 24px | Bold | `#0F172A` | Tiêu đề trang (Dashboard Nhân sự) |
+| **H2** | 18px | SemiBold | `#1E3B5B` | Tiêu đề section (Quản lý nhân viên) |
+| **Body** | 14px | Regular | `#4738BB` | Nội dung chính (Dữ liệu cập nhật theo thời gian thực) |
+| **Caption** | 12px | Regular | `#94A3BB` | Ghi chú, metadata, ngày tháng |
+
+#### Buttons
+
+| Variant | Màu nền | Ví dụ | Ứng dụng |
+|---------|---------|-------|----------|
+| **Filled · Primary** | `#D9211C` | Đăng nhập | Hành động chính, submit form |
+| **Filled · Success** | `#168961` | Phê duyệt | Xác nhận, duyệt đơn |
+| **Outline · Danger** | Viền `#EF4444` | Từ chối | Hủy, từ chối, xóa |
+| **Ghost · Text link** | Trong suốt | Xem chi tiết | Điều hướng phụ, link |
+
+*Mỗi button có 4 state: Default · Hover · Active · Disabled*
+
+#### Status Badges
+
+| Badge | Màu | Trạng thái tương ứng |
+|-------|-----|----------------------|
+| 🟢 **Đang làm** | Xanh lá (Success) | Active — Confirmed (nhân viên đang làm việc / đơn đã duyệt) |
+| 🔵 **Thử việc** | Xanh dương | Probation — In progress |
+| 🟡 **Chờ duyệt** | Vàng (Warning) | Pending — Awaiting review |
+| 🟣 **Đã duyệt** | Tím | Approved |
+| 🔴 **Từ chối** | Đỏ (Error) | Rejected — Action required |
+| ⚫ **Đã nghỉ** | Xám | Inactive |
+
+#### Inputs
+
+| Thành phần | Đặc tả |
+|-----------|--------|
+| **Text Input** | Border `#E2EBF0`, focus border `#D0211C`, border-radius 8px, placeholder mờ |
+| **Dropdown Select** | Custom chevron icon, cùng focus ring với text input, border-radius 8px |
+| **Toggle Switch** | ON color `#D0211C`, OFF color `#E2EBF0`, thumb shadow, label trạng thái |
+
+---
+
+### Bảng 7.3 — Quy ước giao diện chung
 
 | Thành phần | Mô tả |
 |-----------|-------|
-| **Sidebar** | Cố định bên trái, co lại trên mobile |
-| **Header** | Đồng hồ thời gian thực, toggle ngôn ngữ, dark mode, avatar |
-| **Toast** | Thông báo góc phải dưới, tự biến mất sau 3.5s |
-| **Table** | Phân trang (Pagination), mỗi trang 10-20 dòng |
-| **Modal** | Overlay bán trong suốt, close bằng nút X hoặc click ngoài |
-| **Badge** | Bo tròn, màu theo trạng thái |
+| **Sidebar** | Floating panel bo tròn (20px), mặc định 64px (icon only), hover mở rộng 220px (smooth transition) |
+| **Header** | Đồng hồ thời gian thực, logo Axiom dạng pill đỏ, toggle ngôn ngữ, dark mode, avatar người dùng |
+| **Toast** | Thông báo góc phải dưới, tự biến mất sau 3.5s, màu theo loại (success/error/warning) |
+| **Table** | Phân trang (Pagination), mỗi trang 10–20 dòng, có sort và filter |
+| **Modal** | Overlay bán trong suốt, đóng bằng nút X hoặc click ra ngoài, animation slide-in |
+| **Badge** | Bo tròn (pill), màu nền nhạt + text đậm theo trạng thái, không viền |
 
 ---
 

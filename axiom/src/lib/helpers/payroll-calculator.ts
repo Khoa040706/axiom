@@ -43,16 +43,21 @@ export function calculateInsurance(salaryForInsurance: number): InsuranceResult 
   return { bhxh, bhyt, bhtn, total: bhxh + bhyt + bhtn }
 }
 
-// ── Thuế TNCN lũy tiến 5 bậc (VN 2026) ───────────────────────
-// Nghị quyết 107/2023/QH15 — áp dụng từ 01/01/2026
+// ── Thuế TNCN lũy tiến 7 bậc (VN — Luật Thuế TNCN Điều 22) ──
+// Khớp với TAX_BRACKETS trong constants.ts
 // Dùng công thức nhanh thay vì vòng lặp để tránh sai số làm tròn
+// Bậc 1: ≤ 5tr → 5%   | Bậc 2: 5–10tr → 10%  | Bậc 3: 10–18tr → 15%
+// Bậc 4: 18–32tr → 20% | Bậc 5: 32–52tr → 25% | Bậc 6: 52–80tr → 30%
+// Bậc 7: > 80tr → 35%
 export function calculateIncomeTax(taxableIncome: number): number {
   if (taxableIncome <= 0)             return 0
-  if (taxableIncome <= 10_000_000)    return Math.round(taxableIncome * 0.05)
-  if (taxableIncome <= 30_000_000)    return Math.round(taxableIncome * 0.10 -    500_000)
-  if (taxableIncome <= 60_000_000)    return Math.round(taxableIncome * 0.20  - 3_500_000)
-  if (taxableIncome <= 100_000_000)   return Math.round(taxableIncome * 0.30  - 9_500_000)
-  return                                     Math.round(taxableIncome * 0.35  - 14_500_000)
+  if (taxableIncome <= 5_000_000)     return Math.round(taxableIncome * 0.05)
+  if (taxableIncome <= 10_000_000)    return Math.round(taxableIncome * 0.10 -    250_000)
+  if (taxableIncome <= 18_000_000)    return Math.round(taxableIncome * 0.15 -    750_000)
+  if (taxableIncome <= 32_000_000)    return Math.round(taxableIncome * 0.20 -  1_650_000)
+  if (taxableIncome <= 52_000_000)    return Math.round(taxableIncome * 0.25 -  3_250_000)
+  if (taxableIncome <= 80_000_000)    return Math.round(taxableIncome * 0.30 -  5_850_000)
+  return                                     Math.round(taxableIncome * 0.35 -  9_850_000)
 }
 
 // ── Tính lương Gross → Net (full pipeline) ──────────────────────

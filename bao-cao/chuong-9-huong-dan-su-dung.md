@@ -86,7 +86,7 @@ Trang dashboard hiển thị tự động các chỉ số:
 
 ### 👨‍💼 9.2.3 HRManager — Trưởng phòng Nhân sự
 
-**Tài khoản:** `tp_nhansu` / `123456`  
+**Tài khoản:** `nhansu` / `nhansu`  
 **Dashboard:** `/dashboard-hr`
 
 #### Quản lý hồ sơ nhân viên
@@ -124,7 +124,7 @@ Tương tự Admin — xem mục 9.2.1
 
 ### 💰 9.2.4 Accountant — Kế toán
 
-**Tài khoản:** `tp_ketoan` / `123456`  
+**Tài khoản:** `ketoan` / `ketoan`  
 **Dashboard:** `/dashboard-accountant`
 
 #### Tính lương tự động
@@ -161,7 +161,7 @@ Tương tự Admin — xem mục 9.2.1
 
 ### 🏢 9.2.5 Manager — Trưởng phòng ban
 
-**Tài khoản:** `tp_cntt` / `123456` (hoặc `tp_kinhdoanh`, `tp_marketing`)  
+**Tài khoản:** `quanly` / `quanly` (hoặc `tp_kinhdoanh` / `123456`, `tp_marketing` / `123456`)  
 **Dashboard:** `/dashboard-manager`
 
 #### Xem chấm công phòng ban
@@ -182,8 +182,8 @@ Tương tự Admin — xem mục 9.2.1
 
 ### 👤 9.2.6 Employee — Nhân viên
 
-**Tài khoản ví dụ:** `nv009` / `123456`  
-**Trang chính:** `/attendance/check-in`
+**Tài khoản ví dụ:** `nhanvien` / `nhanvien`  
+**Trang chính:** `/dashboard-employee`
 
 #### Check-in buổi sáng
 
@@ -255,24 +255,24 @@ Tương tự Admin — xem mục 9.2.1
 |------|----------|----------|-----------|----------------|
 | **Admin** | `admin` | `admin` | `/dashboard` | Toàn quyền hệ thống |
 | **Director** | `giamdoc` | `giamdoc` | `/dashboard-director` | KPI tổng hợp, báo cáo |
-| **HRManager** | `tp_nhansu` | `123456` | `/dashboard-hr` | Nhân sự, hợp đồng, duyệt nghỉ |
-| **Accountant** | `tp_ketoan` | `123456` | `/dashboard-accountant` | Lương, phiếu lương |
-| **Manager** | `tp_cntt` | `123456` | `/dashboard-manager` | Quản lý phòng CNTT |
-| **Employee** | `nv009` | `123456` | `/attendance/check-in` | Check-in, xem lương, nghỉ phép |
+| **HRManager** | `nhansu` | `nhansu` | `/dashboard-hr` | Nhân sự, hợp đồng, duyệt nghỉ |
+| **Accountant** | `ketoan` | `ketoan` | `/dashboard-accountant` | Lương, phiếu lương |
+| **Manager** | `quanly` | `quanly` | `/dashboard-manager` | Quản lý phòng CNTT |
+| **Employee** | `nhanvien` | `nhanvien` | `/dashboard-employee` | Check-in, xem lương, nghỉ phép |
 
 ### Bảng 9.2 — Tài khoản nhân viên theo phòng ban
 
-| Phòng ban | Username | Vai trò |
-|-----------|---------|---------|
-| Ban Giám đốc | `pgd1`, `pgd2` | Phó Giám đốc |
-| Kinh doanh | `tp_kinhdoanh`, `nv039`–`nv048` | Manager + NV |
-| Marketing | `tp_marketing`, `nv049`–`nv058` | Manager + NV |
-| CNTT | `nv009`–`nv018` | Lập trình viên, DevOps, Tester |
-| Nhân sự | `nv019`–`nv028` | Chuyên viên nhân sự |
-| Kế toán | `nv029`–`nv038` | Kế toán viên |
-| Thử việc | `nv059`–`nv063` | Thực tập sinh (mỗi phòng 1) |
+| Phòng ban | Username | Mật khẩu | Vai trò |
+|-----------|---------|----------|--------|
+| Ban Giám đốc | `pgd1`, `pgd2` | `123456` | Phó Giám đốc |
+| CNTT | `quanly` (TP), `nhanvien` (NV009), `nv010`–`nv018` | TP: `quanly`, NV009: `nhanvien`, còn lại: `123456` | Manager + NV |
+| Nhân sự | `nhansu` (TP), `nv019`–`nv028` | TP: `nhansu`, NV: `123456` | HRManager + NV |
+| Kế toán | `ketoan` (TP), `nv029`–`nv038` | TP: `ketoan`, NV: `123456` | Accountant + NV |
+| Kinh doanh | `tp_kinhdoanh`, `nv039`–`nv048` | `123456` | Manager + NV |
+| Marketing | `tp_marketing`, `nv049`–`nv058` | `123456` | Manager + NV |
+| Thử việc | `nv059`–`nv063` | `123456` | Thực tập sinh (mỗi phòng 1) |
 
-> **Mật khẩu mặc định:** `123456` (trừ admin/admin và giamdoc/giamdoc)
+> **Lưu ý:** Các tài khoản chính (`admin`, `giamdoc`, `nhansu`, `ketoan`, `quanly`, `nhanvien`) dùng **username = password**. Các tài khoản nhân viên còn lại (`nv010`–`nv063`, `pgd1`, `pgd2`, `tp_kinhdoanh`, `tp_marketing`) dùng mật khẩu `123456`.
 
 ---
 

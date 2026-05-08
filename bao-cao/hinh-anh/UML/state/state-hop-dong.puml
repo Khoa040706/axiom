@@ -1,9 +1,8 @@
 @startuml
+skinparam monochrome true
+skinparam shadowing false
 title Hình 6.14 — State Diagram: Trạng thái hợp đồng lao động
-skinparam state {
-  BackgroundColor #FEF2F2
-  BorderColor #D0211C
-}
+
 
 [*] --> HieuLuc : Tạo hợp đồng mới
 HieuLuc : status = "Hiệu lực"
