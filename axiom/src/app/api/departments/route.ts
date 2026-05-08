@@ -4,7 +4,8 @@ import { departmentService } from "@/lib/services/department.service"
 export async function GET() {
   try {
     const depts = await departmentService.findAll()
-    const result = depts.map(d => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = depts.map((d: any) => ({
       id: d.id,
       name: d.name,
       description: d.description,
