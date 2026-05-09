@@ -375,8 +375,8 @@ function calculateSalary(params: {
   const totalInsurance = bhxh + bhyt + bhtn
 
   // Thu nhập chịu thuế = Gross - BH - giảm trừ bản thân - giảm trừ người phụ thuộc
-  const personalDeduction   = 11_000_000
-  const dependentDeduction  = params.numDependents * 4_400_000
+  const personalDeduction   = 15_500_000
+  const dependentDeduction  = params.numDependents * 6_200_000
   const taxableIncome = Math.max(0,
     gross - totalInsurance - personalDeduction - dependentDeduction
   )
