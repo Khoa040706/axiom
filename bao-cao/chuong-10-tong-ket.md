@@ -345,6 +345,106 @@ Nhóm sử dụng AI như một **công cụ hỗ trợ có chọn lọc** — k
 
 ---
 
+### 10.4.5 Các trường hợp AI mắc lỗi
+
+Trong quá trình sử dụng AI hỗ trợ, nhóm ghi nhận nhiều trường hợp AI đưa ra gợi ý **sai hoặc không phù hợp**. Việc ghi lại các trường hợp này nhằm minh bạch quá trình làm việc và rút kinh nghiệm cho các dự án sau.
+
+---
+
+#### Lỗi 1 — Gợi ý sai số bậc thuế TNCN
+
+| Hạng mục | Chi tiết |
+|----------|----------|
+| **Công cụ** | Gemini |
+| **Người gặp** | BA (52400004) |
+| **Mô tả lỗi** | Khi hỏi về biểu thuế TNCN Việt Nam, AI ban đầu trả lời biểu thuế gồm **5 bậc** thay vì đúng **7 bậc** theo Luật Thuế TNCN Điều 22. AI nhầm lẫn với biểu thuế rút gọn dùng trong một số tài liệu tham khảo cũ |
+| **Hậu quả** | Nếu không kiểm tra lại, engine tính lương sẽ tính sai thuế cho nhân viên có thu nhập chịu thuế trên 32 triệu/tháng |
+| **Cách phát hiện** | BA đối chiếu với văn bản gốc Luật Thuế TNCN và phát hiện thiếu 2 bậc (bậc 6: 30%, bậc 7: 35%) |
+| **Bài học** | Luôn đối chiếu output AI với văn bản pháp luật gốc — đặc biệt với dữ liệu có tính pháp lý |
+
+---
+
+#### Lỗi 2 — Gợi ý sai cách lưu trữ thời gian check-in
+
+| Hạng mục | Chi tiết |
+|----------|----------|
+| **Công cụ** | Claude |
+| **Người gặp** | Dev (52400017) |
+| **Mô tả lỗi** | Khi hỏi cách lưu giờ check-in/check-out trong PostgreSQL, AI gợi ý dùng kiểu `@db.Time()` (chỉ lưu giờ, không có ngày). Điều này dẫn đến **BUG-01** — khi client tính thời gian elapsed, nó so sánh với epoch 1970-01-01 và ra kết quả `497222:13:42` |
+| **Hậu quả** | Timer check-in hiển thị sai hoàn toàn, mất ~1 ngày debug |
+| **Cách phát hiện** | Tester phát hiện trong quá trình kiểm thử module Attendance (TC-05-07) |
+| **Cách khắc phục** | Dev tự viết hàm `normalizeTime()` ghép giờ từ DB với ngày hôm nay trước khi tính elapsed |
+| **Bài học** | AI không nắm được ngữ cảnh frontend-backend đồng thời — cần cân nhắc cách dữ liệu sẽ được sử dụng ở cả hai phía trước khi chọn kiểu dữ liệu |
+
+---
+
+#### Lỗi 3 — Gợi ý sai field name khi mapping Prisma → UI
+
+| Hạng mục | Chi tiết |
+|----------|----------|
+| **Công cụ** | Claude |
+| **Người gặp** | Dev (52400017) |
+| **Mô tả lỗi** | Khi được hỏi cách hiển thị phiếu lương từ dữ liệu Prisma, AI sử dụng các field name khác với schema thực tế: `basicSalary` thay vì `grossSalary`, `allowances` thay vì `allowance`, `overtimePay` thay vì `otPay`, `pit` thay vì `taxAmount`. Kết quả: phiếu lương hiển thị `0đ` ở tất cả các cột |
+| **Hậu quả** | Tạo ra **BUG-03** — phiếu lương hoàn toàn sai, mất thêm thời gian debug để tìm ra 4 field bị mapping sai |
+| **Cách phát hiện** | Tester phát hiện khi kiểm thử TC-08-07 |
+| **Bài học** | AI không có quyền truy cập vào schema Prisma thực tế của dự án — luôn cần đối chiếu tên field với `schema.prisma` trước khi dùng |
+
+---
+
+#### Lỗi 4 — Gợi ý code không tương thích NextAuth v5
+
+| Hạng mục | Chi tiết |
+|----------|----------|
+| **Công cụ** | Gemini, Claude |
+| **Người gặp** | Dev (52400017) |
+| **Mô tả lỗi** | Cả 2 AI đều gợi ý cú pháp của NextAuth **v4** (ví dụ: `import NextAuth from "next-auth"`, `getServerSession(authOptions)`) thay vì v5 (`import { auth } from "@/lib/auth"`, `auth()`). NextAuth v5 thay đổi hoàn toàn API surface so với v4, nhưng AI chưa cập nhật vì tài liệu v5 còn mới |
+| **Hậu quả** | Code không compile được, mất gần 1 ngày tự đọc tài liệu NextAuth v5 chính thức để viết lại callback `authorize()` và cấu hình JWT |
+| **Cách phát hiện** | Dev thử chạy code do AI gợi ý → lỗi ngay lúc build |
+| **Bài học** | AI thường không cập nhật kịp với phiên bản mới nhất của thư viện — cần đọc changelog và tài liệu chính thức khi dùng phiên bản mới |
+
+---
+
+#### Lỗi 5 — Gợi ý test case không phù hợp nghiệp vụ VN
+
+| Hạng mục | Chi tiết |
+|----------|----------|
+| **Công cụ** | Claude |
+| **Người gặp** | Tester (52400133) |
+| **Mô tả lỗi** | Khi sinh test case cho module Payroll, AI gợi ý kiểm tra "overtime rate 1.25× cho ngày thường" — đây là hệ số OT theo luật lao động Mỹ (FLSA). Hệ số đúng theo pháp luật Việt Nam là **1.5× ngày thường, 2.0× cuối tuần, 3.0× ngày lễ** |
+| **Hậu quả** | Nếu dùng trực tiếp, test case sẽ kiểm tra sai hệ số, dẫn đến kết quả "Pass" giả trên logic sai |
+| **Cách phát hiện** | Tester đối chiếu với tài liệu nghiệp vụ do BA cung cấp trước khi sử dụng |
+| **Bài học** | AI training data thiên về luật pháp quốc tế (Mỹ, EU) — khi áp dụng cho nghiệp vụ Việt Nam cần luôn kiểm tra lại với quy định trong nước |
+
+---
+
+#### Lỗi 6 — Gợi ý cách tính ngày nghỉ phép sai
+
+| Hạng mục | Chi tiết |
+|----------|----------|
+| **Công cụ** | Gemini |
+| **Người gặp** | BA (52400004) |
+| **Mô tả lỗi** | Khi hỏi cách tính `totalDays` cho đơn nghỉ phép, AI gợi ý công thức `endDate - startDate + 1` (tính cả Thứ 7 và Chủ nhật). Tuy nhiên, theo quy định lao động Việt Nam và nghiệp vụ thực tế, phép năm chỉ tính ngày làm việc (bỏ T7/CN) |
+| **Hậu quả** | Ban đầu BA và Dev tranh luận về cách tính (vì BA tham khảo gợi ý AI). Mất 1 buổi họp nhóm để thống nhất |
+| **Cách phát hiện** | Dev đặt câu hỏi ngược: "Nếu nghỉ từ Thứ 6 đến Thứ 2 tuần sau, nhân viên mất bao nhiêu ngày phép?" — cả nhóm đồng ý là 2 ngày, không phải 4 |
+| **Bài học** | Không nên để AI quyết định logic nghiệp vụ — cần thảo luận nhóm và tham khảo quy định pháp luật lao động |
+
+---
+
+### Bảng 10.4 — Tổng hợp lỗi AI
+
+| # | Loại lỗi | Công cụ | Mức độ ảnh hưởng | Phát hiện bởi |
+|---|----------|---------|:----------------:|:-------------:|
+| 1 | Sai dữ liệu pháp lý (thuế 5 bậc thay vì 7) | Gemini | 🔴 Cao | BA đối chiếu văn bản gốc |
+| 2 | Sai kiểu dữ liệu DB (`@db.Time`) | Claude | 🔴 Cao — gây BUG-01 | Tester kiểm thử |
+| 3 | Sai field name Prisma (4 field) | Claude | 🔴 Cao — gây BUG-03 | Tester kiểm thử |
+| 4 | Code không tương thích NextAuth v5 | Cả hai | 🟡 Trung bình | Dev tự phát hiện khi build |
+| 5 | Sai hệ số OT (luật Mỹ thay vì VN) | Claude | 🟡 Trung bình | Tester đối chiếu tài liệu BA |
+| 6 | Sai cách tính ngày phép (tính cả T7/CN) | Gemini | 🟡 Trung bình | Thảo luận nhóm |
+
+> **Kết luận:** 6/6 lỗi AI đều được phát hiện **trước khi vào production** nhờ quy trình review chéo (BA ↔ Dev ↔ Tester). Điều này khẳng định rằng AI là công cụ hỗ trợ hữu ích nhưng **không thể thay thế sự kiểm tra của con người**, đặc biệt với dữ liệu pháp lý và nghiệp vụ đặc thù Việt Nam.
+
+---
+
 ## 10.5 Hạn chế của dự án
 
 Bên cạnh những kết quả đạt được, nhóm nhìn nhận thắc một số hạn chế cần cải thiện:
