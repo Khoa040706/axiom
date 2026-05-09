@@ -518,36 +518,38 @@ function Inner({ children }: { children: React.ReactNode }) {
         zIndex: 90,
         transition: "background .3s, border-color .3s, left .28s",
       }}>
-        {/* Left: Logo brand area — pill with red bg wrapping icon + text */}
+        {/* Left: Logo brand area — red circle + AXIOM (giống trang login) */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
           <Link href={user?.dashboardPath ?? "/dashboard"}
-            style={{ textDecoration: "none" }}>
+            style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Red gradient circle — giống login page */}
             <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              background: "linear-gradient(135deg, #D0211C, #e63030)",
-              borderRadius: 12,
-              padding: isMobile ? "7px 10px" : "7px 16px 7px 10px",
-              boxShadow: "0 2px 12px rgba(208,33,28,0.4)",
+              width: 38, height: 38, borderRadius: "50%",
+              background: "linear-gradient(140deg, #FF6659, #D0211C, #9A0007)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 4px 14px rgba(154,0,7,0.35)", flexShrink: 0,
               transition: "box-shadow .2s, transform .2s",
             }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 18px rgba(208,33,28,0.55)"
-                ;(e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(154,0,7,0.5)";
+                (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 12px rgba(208,33,28,0.4)"
-                ;(e.currentTarget as HTMLElement).style.transform = "translateY(0)"
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 14px rgba(154,0,7,0.35)";
+                (e.currentTarget as HTMLElement).style.transform = "translateY(0)"
               }}
             >
-              <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={26} height={26}
+              <Image src="/images/LogoAXIOM.png" alt="AXIOM" width={28} height={28}
                 style={{ objectFit: "contain", filter: "brightness(0) invert(1)", flexShrink: 0 }} />
-              {!isMobile && (
-                <span style={{
-                  fontWeight: 800, fontSize: 17, letterSpacing: 3,
-                  color: "#fff", whiteSpace: "nowrap",
-                }}>AXIOM</span>
-              )}
             </div>
+            {!isMobile && (
+              <span style={{
+                fontWeight: 800, fontSize: 18, letterSpacing: 4,
+                background: "linear-gradient(135deg, #FF6659 0%, #D0211C 45%, #9A0007 100%)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                backgroundClip: "text", fontStyle: "italic",
+              }}>AXIOM</span>
+            )}
           </Link>
         </div>
 

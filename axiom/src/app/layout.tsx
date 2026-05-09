@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   description:
     "Hệ thống Quản lý Nhân sự và Tiền lương Doanh nghiệp — chính xác tuyệt đối.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/images/icon-192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

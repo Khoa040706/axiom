@@ -51,16 +51,21 @@ export const attendanceService = {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
+    // T7/CN: cho phép check-in nhưng không tính đi muộn (không phải giờ hành chính)
+    const dow = today.getDay()
+    const isWeekend = dow === 0 || dow === 6
+
     // Giờ chuẩn: 7:30 (giờ hành chính), trễ nếu sau 8:05
+    // Cuối tuần: không tính trễ (vì không phải giờ hành chính)
     const standardStart = new Date(today)
     standardStart.setHours(7, 30, 0, 0)
     const lateThreshold = new Date(today)
     lateThreshold.setHours(8, 5, 0, 0)
-    const lateMinutes = Math.max(
+    const lateMinutes = isWeekend ? 0 : Math.max(
       0,
       Math.floor((checkIn.getTime() - standardStart.getTime()) / 60000)
     )
-    const isLate = checkIn.getTime() > lateThreshold.getTime()
+    const isLate = isWeekend ? false : checkIn.getTime() > lateThreshold.getTime()
 
     return prisma.attendance.upsert({
       where: { employeeId_workDate: { employeeId, workDate: today } },
@@ -70,6 +75,7 @@ export const attendanceService = {
         checkIn,
         status: isLate ? "Đi muộn" : "Đi làm",
         lateMinutes,
+        notes: isWeekend ? "Làm thêm cuối tuần" : undefined,
       },
       // ⚠️ Quan trọng: xóa checkOut cũ (từ seed/sync) + reset OT/early
       update: {
@@ -79,6 +85,7 @@ export const attendanceService = {
         status: isLate ? "Đi muộn" : "Đi làm",
         otHours: 0,
         earlyMinutes: 0,
+        notes: isWeekend ? "Làm thêm cuối tuần" : undefined,
       },
     })
   },
@@ -88,21 +95,39 @@ export const attendanceService = {
     const record = await prisma.attendance.findUnique({ where: { id: attendanceId } })
     if (!record || !record.checkIn) throw new Error("Chưa có dữ liệu check-in")
 
-    // Giờ chuẩn: 17:00 (8 tiếng) — dùng ngày của checkOut để tránh timezone issue với @db.Date
-    const standardEnd = new Date(checkOut)
-    standardEnd.setHours(17, 0, 0, 0)
+    const dow = record.workDate.getDay()
+    const isWeekend = dow === 0 || dow === 6
 
-    // Tính OT (checkout sau 17:00)
-    const otHours = Math.max(
-      0,
-      (checkOut.getTime() - standardEnd.getTime()) / (1000 * 3600)
-    )
+    // Cuối tuần: toàn bộ giờ làm = OT (không có giờ hành chính)
+    // Ngày thường: OT = phần sau 17:00
+    let otHours: number
+    let earlyMinutes: number
 
-    // Tính về sớm (checkout trước 17:00)
-    const earlyMinutes = Math.max(
-      0,
-      Math.floor((standardEnd.getTime() - checkOut.getTime()) / 60000)
-    )
+    if (isWeekend) {
+      // T7/CN: tổng giờ từ checkIn → checkOut = OT
+      const checkInTime = new Date(record.checkIn)
+      const totalMs = checkOut.getTime() - checkInTime.getTime()
+      // Trừ 1h nghỉ trưa nếu làm > 5h
+      const lunchMs = totalMs > 5 * 3600000 ? 3600000 : 0
+      otHours = Math.max(0, (totalMs - lunchMs) / 3600000)
+      earlyMinutes = 0 // Cuối tuần không có "về sớm"
+    } else {
+      // Giờ chuẩn: 17:00 (8 tiếng)
+      const standardEnd = new Date(checkOut)
+      standardEnd.setHours(17, 0, 0, 0)
+
+      // Tính OT (checkout sau 17:00)
+      otHours = Math.max(
+        0,
+        (checkOut.getTime() - standardEnd.getTime()) / (1000 * 3600)
+      )
+
+      // Tính về sớm (checkout trước 17:00)
+      earlyMinutes = Math.max(
+        0,
+        Math.floor((standardEnd.getTime() - checkOut.getTime()) / 60000)
+      )
+    }
 
     return prisma.attendance.update({
       where: { id: attendanceId },

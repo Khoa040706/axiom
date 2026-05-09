@@ -31,7 +31,8 @@ export async function checkIn(employeeId: number) {
     return { success: true, data: serialize(record) }
   } catch (error) {
     console.error("[checkIn]", error)
-    return { success: false, error: "Không thể check-in" }
+    const msg = error instanceof Error ? error.message : "Không thể check-in"
+    return { success: false, error: msg }
   }
 }
 
