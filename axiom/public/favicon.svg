@@ -6,8 +6,7 @@
       <stop offset="100%" stop-color="#9A0007"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="6" fill="#100505"/>
-  <circle cx="16" cy="16" r="13" fill="url(#g)"/>
+  <circle cx="16" cy="16" r="15" fill="url(#g)"/>
   <!-- Simplified A letter -->
   <path d="M16 6L10 24h3l1.2-4h3.6l1.2 4h3L16 6zm-1 12l1-3.5 1 3.5h-2z" fill="white" opacity="0.95"/>
   <!-- Orbital ring -->
