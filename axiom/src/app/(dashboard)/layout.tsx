@@ -228,6 +228,15 @@ function Inner({ children }: { children: React.ReactNode }) {
     fetch("/api/sync-fake-data").catch(() => {})
   }, [])
 
+  // ── Sync chấm công hôm nay mỗi 1 tiếng → quản lý thấy ai vào/ra giờ nào ──
+  useEffect(() => {
+    fetch("/api/sync-today-attendance").catch(() => {})
+    const interval = setInterval(() => {
+      fetch("/api/sync-today-attendance").catch(() => {})
+    }, 60 * 60 * 1000) // 60 phút
+    return () => clearInterval(interval)
+  }, [])
+
   // Cập nhật notifications theo role thực khi session load xong
   useEffect(() => {
     if (!user) return

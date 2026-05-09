@@ -6,8 +6,8 @@ import { Document, Page, Text, View, StyleSheet, renderToBuffer, Font } from "@r
 Font.register({
   family: "Arial",
   fonts: [
-    { src: "C:\\Windows\\Fonts\\arial.ttf",   fontWeight: 400 },
-    { src: "C:\\Windows\\Fonts\\arialbd.ttf", fontWeight: 700 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest/vietnamese-400-normal.ttf", fontWeight: 400 },
+    { src: "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest/vietnamese-700-normal.ttf", fontWeight: 700 },
   ],
 })
 Font.registerHyphenationCallback((word) => [word])

@@ -500,38 +500,32 @@ async function main() {
   // 8. ĐƠN NGHỈ PHÉP MẪU (8 đơn)
   // ═══════════════════════════════════════════════════════════════
   console.log("📋 8. Tạo đơn nghỉ phép mẫu...")
-  const leaveTypes = ["Nghỉ phép năm", "Nghỉ bệnh", "Việc riêng"]
-  const leaveStatuses = ["Chờ duyệt", "Chờ duyệt", "Đã duyệt", "Đã duyệt", "Từ chối", "Chờ duyệt", "Chờ duyệt", "Đã duyệt"]
-  // Ngày nghỉ trải từ tháng 4 → tháng 5/2026 — hợp lý với thời điểm hiện tại
-  const leaveStartDates = [
-    new Date(2026, 3, 7),   // 07/04/2026
-    new Date(2026, 3, 14),  // 14/04/2026
-    new Date(2026, 3, 21),  // 21/04/2026
-    new Date(2026, 3, 28),  // 28/04/2026
-    new Date(2026, 4, 5),   // 05/05/2026
-    new Date(2026, 4, 12),  // 12/05/2026
-    new Date(2026, 4, 15),  // 15/05/2026
-    new Date(2026, 4, 19),  // 19/05/2026
+  // Đơn nghỉ phép mẫu — ngày hợp lý với thời điểm demo (tháng 5/2026)
+  // Đã duyệt/Từ chối = tháng 4 (quá khứ), Chờ duyệt = tháng 5 (hiện tại/tương lai)
+  const sampleLeaves = [
+    // Đã duyệt — tháng 4/2026
+    { empIdx: 8,  type: "Nghỉ phép năm", from: "2026-04-07", to: "2026-04-08", days: 2, reason: "Đưa gia đình đi du lịch cuối tuần",  status: "Đã duyệt",  submitted: "2026-04-02" },
+    { empIdx: 13, type: "Nghỉ bệnh",     from: "2026-04-14", to: "2026-04-15", days: 2, reason: "Bị sốt virus, cần nghỉ ngơi",        status: "Đã duyệt",  submitted: "2026-04-13" },
+    { empIdx: 23, type: "Nghỉ phép năm", from: "2026-04-21", to: "2026-04-22", days: 2, reason: "Về quê thăm ông bà",                  status: "Đã duyệt",  submitted: "2026-04-17" },
+    // Từ chối — tháng 4
+    { empIdx: 33, type: "Việc riêng",     from: "2026-04-28", to: "2026-04-29", days: 2, reason: "Dự đám cưới bạn thân",               status: "Từ chối",   submitted: "2026-04-24" },
+    // Chờ duyệt — tháng 5/2026
+    { empIdx: 18, type: "Nghỉ phép năm", from: "2026-05-12", to: "2026-05-13", days: 2, reason: "Đưa con đi thi học kỳ",               status: "Chờ duyệt", submitted: "2026-05-08" },
+    { empIdx: 28, type: "Nghỉ bệnh",     from: "2026-05-14", to: "2026-05-16", days: 3, reason: "Đi tái khám bệnh viện",               status: "Chờ duyệt", submitted: "2026-05-09" },
+    { empIdx: 38, type: "Việc riêng",     from: "2026-05-15", to: "2026-05-16", days: 2, reason: "Về quê thăm gia đình",                status: "Chờ duyệt", submitted: "2026-05-09" },
+    { empIdx: 48, type: "Nghỉ phép năm", from: "2026-05-19", to: "2026-05-21", days: 3, reason: "Tham gia hội thảo cá nhân",            status: "Chờ duyệt", submitted: "2026-05-08" },
   ]
-  for (let i = 0; i < 8; i++) {
-    const empItem = allEmployees[8 + (i * 5) % 50]
-    const startDate = leaveStartDates[i]
-    const endDate = new Date(startDate)
-    endDate.setDate(endDate.getDate() + 1 + Math.floor(Math.random() * 2))
-    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000)
-    // Ngày nộp đơn = 3-5 ngày trước ngày nghỉ
-    const createdAt = new Date(startDate)
-    createdAt.setDate(createdAt.getDate() - 3 - Math.floor(Math.random() * 3))
+  for (const lr of sampleLeaves) {
     await prisma.leaveRequest.create({
       data: {
-        employeeId: empItem.emp.id,
-        leaveType:  leaveTypes[i % leaveTypes.length],
-        startDate,
-        endDate,
-        totalDays,
-        reason: `Đơn nghỉ phép mẫu #${i + 1}`,
-        status: leaveStatuses[i],
-        createdAt,
+        employeeId: allEmployees[lr.empIdx].emp.id,
+        leaveType:  lr.type,
+        startDate:  new Date(lr.from),
+        endDate:    new Date(lr.to),
+        totalDays:  lr.days,
+        reason:     lr.reason,
+        status:     lr.status,
+        createdAt:  new Date(lr.submitted + "T08:30:00+07:00"),
       },
     })
   }

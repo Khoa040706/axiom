@@ -4,11 +4,10 @@
  * Không cache API/Server Actions để đảm bảo dữ liệu luôn mới.
  */
 
-const CACHE_NAME = "axiom-v1"
+const CACHE_NAME = "axiom-v2"
 
-// Static assets cần cache (shell cơ bản)
+// Static assets cần cache (shell cơ bản — chỉ static files, không cache SSR pages)
 const STATIC_ASSETS = [
-  "/login",
   "/images/LogoAXIOM.png",
   "/images/avatarmacdinh.jpg",
   "/images/icon-192.png",

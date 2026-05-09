@@ -20,6 +20,8 @@ const PUBLIC_PATHS = [
   "/setup-email",
   "/_next",
   "/favicon.ico",
+  "/manifest.json",
+  "/sw.js",
 ]
 
 const ROLES_SKIP_EMAIL_CHECK = ["Admin"]
@@ -59,6 +61,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest\\.json|sw\\.js|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

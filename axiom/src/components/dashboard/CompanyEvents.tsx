@@ -26,25 +26,67 @@ const STATUS_EN: Record<EventStatus, { label: string; color: string; bg: string;
   upcoming: { label: "Upcoming",  color: "#7C3AED", bg: "#EDE9FE", bgDark: "rgba(124,58,237,0.2)"  },
 }
 
-/* ── Shared events data ────────────────────────────── */
-export const COMPANY_EVENTS_VI: EventData[] = [
-  { emoji: "🏖️", title: "Nghỉ lễ Giỗ Tổ Hùng Vương",        desc: "Toàn thể nhân viên được nghỉ theo lịch nhà nước",          date: "26/04/2026",       status: "past" },
-  { emoji: "🎆", title: "Nghỉ lễ 30/4 – Giải phóng miền Nam", desc: "Nghỉ lễ Ngày Giải phóng miền Nam, thống nhất đất nước",  date: "30/04/2026",       status: "upcoming" },
-  { emoji: "🌸", title: "Nghỉ lễ Quốc tế Lao động 1/5",       desc: "Nghỉ lễ Ngày Quốc tế Lao động – toàn công ty nghỉ",      date: "01/05/2026",       status: "upcoming" },
-  { emoji: "🎉", title: "Ngày thành lập công ty",               desc: "Kỷ niệm 5 năm thành lập AXIOM Corporation",              date: "20/06/2026",       status: "upcoming" },
-  { emoji: "📊", title: "Họp tổng kết Q1 2026",                desc: "Báo cáo kết quả kinh doanh quý 1 tại hội trường",        date: "10/04/2026",       status: "past" },
-  { emoji: "🎓", title: "Đào tạo kỹ năng mềm",                 desc: "Khóa đào tạo cho nhân viên mới Q1",                      date: "20/03 – 25/03/2026", status: "past" },
-  { emoji: "💼", title: "Đánh giá hiệu suất Q4 2025",          desc: "Kỳ đánh giá KPI toàn công ty đã hoàn tất",              date: "15/01/2026",       status: "past" },
+/* ── Raw event data with parseable dates ───────────── */
+type RawEvent = {
+  emoji: string
+  titleVi: string
+  titleEn: string
+  descVi: string
+  descEn: string
+  dateVi: string
+  dateEn: string
+  /** ISO date string or start date for range events */
+  startDate: string
+  /** End date for range events (inclusive). Same as startDate for single-day events. */
+  endDate: string
+}
+
+const RAW_EVENTS: RawEvent[] = [
+  { emoji: "🏖️", titleVi: "Nghỉ lễ Giỗ Tổ Hùng Vương", titleEn: "Hung Kings Commemoration", descVi: "Toàn thể nhân viên được nghỉ theo lịch nhà nước", descEn: "Public holiday – Hung Kings Commemoration Day", dateVi: "26/04/2026", dateEn: "Apr 26, 2026", startDate: "2026-04-26", endDate: "2026-04-26" },
+  { emoji: "🎆", titleVi: "Nghỉ lễ 30/4 – Giải phóng miền Nam", titleEn: "Liberation Day – Apr 30", descVi: "Nghỉ lễ Ngày Giải phóng miền Nam, thống nhất đất nước", descEn: "National holiday – Reunification of Vietnam", dateVi: "30/04/2026", dateEn: "Apr 30, 2026", startDate: "2026-04-30", endDate: "2026-04-30" },
+  { emoji: "🌸", titleVi: "Nghỉ lễ Quốc tế Lao động 1/5", titleEn: "International Labour Day – May 1", descVi: "Nghỉ lễ Ngày Quốc tế Lao động – toàn công ty nghỉ", descEn: "Public holiday – International Workers' Day", dateVi: "01/05/2026", dateEn: "May 01, 2026", startDate: "2026-05-01", endDate: "2026-05-01" },
+  { emoji: "📊", titleVi: "Họp tổng kết Q1 2026", titleEn: "Q1 2026 Review Meeting", descVi: "Báo cáo kết quả kinh doanh quý 1 tại hội trường", descEn: "Quarterly business review at conference room", dateVi: "10/04/2026", dateEn: "Apr 10, 2026", startDate: "2026-04-10", endDate: "2026-04-10" },
+  { emoji: "🎓", titleVi: "Đào tạo kỹ năng mềm", titleEn: "Soft Skills Training", descVi: "Khóa đào tạo cho nhân viên mới Q1", descEn: "Training program for new Q1 employees", dateVi: "20/03 – 25/03/2026", dateEn: "Mar 20–25, 2026", startDate: "2026-03-20", endDate: "2026-03-25" },
+  { emoji: "💼", titleVi: "Đánh giá hiệu suất Q4 2025", titleEn: "Q4 2025 Performance Review", descVi: "Kỳ đánh giá KPI toàn công ty đã hoàn tất", descEn: "Company-wide KPI evaluation completed", dateVi: "15/01/2026", dateEn: "Jan 15, 2026", startDate: "2026-01-15", endDate: "2026-01-15" },
+  { emoji: "🏃", titleVi: "Team Building phòng Kỹ thuật", titleEn: "Engineering Team Building", descVi: "Hoạt động gắn kết đội ngũ phòng Kỹ thuật tại Vũng Tàu", descEn: "Team bonding activity for Engineering dept in Vung Tau", dateVi: "08/05 – 10/05/2026", dateEn: "May 08–10, 2026", startDate: "2026-05-08", endDate: "2026-05-10" },
+  { emoji: "🩺", titleVi: "Khám sức khỏe định kỳ", titleEn: "Annual Health Checkup", descVi: "Khám sức khỏe tổng quát cho toàn thể nhân viên", descEn: "Comprehensive health checkup for all employees", dateVi: "15/05 – 17/05/2026", dateEn: "May 15–17, 2026", startDate: "2026-05-15", endDate: "2026-05-17" },
+  { emoji: "📈", titleVi: "Đánh giá KPI giữa năm", titleEn: "Mid-Year KPI Review", descVi: "Kỳ đánh giá hiệu suất giữa năm 2026 cho toàn công ty", descEn: "Mid-year 2026 performance evaluation company-wide", dateVi: "01/06/2026", dateEn: "Jun 01, 2026", startDate: "2026-06-01", endDate: "2026-06-01" },
+  { emoji: "🎉", titleVi: "Ngày thành lập công ty", titleEn: "Company Anniversary", descVi: "Kỷ niệm 5 năm thành lập AXIOM Corporation", descEn: "5th anniversary of AXIOM Corporation", dateVi: "20/06/2026", dateEn: "Jun 20, 2026", startDate: "2026-06-20", endDate: "2026-06-20" },
+  { emoji: "🌊", titleVi: "Du lịch hè 2026", titleEn: "Summer Trip 2026", descVi: "Chuyến du lịch nghỉ mát toàn công ty tại Đà Nẵng", descEn: "Company summer retreat in Da Nang", dateVi: "10/07 – 13/07/2026", dateEn: "Jul 10–13, 2026", startDate: "2026-07-10", endDate: "2026-07-13" },
+  { emoji: "🇻🇳", titleVi: "Nghỉ lễ Quốc khánh 2/9", titleEn: "National Day – Sep 2", descVi: "Nghỉ lễ Quốc khánh nước CHXHCN Việt Nam", descEn: "National Day of the Socialist Republic of Vietnam", dateVi: "02/09/2026", dateEn: "Sep 02, 2026", startDate: "2026-09-02", endDate: "2026-09-02" },
 ]
-export const COMPANY_EVENTS_EN: EventData[] = [
-  { emoji: "🏖️", title: "Hung Kings Commemoration",         desc: "Public holiday – Hung Kings Commemoration Day",            date: "Apr 26, 2026",    status: "past" },
-  { emoji: "🎆", title: "Liberation Day – Apr 30",           desc: "National holiday – Reunification of Vietnam",              date: "Apr 30, 2026",    status: "upcoming" },
-  { emoji: "🌸", title: "International Labour Day – May 1", desc: "Public holiday – International Workers' Day",              date: "May 01, 2026",    status: "upcoming" },
-  { emoji: "🎉", title: "Company Anniversary",               desc: "5th anniversary of AXIOM Corporation",                    date: "Jun 20, 2026",    status: "upcoming" },
-  { emoji: "📊", title: "Q1 2026 Review Meeting",            desc: "Quarterly business review at conference room",             date: "Apr 10, 2026",    status: "past" },
-  { emoji: "🎓", title: "Soft Skills Training",              desc: "Training program for new Q1 employees",                   date: "Mar 20–25, 2026", status: "past" },
-  { emoji: "💼", title: "Q4 2025 Performance Review",        desc: "Company-wide KPI evaluation completed",                   date: "Jan 15, 2026",    status: "past" },
-]
+
+/** Compute event status dynamically based on current date */
+function computeStatus(startDate: string, endDate: string): EventStatus {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const start = new Date(startDate + "T00:00:00")
+  const end = new Date(endDate + "T00:00:00")
+  if (today > end) return "past"
+  if (today >= start && today <= end) return "ongoing"
+  return "upcoming"
+}
+
+/** Build localized event list with auto-computed status */
+function buildEvents(vi: boolean): EventData[] {
+  return RAW_EVENTS.map(ev => ({
+    emoji: ev.emoji,
+    title: vi ? ev.titleVi : ev.titleEn,
+    date: vi ? ev.dateVi : ev.dateEn,
+    desc: vi ? ev.descVi : ev.descEn,
+    status: computeStatus(ev.startDate, ev.endDate),
+  })).sort((a, b) => {
+    // Sort: ongoing first, then upcoming, then past
+    const order: Record<EventStatus, number> = { ongoing: 0, upcoming: 1, past: 2 }
+    return order[a.status] - order[b.status]
+  })
+}
+
+export { buildEvents }
+
+/* ── Shared events data (legacy exports for backward compat) ── */
+export const COMPANY_EVENTS_VI: EventData[] = buildEvents(true)
+export const COMPANY_EVENTS_EN: EventData[] = buildEvents(false)
 
 /* ── Single event item ─────────────────────────────── */
 function EventItem({ emoji, title, date, status, desc, dark, onOpen, vi }: EventData & { dark: boolean; onOpen: () => void; vi: boolean }) {
@@ -158,7 +200,7 @@ function EventModal({ ev, dark, onClose, vi }: { ev: EventData; dark: boolean; o
 export function CompanyEventsWidget({ dark, vi, maxHeight = 400 }: { dark: boolean; vi: boolean; maxHeight?: number }) {
   const th = getTheme(dark)
   const [selected, setSelected] = useState<EventData | null>(null)
-  const events = vi ? COMPANY_EVENTS_VI : COMPANY_EVENTS_EN
+  const events = buildEvents(vi)
 
   return (
     <>

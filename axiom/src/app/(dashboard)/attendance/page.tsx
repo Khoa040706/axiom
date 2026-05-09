@@ -126,6 +126,7 @@ export default function AttendancePage() {
           ra:   checkOut ? checkOut.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit" }) : "—",
           lam:  lamH,
           st:   isLate ? "late" : "ontime",
+          notes: rec.notes ?? "",
         }
       }))
     }
@@ -133,6 +134,45 @@ export default function AttendancePage() {
   }, [monthIdx])
 
   useEffect(() => { load() }, [load])
+
+  // ── Auto-refresh bảng hôm nay mỗi 5 phút ──
+  useEffect(() => {
+    const interval = setInterval(() => {
+      getTodayAttendance().then(res => {
+        if (!res.success || !res.data) return
+        const todayRecs = (res.data as any[]).filter(rec => {
+          if (!isManager) return true
+          const deptName = rec.employee?.department?.name ?? ""
+          return deptName === "Công nghệ thông tin" || deptName === "Phòng Công nghệ"
+        })
+        setToday(todayRecs.map(rec => {
+          const checkIn  = rec.checkIn  ? new Date(rec.checkIn)  : null
+          const checkOut = rec.checkOut ? new Date(rec.checkOut) : null
+          let lamH = "—"
+          if (checkIn && checkOut) {
+            const rawMs = checkOut.getTime() - checkIn.getTime()
+            const ciH = checkIn.getHours()  + checkIn.getMinutes()  / 60
+            const coH = checkOut.getHours() + checkOut.getMinutes() / 60
+            const lunchMs = (ciH < 11.5 && coH > 13.0) ? 90 * 60 * 1000 : 0
+            const netH = Math.max(0, (rawMs - lunchMs) / 3_600_000)
+            lamH = `${netH.toFixed(1)}h`
+          }
+          const lateByDB   = (rec.lateMinutes ?? 0) > 0
+          const lateByTime = checkIn ? (checkIn.getHours() * 60 + checkIn.getMinutes()) > 7 * 60 + 30 : false
+          const isLate     = lateByDB || lateByTime
+          return {
+            name: rec.employee?.fullName ?? "—",
+            vao:  checkIn  ? checkIn.toLocaleTimeString("vi-VN",  { hour:"2-digit", minute:"2-digit" }) : "—",
+            ra:   checkOut ? checkOut.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit" }) : "—",
+            lam:  lamH,
+            st:   isLate ? "late" : "ontime",
+            notes: rec.notes ?? "",
+          }
+        }))
+      })
+    }, 5 * 60 * 1000) // 5 phút
+    return () => clearInterval(interval)
+  }, [isManager])
 
   const rows = staff.filter(s => {
     const matchQ    = matchAny([s.name, s.id, s.dept], q)
@@ -666,26 +706,37 @@ export default function AttendancePage() {
           </div>
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead><tr>
-              {[vi?"Nhân viên":"Employee",vi?"Giờ vào":"Check-in",vi?"Giờ ra":"Check-out",vi?"Giờ làm":"Hours",vi?"Trạng thái":"Status"].map(c=>(
+              {[vi?"Nhân viên":"Employee",vi?"Giờ vào":"Check-in",vi?"Giờ ra":"Check-out",vi?"Giờ làm":"Hours",vi?"Trạng thái":"Status",vi?"Ghi chú":"Notes"].map(c=>(
                 <th key={c} style={hd}>{c}</th>
               ))}
             </tr></thead>
             <tbody>
               {today.length === 0 ? (
-                <tr><td colSpan={5} style={{ ...td, textAlign:"center", color:th.text3, padding:24 }}>
+                <tr><td colSpan={6} style={{ ...td, textAlign:"center", color:th.text3, padding:24 }}>
                   {vi?"Chưa có dữ liệu chấm công hôm nay":"No attendance data for today"}
                 </td></tr>
               ) : todayRows.map((r,i)=>(
                 <tr key={i}>
                   <td style={td}>{r.name}</td>
                   <td style={td}>{r.vao}</td>
-                  <td style={td}>{r.ra}</td>
+                  <td style={td}>{r.ra === "—" ? <span style={{ color: th.text3, fontStyle:"italic" }}>—</span> : r.ra}</td>
                   <td style={td}>{r.lam}</td>
                   <td style={td}>
                     <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600,
                       background:r.st==="ontime"?"#D1FAE5":"#FEF3C7",
                       color:r.st==="ontime"?"#065F46":"#92400E",
                     }}>{r.st==="ontime"?(vi?"Đúng giờ":"On time"):(vi?"Đi muộn":"Late")}</span>
+                  </td>
+                  <td style={td}>
+                    {r.notes ? (
+                      <span style={{
+                        display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:600,
+                        background: r.notes.includes("check-out") ? "#FEE2E2" : "#FFF7ED",
+                        color: r.notes.includes("check-out") ? "#991B1B" : "#9A3412",
+                      }}>{r.notes}</span>
+                    ) : (
+                      <span style={{ color: th.text3 }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}
