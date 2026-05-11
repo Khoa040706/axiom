@@ -11,13 +11,46 @@
  * - checkOut = null nếu chưa tới giờ ra (đang làm)
  * - Cuối ngày (≥ 21h): ghi notes "Không check-out" nếu thiếu
  *
- * ⚠️ CHỈ DÙNG CHO DEMO — Không sử dụng trong production
+ * ⚠️ Tất cả giờ dùng Vietnam timezone (UTC+7)
  */
 
 import { prisma } from "@/lib/prisma"
 
 // 6 username demo — không tạo data ảo
 const DEMO_USERNAMES = ["admin", "giamdoc", "nhansu", "ketoan", "quanly", "nhanvien"]
+
+/** Lấy thời gian Vietnam (UTC+7) từ Date hiện tại */
+function vnNow(): { hours: number; minutes: number; day: number; month: number; year: number; dow: number; minOfDay: number; date: Date } {
+  const now = new Date()
+  // Shift to VN timezone: UTC + 7 hours
+  const vnMs = now.getTime() + 7 * 60 * 60 * 1000
+  const vn = new Date(vnMs)
+  const hours = vn.getUTCHours()
+  const minutes = vn.getUTCMinutes()
+  return {
+    hours,
+    minutes,
+    day: vn.getUTCDate(),
+    month: vn.getUTCMonth() + 1,
+    year: vn.getUTCFullYear(),
+    dow: vn.getUTCDay(),
+    minOfDay: hours * 60 + minutes,
+    date: now,
+  }
+}
+
+/** Tạo Date object cho 1 giờ cụ thể theo Vietnam timezone */
+function vnTimeToDate(h: number, m: number): Date {
+  // Tạo date 1970-01-01 với giờ VN, lưu dưới dạng UTC
+  // VN = UTC+7, nên giờ UTC = giờ VN - 7
+  const utcH = h - 7
+  if (utcH >= 0) {
+    return new Date(Date.UTC(1970, 0, 1, utcH, m, 0))
+  } else {
+    // Xử lý trường hợp qua ngày (e.g. 0:00 VN = 17:00 UTC ngày trước)
+    return new Date(Date.UTC(1969, 11, 31, 24 + utcH, m, 0))
+  }
+}
 
 /** Seeded random (giống fake-data-sync) — nhất quán giữa các lần gọi */
 function seeded(empId: number, day: number, month: number, year: number, salt: number): number {
@@ -44,12 +77,9 @@ interface DaySchedule {
 /**
  * Tính lịch trình cá nhân cho 1 NV dựa trên seeded random.
  * Kết quả nhất quán — gọi bao nhiêu lần cũng giống nhau cho cùng (empId, ngày).
+ * Tất cả giờ là giờ Vietnam.
  */
-function getSchedule(empId: number, date: Date): DaySchedule {
-  const day = date.getDate()
-  const month = date.getMonth() + 1
-  const year = date.getFullYear()
-
+function getSchedule(empId: number, day: number, month: number, year: number): DaySchedule {
   // 1. Trạng thái ngày: 85% đi làm, 5% vắng, 5% nghỉ phép, 5% đi muộn nặng
   const statusRand = seeded(empId, day, month, year, 1000)
   if (statusRand < 0.05) {
@@ -59,7 +89,7 @@ function getSchedule(empId: number, date: Date): DaySchedule {
     return { status: "Nghỉ phép", checkInHour: 0, checkInMin: 0, checkOutHour: 0, checkOutMin: 0, lateMinutes: 0, otHours: 0, hasCheckout: false }
   }
 
-  // 2. Giờ check-in (độc lập)
+  // 2. Giờ check-in (VN time, độc lập)
   const ciRand = seeded(empId, day, month, year, 2000)
   let checkInHour: number, checkInMin: number, lateMinutes: number
   
@@ -90,7 +120,7 @@ function getSchedule(empId: number, date: Date): DaySchedule {
   const hasOT = otRand < 0.12
   const otHours = hasOT ? seededInt(empId, day, month, year, 3100, 1, 3) : 0
 
-  // 4. Giờ check-out
+  // 4. Giờ check-out (VN time)
   // - NV bình thường (không OT): 17:00 – 17:15
   // - NV có OT: 17:00 + otHours (17:xx – 20:xx)
   // - 3% NV: không checkout (quên)
@@ -117,20 +147,19 @@ function getSchedule(empId: number, date: Date): DaySchedule {
 /**
  * Sync chấm công hôm nay cho tất cả NV ảo.
  * Gọi mỗi 1 tiếng từ API endpoint.
+ * Tất cả thời gian sử dụng Vietnam timezone (UTC+7).
  */
 export async function ensureTodayAttendance(): Promise<{ synced: boolean; updated: number; message: string }> {
-  const now = new Date()
-  const dow = now.getDay()
+  const vn = vnNow()
 
   // Không chạy T7/CN
-  if (dow === 0 || dow === 6) {
+  if (vn.dow === 0 || vn.dow === 6) {
     return { synced: false, updated: 0, message: "Cuối tuần — bỏ qua" }
   }
 
-  // Chưa tới 7:15 → chưa ai vào
-  const currentMinOfDay = now.getHours() * 60 + now.getMinutes()
-  if (currentMinOfDay < 7 * 60 + 15) {
-    return { synced: false, updated: 0, message: "Chưa tới giờ làm" }
+  // Chưa tới 7:15 VN → chưa ai vào
+  if (vn.minOfDay < 7 * 60 + 15) {
+    return { synced: false, updated: 0, message: "Chưa tới giờ làm (VN)" }
   }
 
   try {
@@ -156,15 +185,22 @@ export async function ensureTodayAttendance(): Promise<{ synced: boolean; update
       return { synced: true, updated: 0, message: "Không có NV ảo" }
     }
 
+    // Ngày hôm nay (đầu ngày VN, lưu theo UTC)
+    const todayStart = new Date(Date.UTC(vn.year, vn.month - 1, vn.day, 0, 0, 0))
+    // Shift to midnight UTC of the VN date
+    todayStart.setTime(todayStart.getTime() - 7 * 60 * 60 * 1000)
+
+    // Fallback: dùng local midnight cho workDate query
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+
     let updated = 0
 
     for (const emp of employees) {
       // NV chưa vào làm → skip
       if (emp.hireDate > today) continue
 
-      const schedule = getSchedule(emp.id, today)
+      const schedule = getSchedule(emp.id, vn.day, vn.month, vn.year)
 
       // Vắng / Nghỉ phép → tạo record trạng thái
       if (schedule.status === "Vắng" || schedule.status === "Nghỉ phép") {
@@ -179,15 +215,16 @@ export async function ensureTodayAttendance(): Promise<{ synced: boolean; update
         continue
       }
 
-      // Tính giờ check-in/check-out dưới dạng phút trong ngày
+      // Tính giờ check-in/check-out dưới dạng phút trong ngày (VN time)
       const ciMinOfDay = schedule.checkInHour * 60 + schedule.checkInMin
       const coMinOfDay = schedule.checkOutHour * 60 + schedule.checkOutMin
 
-      // Chưa tới giờ vào của NV này → skip
-      if (currentMinOfDay < ciMinOfDay) continue
+      // Chưa tới giờ vào VN của NV này → skip
+      if (vn.minOfDay < ciMinOfDay) continue
 
       // Đã tới giờ vào → tạo/cập nhật checkIn
-      const checkIn = new Date(1970, 0, 1, schedule.checkInHour, schedule.checkInMin, 0)
+      // Dùng vnTimeToDate để lưu giờ VN dưới dạng UTC đúng
+      const checkIn = vnTimeToDate(schedule.checkInHour, schedule.checkInMin)
 
       // Xác định checkOut
       let checkOut: Date | null = null
@@ -195,19 +232,19 @@ export async function ensureTodayAttendance(): Promise<{ synced: boolean; update
       let earlyMinutes = 0
       let notes: string | null = null
 
-      if (currentMinOfDay >= coMinOfDay && schedule.hasCheckout) {
-        // Đã qua giờ ra VÀ NV có checkout → ghi checkOut
-        checkOut = new Date(1970, 0, 1, schedule.checkOutHour, schedule.checkOutMin, 0)
+      if (vn.minOfDay >= coMinOfDay && schedule.hasCheckout) {
+        // Đã qua giờ ra VN VÀ NV có checkout → ghi checkOut
+        checkOut = vnTimeToDate(schedule.checkOutHour, schedule.checkOutMin)
         otHours = schedule.otHours
 
         // Về sớm nếu checkout trước 17:00 (chỉ khi không OT)
         if (schedule.checkOutHour < 17) {
           earlyMinutes = (17 * 60) - coMinOfDay
         }
-      } else if (currentMinOfDay >= coMinOfDay && !schedule.hasCheckout) {
+      } else if (vn.minOfDay >= coMinOfDay && !schedule.hasCheckout) {
         // Đã qua giờ ra NHƯNG NV quên checkout
-        // Chỉ ghi notes khi đã >= 21:00 (cuối ngày)
-        if (currentMinOfDay >= 21 * 60) {
+        // Chỉ ghi notes khi đã >= 21:00 VN (cuối ngày)
+        if (vn.minOfDay >= 21 * 60) {
           notes = "Không check-out"
         }
         // checkOut vẫn = null
@@ -224,9 +261,10 @@ export async function ensureTodayAttendance(): Promise<{ synced: boolean; update
         if (existing && existing.checkIn) {
           const existingCI = new Date(existing.checkIn)
           const seedCI = checkIn
+          // So sánh bằng UTC hours/minutes (cả 2 đều lưu UTC)
           const diffMin = Math.abs(
-            (existingCI.getHours() * 60 + existingCI.getMinutes()) -
-            (seedCI.getHours() * 60 + seedCI.getMinutes())
+            (existingCI.getUTCHours() * 60 + existingCI.getUTCMinutes()) -
+            (seedCI.getUTCHours() * 60 + seedCI.getUTCMinutes())
           )
           // Nếu giờ check-in khác nhau > 5 phút → NV đã check-in thật, skip
           if (diffMin > 5) continue
@@ -246,7 +284,7 @@ export async function ensureTodayAttendance(): Promise<{ synced: boolean; update
             notes,
           },
           update: {
-            // Chỉ cập nhật checkOut và notes (không ghi đè checkIn)
+            // Cập nhật checkOut, OT, notes (không ghi đè checkIn/status)
             ...(checkOut ? { checkOut, otHours, earlyMinutes } : {}),
             ...(notes ? { notes } : {}),
           },
@@ -255,8 +293,8 @@ export async function ensureTodayAttendance(): Promise<{ synced: boolean; update
       } catch { /* skip */ }
     }
 
-    console.log(`[today-attendance-sync] ✅ Updated ${updated} records (${now.toLocaleTimeString("vi-VN")})`)
-    return { synced: true, updated, message: `Đã cập nhật ${updated} bản ghi` }
+    console.log(`[today-attendance-sync] ✅ Updated ${updated} records (VN: ${vn.hours}:${String(vn.minutes).padStart(2,"0")})`)
+    return { synced: true, updated, message: `Đã cập nhật ${updated} bản ghi (VN: ${vn.hours}:${String(vn.minutes).padStart(2,"0")})` }
 
   } catch (error) {
     console.error("[today-attendance-sync] ❌ Error:", error)

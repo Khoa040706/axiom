@@ -223,11 +223,16 @@ function Inner({ children }: { children: React.ReactNode }) {
     reloadUser()
   }, [reloadUser])
 
-  // ── Auto-sync fake data: cập nhật chấm công + lương ảo hàng ngày cho 57 NV (không block UI) ──
-  // ── Auto-fix leave dates: nếu còn data nghỉ phép tháng 3 (cũ) → tự fix sang tháng 4-5 ──
+  // ── Auto-fix data sau deploy (chạy 1 lần, idempotent, không block UI) ──
+  // - sync-fake-data: cập nhật chấm công + lương ảo hàng ngày cho NV
+  // - fix-leave-dates: fix đơn nghỉ phép tháng 3 (data seed cũ) → tháng 4-5
+  // - seed-payslips: tạo phiếu lương tháng 1-4, xóa tháng hiện tại chưa hết
+  // - fix-emails: đổi email @axiom.vn → @gmail.com
   useEffect(() => {
     fetch("/api/sync-fake-data").catch(() => {})
     fetch("/api/fix-leave-dates").catch(() => {})
+    fetch("/api/seed-payslips").catch(() => {})
+    fetch("/api/fix-emails").catch(() => {})
   }, [])
 
   // ── Sync chấm công hôm nay mỗi 1 tiếng → quản lý thấy ai vào/ra giờ nào ──

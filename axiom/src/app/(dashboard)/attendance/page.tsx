@@ -125,13 +125,30 @@ export default function AttendancePage() {
         const isLate     = lateByDB || lateByTime
         const noData     = !checkIn // NV không có giờ vào → chưa chấm công
 
+        // Không check-out: đã check-in, qua 17:00, nhưng không có checkOut
+        const nowH = new Date().getHours()
+        const noCheckout = checkIn && !checkOut && nowH >= 17
+
+        // Xác định trạng thái kết hợp
+        let st: string = "ontime"
+        if (noData) st = "nodata"
+        else if (isLate && noCheckout) st = "late+noco"
+        else if (isLate) st = "late"
+        else if (noCheckout) st = "noco"
+
+        // Notes: bổ sung "Không check-out" nếu chưa có trong notes
+        let notes = rec.notes ?? ""
+        if (noCheckout && !notes.includes("check-out")) {
+          notes = notes ? notes + " | Không check-out" : "Không check-out"
+        }
+
         return {
           name: rec.employee?.fullName ?? "—",
           vao:  checkIn  ? checkIn.toLocaleTimeString("vi-VN",  { hour:"2-digit", minute:"2-digit" }) : "—",
           ra:   checkOut ? checkOut.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit" }) : "—",
           lam:  lamH,
-          st:   noData ? "nodata" : (isLate ? "late" : "ontime"),
-          notes: rec.notes ?? "",
+          st,
+          notes,
         }
       }))
     }
@@ -169,13 +186,24 @@ export default function AttendancePage() {
           const lateByTime = checkIn ? (checkIn.getHours() * 60 + checkIn.getMinutes()) > 7 * 60 + 30 : false
           const isLate     = lateByDB || lateByTime
           const noData     = !checkIn
+          const nowH2 = new Date().getHours()
+          const noCheckout2 = checkIn && !checkOut && nowH2 >= 17
+          let st2: string = "ontime"
+          if (noData) st2 = "nodata"
+          else if (isLate && noCheckout2) st2 = "late+noco"
+          else if (isLate) st2 = "late"
+          else if (noCheckout2) st2 = "noco"
+          let notes2 = rec.notes ?? ""
+          if (noCheckout2 && !notes2.includes("check-out")) {
+            notes2 = notes2 ? notes2 + " | Không check-out" : "Không check-out"
+          }
           return {
             name: rec.employee?.fullName ?? "—",
             vao:  checkIn  ? checkIn.toLocaleTimeString("vi-VN",  { hour:"2-digit", minute:"2-digit" }) : "—",
             ra:   checkOut ? checkOut.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit" }) : "—",
             lam:  lamH,
-            st:   noData ? "nodata" : (isLate ? "late" : "ontime"),
-            notes: rec.notes ?? "",
+            st:   st2,
+            notes: notes2,
           }
         }))
       })
@@ -731,10 +759,20 @@ export default function AttendancePage() {
                   <td style={td}>{r.ra === "—" ? <span style={{ color: th.text3, fontStyle:"italic" }}>—</span> : r.ra}</td>
                   <td style={td}>{r.lam}</td>
                   <td style={td}>
-                    <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600,
-                      background:r.st==="nodata"?"#F3F4F6":(r.st==="ontime"?"#D1FAE5":"#FEF3C7"),
-                      color:r.st==="nodata"?"#6B7280":(r.st==="ontime"?"#065F46":"#92400E"),
-                    }}>{r.st==="nodata"?(vi?"Chưa chấm công":"No check-in"):(r.st==="ontime"?(vi?"Đúng giờ":"On time"):(vi?"Đi muộn":"Late"))}</span>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                      {r.st==="nodata" && (
+                        <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600, background:"#F3F4F6", color:"#6B7280" }}>{vi?"Chưa chấm công":"No check-in"}</span>
+                      )}
+                      {r.st==="ontime" && (
+                        <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600, background:"#D1FAE5", color:"#065F46" }}>{vi?"Đúng giờ":"On time"}</span>
+                      )}
+                      {(r.st==="late" || r.st==="late+noco") && (
+                        <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600, background:"#FEF3C7", color:"#92400E" }}>{vi?"Đi muộn":"Late"}</span>
+                      )}
+                      {(r.st==="noco" || r.st==="late+noco") && (
+                        <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600, background:"#FEE2E2", color:"#991B1B" }}>{vi?"Không checkout":"No checkout"}</span>
+                      )}
+                    </div>
                   </td>
                   <td style={td}>
                     {r.notes ? (

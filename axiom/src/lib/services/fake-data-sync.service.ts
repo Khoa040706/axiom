@@ -29,6 +29,13 @@ function seededInt(empId: number, day: number, month: number, year: number, salt
   return min + Math.floor(seeded(empId, day, month, year, salt) * (max - min + 1))
 }
 
+/** Tạo Date cho giờ VN, lưu dưới dạng UTC */
+function vnTimeToDate(h: number, m: number): Date {
+  const utcH = h - 7
+  if (utcH >= 0) return new Date(Date.UTC(1970, 0, 1, utcH, m, 0))
+  return new Date(Date.UTC(1969, 11, 31, 24 + utcH, m, 0))
+}
+
 /** Tính lương Gross → Net */
 function calcPayroll(params: {
   baseSalary: number; allowance: number; otHours: number;
@@ -177,8 +184,8 @@ export async function ensureFakeDataUpToDate(): Promise<{ synced: boolean; newRe
               where: { employeeId_workDate: { employeeId: emp.id, workDate } },
               create: {
                 employeeId: emp.id, workDate, status,
-                checkIn: new Date(1970, 0, 1, checkInHour, checkInMin, 0),
-                checkOut: new Date(1970, 0, 1, 17 + otHours, 0, 0),
+                checkIn: vnTimeToDate(checkInHour, checkInMin),
+                checkOut: vnTimeToDate(17 + otHours, 0),
                 lateMinutes, otHours,
               },
               update: {},  // Không ghi đè nếu đã có
