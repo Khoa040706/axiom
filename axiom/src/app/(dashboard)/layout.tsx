@@ -224,8 +224,10 @@ function Inner({ children }: { children: React.ReactNode }) {
   }, [reloadUser])
 
   // ── Auto-sync fake data: cập nhật chấm công + lương ảo hàng ngày cho 57 NV (không block UI) ──
+  // ── Auto-fix leave dates: nếu còn data nghỉ phép tháng 3 (cũ) → tự fix sang tháng 4-5 ──
   useEffect(() => {
     fetch("/api/sync-fake-data").catch(() => {})
+    fetch("/api/fix-leave-dates").catch(() => {})
   }, [])
 
   // ── Sync chấm công hôm nay mỗi 1 tiếng → quản lý thấy ai vào/ra giờ nào ──
@@ -336,8 +338,8 @@ function Inner({ children }: { children: React.ReactNode }) {
   // Sidebar has 10px left offset when floating, so main content needs extra margin
   const mainMargin = isMobile ? 0 : isTablet ? (W_TABLET + 20) : (W_COLLAPSED + 20)
 
-  // ── Bottom nav items (mobile only) — first 5 max ───────────────
-  const bottomNavItems = navItems.slice(0, 5)
+  // ── Bottom nav items (mobile only) ─ hiển thị TẤT CẢ chức năng ─────────
+  const bottomNavItems = navItems
 
   return (
     <div className={dark ? "dark" : undefined} style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif", background: th.pageBg }}>
@@ -861,11 +863,12 @@ function Inner({ children }: { children: React.ReactNode }) {
             const active = pathname === href || (pathname.startsWith(href + "/") && !bottomNavItems.some(n => n.href !== href && pathname.startsWith(n.href)))
             return (
               <Link key={href} href={href} style={{
-                flex: 1,
+                flex: "1 1 0",
+                minWidth: 0,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                gap: 3, textDecoration: "none",
+                gap: 2, textDecoration: "none",
                 color: active ? "#D0211C" : th.text2,
-                padding: "6px 2px",
+                padding: "6px 1px",
                 transition: "color .15s",
                 fontSize: 10, fontWeight: active ? 700 : 400,
                 position: "relative",
@@ -876,8 +879,8 @@ function Inner({ children }: { children: React.ReactNode }) {
                     height: 2, background: "#D0211C", borderRadius: "0 0 2px 2px",
                   }} />
                 )}
-                <Icon size={20} />
-                <span style={{ fontSize: 9.5, lineHeight: 1, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textAlign: "center" }}>
+                <Icon size={18} />
+                <span style={{ fontSize: bottomNavItems.length > 5 ? 8 : 9.5, lineHeight: 1, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", textAlign: "center", padding: "0 1px" }}>
                   {lang === "vi" ? vi : en}
                 </span>
               </Link>

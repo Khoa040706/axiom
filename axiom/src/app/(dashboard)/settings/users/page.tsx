@@ -513,8 +513,91 @@ export default function UsersAdminPage() {
         ))}
       </div>
 
-      {/* Table */}
+      {/* Table / Mobile cards */}
       <div style={{ background: th.cardBg, borderRadius: 14, border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+        {isMobile ? (
+          /* ── MOBILE CARD VIEW ── */
+          <div style={{ padding: 12 }}>
+            {paginated.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: th.text2, fontSize: 13 }}>
+                {vi ? "Không tìm thấy tài khoản nào" : "No accounts found"}
+              </div>
+            ) : paginated.map(u => {
+              const ri = roleInfo(u.role)
+              const empName = u.employee?.fullName ?? u.username
+              const empCode = u.employee?.code ?? "—"
+              const dept    = u.employee?.department?.name ?? "—"
+              return (
+                <div key={u.id} style={{
+                  background: dark ? "rgba(255,255,255,0.03)" : "#FAFAFA",
+                  border: `1px solid ${th.cardBorder}`,
+                  borderRadius: 12, padding: 14, marginBottom: 10,
+                }}>
+                  {/* Row 1: Avatar + Name + Status */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <AvatarImg src={u.employee?.avatarPath} alt={empName} size={40}
+                      style={{ border: `2px solid ${ri.color}40`, flexShrink: 0 }}/>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: th.text1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{empName}</div>
+                      <div style={{ fontSize: 11.5, color: th.text2 }}>{empCode}</div>
+                    </div>
+                    <span style={{
+                      background: u.isActive ? "#D1FAE5" : "#FEE2E2",
+                      color: u.isActive ? "#065F46" : "#991B1B",
+                      borderRadius: 10, padding: "3px 10px", fontSize: 11, fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {u.isActive ? (vi ? "Hoạt động" : "Active") : (vi ? "Khoá" : "Inactive")}
+                    </span>
+                  </div>
+
+                  {/* Row 2: Info grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", fontSize: 12.5, color: th.text1, marginBottom: 10 }}>
+                    <div><span style={{ color: th.text2 }}>{vi ? "Tài khoản" : "Username"}: </span><b style={{ fontFamily: "monospace" }}>{u.username}</b></div>
+                    <div><span style={{ color: th.text2 }}>{vi ? "Phòng ban" : "Dept"}: </span><b>{tDept(dept, vi)}</b></div>
+                  </div>
+
+                  {/* Row 3: Role dropdown + Actions */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <RoleDropdown user={u} vi={vi} onRoleChange={handleRoleChange} actionLoading={actionLoading} th={th}/>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => handleToggleActive(u)} disabled={actionLoading}
+                        title={u.isActive ? (vi ? "Khoá" : "Deactivate") : (vi ? "Mở khoá" : "Activate")}
+                        style={{ padding: "6px 8px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: th.cardBg, cursor: "pointer", display: "flex", alignItems: "center", color: u.isActive ? "#EF4444" : "#10B981" }}>
+                        {u.isActive ? <UserX size={14}/> : <UserCheck size={14}/>}
+                      </button>
+                      <button onClick={() => { setShowReset(u); setShowResetPw(""); setShowPw(false) }} disabled={actionLoading}
+                        title={vi ? "Reset mật khẩu" : "Reset password"}
+                        style={{ padding: "6px 8px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: th.cardBg, cursor: "pointer", display: "flex", alignItems: "center", color: "#3B82F6" }}>
+                        <Key size={14}/>
+                      </button>
+                      <button onClick={() => handleDelete(u)} disabled={actionLoading}
+                        title={vi ? "Xoá" : "Delete"}
+                        style={{ padding: "6px 8px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: th.cardBg, cursor: "pointer", display: "flex", alignItems: "center", color: "#EF4444" }}>
+                        <Trash2 size={14}/>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+            {/* Mobile pagination */}
+            {totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, paddingTop: 10 }}>
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                  style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${th.cardBorder}`, background: safePage === 1 ? th.tableHead : "#D0211C", color: safePage === 1 ? th.text3 : "#fff", cursor: safePage === 1 ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 600 }}>
+                  {vi ? "← Trước" : "← Prev"}
+                </button>
+                <span style={{ fontSize: 12, color: th.text2, fontWeight: 600 }}>{safePage}/{totalPages}</span>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                  style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${th.cardBorder}`, background: safePage === totalPages ? th.tableHead : "#D0211C", color: safePage === totalPages ? th.text3 : "#fff", cursor: safePage === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 600 }}>
+                  {vi ? "Sau →" : "Next →"}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── DESKTOP TABLE VIEW ── */
+          <>
         <div className="table-scroll">
         <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead><tr>
@@ -624,6 +707,8 @@ export default function UsersAdminPage() {
               style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${th.cardBorder}`, background: safePage === totalPages ? th.tableHead : th.cardBg, color: safePage === totalPages ? th.text3 : th.text1, cursor: safePage === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>»</button>
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* ── Create modal ── */}

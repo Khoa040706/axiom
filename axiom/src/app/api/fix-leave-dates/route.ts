@@ -1,10 +1,9 @@
 /**
  * API Route: /api/fix-leave-dates
  *
- * One-time fix: Xóa đơn nghỉ phép cũ (tháng 3) và tạo lại với ngày hợp lý
- * Gọi 1 lần duy nhất sau khi deploy để fix dữ liệu trên production
- *
- * ⚠️ CHỈ DÙNG CHO DEMO — Xóa sau khi fix xong
+ * Auto-detect & fix: Kiểm tra nếu có đơn nghỉ phép với ngày tháng 3/2026
+ * (data seed cũ lỗi) thì xóa và tạo lại với ngày hợp lý (tháng 4-5).
+ * Nếu data đã OK thì skip — an toàn để gọi nhiều lần.
  */
 
 import { NextResponse } from "next/server"
@@ -14,17 +13,36 @@ export const runtime = "nodejs"
 
 export async function GET() {
   try {
-    // 1. Xóa toàn bộ đơn nghỉ phép cũ
+    // 1. Kiểm tra xem có đơn nghỉ phép tháng 3/2026 không (data lỗi)
+    const badLeaves = await prisma.leaveRequest.findMany({
+      where: {
+        startDate: {
+          gte: new Date("2026-03-01"),
+          lt: new Date("2026-04-01"),
+        },
+      },
+    })
+
+    if (badLeaves.length === 0) {
+      // Data đã OK, không cần fix
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        message: "Data đã hợp lệ, không cần fix",
+      })
+    }
+
+    // 2. Có data lỗi → xóa toàn bộ và tạo lại
     const deleted = await prisma.leaveRequest.deleteMany()
 
-    // 2. Lấy danh sách nhân viên
+    // 3. Lấy danh sách nhân viên
     const employees = await prisma.employee.findMany({
       select: { id: true, code: true },
       orderBy: { code: "asc" },
     })
     const byCode = (code: string) => employees.find(e => e.code === code)
 
-    // 3. Tạo lại đơn nghỉ phép với ngày hợp lý
+    // 4. Tạo lại đơn nghỉ phép với ngày hợp lý
     const pastLeaves = [
       { code: "NV009", type: "Nghỉ phép năm", from: "2026-04-07", to: "2026-04-08", days: 2, reason: "Đưa gia đình đi du lịch cuối tuần", status: "Đã duyệt", createdAt: "2026-04-02" },
       { code: "NV013", type: "Nghỉ bệnh",     from: "2026-04-14", to: "2026-04-15", days: 2, reason: "Bị sốt virus, cần nghỉ ngơi",       status: "Đã duyệt", createdAt: "2026-04-13" },
@@ -75,7 +93,7 @@ export async function GET() {
       success: true,
       deleted: deleted.count,
       created: count,
-      message: `Đã xóa ${deleted.count} đơn cũ, tạo ${count} đơn mới`,
+      message: `Đã xóa ${deleted.count} đơn cũ (tháng 3), tạo ${count} đơn mới (tháng 4-5)`,
     })
   } catch (error) {
     console.error("[fix-leave-dates]", error)

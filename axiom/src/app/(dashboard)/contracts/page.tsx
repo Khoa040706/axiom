@@ -781,7 +781,7 @@ export default function ContractsPage() {
                   </span>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr",
-                  gap:"4px 12px", fontSize:12.5, marginBottom:10 }}>
+                  gap:"4px 12px", fontSize:12.5, marginBottom:10, color:th.text1 }}>
                   <div><span style={{ color:th.text2 }}>{vi?"Loại":"Type"}: </span><b>{vi?c.contractType:({"Chính thức":"Full-time","Thử việc":"Probation","Thời vụ":"Seasonal","Thực tập":"Internship"} as Record<string,string>)[c.contractType]??c.contractType}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Lương":"Salary"}: </span><b>{fmtSalary(c.baseSalary)}</b></div>
                   <div><span style={{ color:th.text2 }}>{vi?"Bắt đầu":"Start"}: </span><b>{c.startDate}</b></div>

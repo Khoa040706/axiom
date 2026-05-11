@@ -42,10 +42,13 @@ function PieLabel({ cx, cy, midAngle, outerRadius, name, value, textColor }: any
   const r = outerRadius + 26
   const x = cx + r * Math.cos(-midAngle * RADIAN)
   const y = cy + r * Math.sin(-midAngle * RADIAN)
+  // Truncate long names to prevent overflow on mobile
+  const maxLen = outerRadius < 70 ? 10 : 18
+  const displayName = name.length > maxLen ? name.slice(0, maxLen) + "…" : name
   return (
-    <text x={x} y={y} fill={textColor} fontSize={10.5} fontWeight={500}
+    <text x={x} y={y} fill={textColor} fontSize={outerRadius < 70 ? 9 : 10.5} fontWeight={500}
       textAnchor={x > cx ? "start" : "end"} dominantBaseline="central">
-      {name}: <tspan fontWeight={700}>{value}</tspan>
+      {displayName}: <tspan fontWeight={700}>{value}</tspan>
     </text>
   )
 }
