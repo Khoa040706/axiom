@@ -165,10 +165,10 @@ export default function PayrollConfigPage() {
   const totalInsEmployer = draft.bhxhEmployer + draft.bhytEmployer + draft.bhtnEmployer
 
   const TABS = [
-    { id: "insurance", label: vi ? "Bảo hiểm" : "Insurance", icon: <Shield size={13}/> },
-    { id: "tax",       label: vi ? "Thuế TNCN" : "Income Tax", icon: <Percent size={13}/> },
-    { id: "payroll",   label: vi ? "Cài đặt lương" : "Payroll", icon: <Calculator size={13}/> },
-    { id: "wages",     label: vi ? "Lương tối thiểu" : "Min Wage", icon: <DollarSign size={13}/> },
+    { id: "insurance", label: vi ? "Bảo hiểm" : "Insurance", short: vi ? "BH" : "Ins.", icon: <Shield size={13}/> },
+    { id: "tax",       label: vi ? "Thuế TNCN" : "Income Tax", short: vi ? "Thuế" : "Tax", icon: <Percent size={13}/> },
+    { id: "payroll",   label: vi ? "Cài đặt lương" : "Payroll", short: vi ? "Lương" : "Pay", icon: <Calculator size={13}/> },
+    { id: "wages",     label: vi ? "Lương tối thiểu" : "Min Wage", short: vi ? "Tối thiểu" : "Wage", icon: <DollarSign size={13}/> },
   ]
 
   return (
@@ -245,14 +245,14 @@ export default function PayrollConfigPage() {
           <div style={{ display: "flex", gap: isMobile ? 2 : 6, marginBottom: 16, background: th.tableHead, borderRadius: 12, padding: isMobile ? 4 : 6, border: `1px solid ${th.cardBorder}`, overflowX: isMobile ? "auto" as const : "visible" as const, WebkitOverflowScrolling: "touch" as any }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setActiveTab(t.id as any)} style={{
-                flex: 1, padding: "8px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                flex: 1, padding: isMobile ? "8px 6px" : "8px 12px", borderRadius: 8, border: "none", cursor: "pointer",
                 background: activeTab === t.id ? "#D0211C" : "none",
                 color: activeTab === t.id ? "#fff" : th.text2,
-                fontSize: 12.5, fontWeight: activeTab === t.id ? 700 : 400, fontFamily: "inherit",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                transition: "all .15s",
+                fontSize: isMobile ? 11 : 12.5, fontWeight: activeTab === t.id ? 700 : 400, fontFamily: "inherit",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 4 : 6,
+                transition: "all .15s", whiteSpace: "nowrap",
               }}>
-                {t.icon}{isMobile ? null : t.label}
+                {t.icon}{isMobile ? t.short : t.label}
               </button>
             ))}
           </div>

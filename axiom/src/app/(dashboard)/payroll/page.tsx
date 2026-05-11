@@ -831,7 +831,7 @@ export default function PayrollPage() {
         </div>{/* end table-scroll */}
         {/* Pagination footer */}
         <div style={{ padding:"10px 14px", background:th.tableHead, borderTop:`1px solid ${th.tableBorder}`,
-          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          display:"flex", flexWrap:"wrap", justifyContent:"space-between", alignItems:"center", gap:"8px 12px" }}>
           <span style={{ fontSize:12, color:th.text2 }}>
             {vi ? `Trang ${page}/${totalPages} · ${payrollData.length} ${"nhân viên"}` : `Page ${page}/${totalPages} · ${payrollData.length} ${"employees"}`}
           </span>
@@ -868,7 +868,7 @@ export default function PayrollPage() {
               color:th.text1,
             }}><ChevronRight size={14}/></button>
           </div>
-          <span style={{ fontSize:12.5, fontWeight:700, color:"#059669" }}>
+          <span style={{ fontSize:12.5, fontWeight:700, color:"#059669", whiteSpace:"nowrap" }}>
             {vi?"Tổng Net:":"Total Net:"} {fmt(totals.net)}
           </span>
         </div>
