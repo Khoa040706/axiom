@@ -29,6 +29,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.role          = (user as any).role
         token.employeeId    = (user as any).employeeId
+        token.department    = (user as any).department
         token.dashboardPath = (user as any).dashboardPath ?? ROLE_DASHBOARD[(user as any).role] ?? "/dashboard-employee"
         token.personalEmail = (user as any).personalEmail ?? null
       }
@@ -43,6 +44,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id            = token.sub ?? ""
         session.user.role          = typeof token.role === "string" ? token.role : "Employee"
         session.user.employeeId    = typeof token.employeeId === "number" ? token.employeeId : undefined
+        session.user.department    = typeof token.department === "string" ? token.department : undefined
         session.user.dashboardPath = typeof token.dashboardPath === "string" ? token.dashboardPath : "/dashboard-employee"
         session.user.personalEmail = token.personalEmail as string | null | undefined
       }

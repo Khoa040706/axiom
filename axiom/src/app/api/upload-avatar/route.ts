@@ -1,8 +1,7 @@
-// API route: upload avatar to disk
+// API route: upload avatar — lưu base64 vào DB (tương thích Vercel/serverless)
+// Không dùng fs.writeFile vì Vercel filesystem read-only
 
 import { NextRequest, NextResponse } from "next/server"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
 import { auth } from "@/lib/auth"
 
 export const runtime = "nodejs"
@@ -25,40 +24,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing data" }, { status: 400 })
     }
 
-    // Extract base64 data
+    // Validate base64 data URI format
     const match = imageData.match(/^data:image\/(png|jpe?g|webp);base64,(.+)$/)
     if (!match) {
       return NextResponse.json({ success: false, error: "Invalid image format" }, { status: 400 })
     }
 
-    const ext = match[1] === "jpeg" ? "jpg" : match[1]
+    // Limit: 5MB (check base64 size — base64 ~33% larger than raw)
     const base64Data = match[2]
-    const buffer = Buffer.from(base64Data, "base64")
-
-    // Limit: 5MB
-    if (buffer.byteLength > 5 * 1024 * 1024) {
+    const estimatedBytes = (base64Data.length * 3) / 4
+    if (estimatedBytes > 5 * 1024 * 1024) {
       return NextResponse.json({ success: false, error: "Image too large (max 5MB)" }, { status: 400 })
     }
 
-    // Save to public/uploads/avatars/
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "avatars")
-    await mkdir(uploadsDir, { recursive: true })
-
-    const filename = `avatar_${employeeId}_${Date.now()}.${ext}`
-    const filepath = path.join(uploadsDir, filename)
-    await writeFile(filepath, buffer)
-
-    // URL path for the browser
-    const avatarUrl = `/uploads/avatars/${filename}`
-
-    // Update DB
+    // Lưu base64 data URI trực tiếp vào avatarPath trong DB
+    // Ưu điểm: hoạt động trên mọi nền tảng (Vercel, Docker, etc.)
+    // AvatarImg component đã hỗ trợ hiển thị base64 data URI
     const { prisma } = await import("@/lib/prisma")
     await prisma.employee.update({
       where: { id: employeeId },
-      data: { avatarPath: avatarUrl },
+      data: { avatarPath: imageData },
     })
 
-    return NextResponse.json({ success: true, avatarPath: avatarUrl })
+    return NextResponse.json({ success: true, avatarPath: imageData })
   } catch (err) {
     console.error("[upload-avatar]", err)
     return NextResponse.json(
@@ -83,7 +71,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing employeeId" }, { status: 400 })
     }
 
-    // Xóa avatarPath trong DB → component AvatarImg sẽ tự hiển thị avatar mặc định (chữ cái)
+    // Xóa avatarPath trong DB → component AvatarImg sẽ tự hiển thị avatar mặc định
     const { prisma } = await import("@/lib/prisma")
     await prisma.employee.update({
       where: { id: employeeId },

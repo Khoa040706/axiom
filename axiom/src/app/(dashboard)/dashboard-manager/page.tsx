@@ -12,6 +12,7 @@ import { useSession } from "next-auth/react"
 import { useEmployeeId } from "@/hooks/use-current-user"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { CompanyEventsWidget } from "@/components/dashboard/CompanyEvents"
+import { tLeaveType } from "@/lib/i18n-maps"
 
 function StatCard({ label, value, accent, icon, sub }: any) {
   return (
@@ -73,6 +74,7 @@ export default function ManagerDashboard() {
   const { data: session } = useSession()
   const employeeId = useEmployeeId()
   const { isMobile } = useBreakpoint()
+  const userDept = (session?.user as any)?.department ?? ""
 
   const [pendingLeaves, setPending] = useState<any[]>([])
   const [deptAttend, setDeptAttend] = useState<any[]>([])
@@ -94,14 +96,20 @@ export default function ManagerDashboard() {
       setKpi({ deptSize: String(statsRes.data.empStats.total), pendingLeave: String(statsRes.data.pendingLeave) })
     }
     if (leavesRes.success) {
-      setPending((leavesRes.data as any[]).map((l: any) => ({
+      const allLeaves = (leavesRes.data as any[]).map((l: any) => ({
         id:   l.id,
         name: l.employee?.fullName ?? "—",
         type: l.leaveType,
         from: new Date(l.startDate).toLocaleDateString("vi-VN"),
         to:   new Date(l.endDate).toLocaleDateString("vi-VN"),
         days: Number(l.totalDays),
-      })))
+        department: l.employee?.department?.name ?? "",
+      }))
+      // Filter theo phòng ban của manager
+      const filtered = userDept
+        ? allLeaves.filter((l: any) => l.department === userDept)
+        : allLeaves
+      setPending(filtered)
     }
     if (attendRes.success) {
       // Build attendance chart từ records thực của manager
@@ -139,7 +147,10 @@ export default function ManagerDashboard() {
       <div className="page-header" style={{ marginBottom: 22 }}>
         <div>
           <h1 style={{ fontSize:22, fontWeight:800, color:th.text1, margin:0 }}>
-            {vi?"Dashboard — Trưởng phòng Công nghệ Thông tin":"IT Department Manager Dashboard"}
+            {vi
+              ? `Dashboard — Trưởng phòng ${userDept || "CNTT"}`
+              : `${userDept || "IT"} Department Manager Dashboard`
+            }
           </h1>
           <p style={{ fontSize:13, color:th.text2, margin:"4px 0 0" }}>{vi?"Quản lý nhân sự phòng ban của bạn":"Manage your department team"}</p>
         </div>
@@ -195,8 +206,8 @@ export default function ManagerDashboard() {
               {pendingLeaves.slice(0,4).map(l => (
                 <div key={l.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 10px", background:th.tableHead, borderRadius:8 }}>
                   <div>
-                    <div style={{ fontWeight:600, fontSize:12.5, color:th.text1 }}>{l.name}</div>
-                    <div style={{ fontSize:11, color:th.text2 }}>{l.type} · {l.from} → {l.to} ({l.days} {vi?"ngày":"days"})</div>
+                  <div style={{ fontWeight:600, fontSize:12.5, color:th.text1 }}>{l.name}</div>
+                    <div style={{ fontSize:11, color:th.text2 }}>{tLeaveType(l.type, vi)} · {l.from} → {l.to} ({l.days} {vi?"ngày":"days"})</div>
                   </div>
                   <div style={{ display:"flex", gap:4 }}>
                     <button onClick={() => handleApprove(l.id, true)} disabled={actionLoading}
@@ -232,7 +243,7 @@ export default function ManagerDashboard() {
                   onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background=dark?"rgba(255,255,255,0.03)":"#FAFAFA"}
                   onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background=""}>
                   <td style={{ ...td, fontWeight:600 }}>{l.name}</td>
-                  <td style={td}><span style={{ background:"#DBEAFE", color:"#1E40AF", borderRadius:10, padding:"2px 8px", fontSize:11.5, fontWeight:600 }}>{l.type}</span></td>
+                  <td style={td}><span style={{ background:"#DBEAFE", color:"#1E40AF", borderRadius:10, padding:"2px 8px", fontSize:11.5, fontWeight:600 }}>{tLeaveType(l.type, vi)}</span></td>
                   <td style={td}>{l.from}</td>
                   <td style={td}>{l.to}</td>
                   <td style={td}><b style={{ color:"#D0211C" }}>{l.days}</b></td>

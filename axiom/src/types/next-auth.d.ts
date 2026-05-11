@@ -11,6 +11,7 @@ declare module "next-auth" {
       image?: string | null
       role: string
       employeeId?: number
+      department?: string
       dashboardPath?: string
       personalEmail?: string | null
     }
@@ -20,6 +21,7 @@ declare module "next-auth" {
     id: string
     role: string
     employeeId?: number
+    department?: string
     dashboardPath?: string
     personalEmail?: string | null
   }
@@ -29,6 +31,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     role?: string
     employeeId?: number
+    department?: string
     dashboardPath?: string
     personalEmail?: string | null
   }

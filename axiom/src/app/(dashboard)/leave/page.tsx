@@ -125,6 +125,7 @@ export default function LeavePage() {
   const sessionEmployeeId = useEmployeeId()
   const sessionUserId = useUserId()
   const userRole = session?.user?.role ?? "Employee"
+  const userDept = (session?.user as any)?.department ?? ""
   const isManager = ["Admin", "HRManager", "Manager", "Director"].includes(userRole)
   const isOnlyDeptManager = userRole === "Manager" // Trưởng phòng chỉ thấy phòng mình
 
@@ -182,8 +183,8 @@ export default function LeavePage() {
         allLeaves = allLeaves.filter((l: any) => l.employeeId === sessionEmployeeId)
       }
       // Trưởng phòng chỉ thấy đơn của nhân viên phòng mình
-      if (isOnlyDeptManager) {
-        allLeaves = allLeaves.filter((l: any) => l.department === "Công nghệ thông tin" || l.department === "Phòng Công nghệ")
+      if (isOnlyDeptManager && userDept) {
+        allLeaves = allLeaves.filter((l: any) => l.department === userDept)
       }
       setLeaves(allLeaves)
     }
@@ -201,8 +202,8 @@ export default function LeavePage() {
         allQuota = allQuota.filter((q: any) => q.employeeId === sessionEmployeeId)
       }
       // Trưởng phòng chỉ thấy quota phòng mình
-      if (isOnlyDeptManager) {
-        allQuota = allQuota.filter((q: any) => q.department === "Công nghệ thông tin" || q.department === "Phòng Công nghệ")
+      if (isOnlyDeptManager && userDept) {
+        allQuota = allQuota.filter((q: any) => q.department === userDept)
       }
       setQuota(allQuota)
     }

@@ -49,6 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email:         null,
             role:          user.role,
             employeeId:    user.employeeId ?? undefined,
+            department:    user.employee?.department?.name ?? undefined,
             dashboardPath: dashboard,
             personalEmail: user.personalEmail ?? null,
           }

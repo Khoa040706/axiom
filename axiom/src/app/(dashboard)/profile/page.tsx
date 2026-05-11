@@ -347,6 +347,7 @@ export default function ProfilePage() {
 
   // Avatar
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [savedAvatar, setSavedAvatar]     = useState<string | null>(null) // Ảnh đã lưu trong DB
   const [avatarSaving, setAvatarSaving]   = useState(false)
   const [avatarChanged, setAvatarChanged] = useState(false)
   // Crop modal
@@ -358,7 +359,10 @@ export default function ProfilePage() {
     setInfoForm({ name: sessionUser.name, email: sessionUser.email ?? "", phone: (sessionUser as any).phone ?? "" })
     if (employeeId) {
       getEmployeeAvatar(employeeId).then(res => {
-        if (res.avatarPath) setAvatarPreview(res.avatarPath)
+        if (res.avatarPath) {
+          setAvatarPreview(res.avatarPath)
+          setSavedAvatar(res.avatarPath)
+        }
         if (res.email || res.phone) {
           setInfoForm(f => ({
             ...f,
@@ -467,6 +471,7 @@ export default function ProfilePage() {
       const json = await res.json()
       if (json.success) {
         setAvatarPreview(json.avatarPath)
+        setSavedAvatar(json.avatarPath)
         showToast("success", vi ? "Cập nhật ảnh đại diện thành công!" : "Avatar updated!")
         setAvatarChanged(false)
         window.dispatchEvent(new Event("axiom-user-updated"))
@@ -495,6 +500,7 @@ export default function ProfilePage() {
       const json = await res.json()
       if (json.success) {
         setAvatarPreview(null)
+        setSavedAvatar(null)
         setAvatarChanged(false)
         showToast("success", vi ? "Đã xóa ảnh đại diện!" : "Avatar removed!")
         window.dispatchEvent(new Event("axiom-user-updated"))
@@ -973,7 +979,7 @@ export default function ProfilePage() {
                     </button>
                     {avatarChanged && (
                       <button
-                        onClick={() => { setAvatarPreview(null); setAvatarChanged(false) }}
+                        onClick={() => { setAvatarPreview(savedAvatar); setAvatarChanged(false) }}
                         style={{
                           padding: "10px 20px", borderRadius: 10, border: `1.5px solid ${th.cardBorder}`,
                           background: "none", cursor: "pointer", fontSize: 14, fontWeight: 600,
@@ -983,8 +989,8 @@ export default function ProfilePage() {
                         {vi ? "Huỷ" : "Cancel"}
                       </button>
                     )}
-                    {/* Nút xóa ảnh đại diện — chỉ hiện khi có ảnh hiện tại (không phải đang chọn mới) */}
-                    {avatarPreview && !avatarChanged && (
+                    {/* Nút xóa ảnh đại diện — hiện khi có ảnh đã lưu trong DB */}
+                    {savedAvatar && (
                       <button
                         onClick={handleDeleteAvatar}
                         disabled={avatarSaving}

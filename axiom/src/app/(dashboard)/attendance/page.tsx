@@ -64,7 +64,7 @@ export default function AttendancePage() {
       const allRecs = (monthRes.data as any[]).filter(rec => {
         if (!isManager) return true
         const deptName = rec.employee?.department?.name ?? ""
-        return deptName === "Công nghệ thông tin" || deptName === "Phòng Công nghệ"
+        return deptName === userDept
       })
       const empMap = new Map<number, any>()
       for (const rec of allRecs) {
@@ -98,19 +98,23 @@ export default function AttendancePage() {
       const todayRecs = (todayRes.data as any[]).filter(rec => {
         if (!isManager) return true
         const deptName = rec.employee?.department?.name ?? ""
-        return deptName === "Công nghệ thông tin" || deptName === "Phòng Công nghệ"
+        return deptName === userDept
       })
       setToday(todayRecs.map(rec => {
         const checkIn  = rec.checkIn  ? new Date(rec.checkIn)  : null
         const checkOut = rec.checkOut ? new Date(rec.checkOut) : null
 
         // Tính giờ làm: trừ 90 phút nghỉ trưa nếu làm qua khung 11:30 → 13:00
+        // Cap giờ bắt đầu tại 7:30 — tới sớm không tính thêm giờ
         let lamH = "—"
         if (checkIn && checkOut) {
-          const rawMs = checkOut.getTime() - checkIn.getTime()
-          const ciH = checkIn.getHours()  + checkIn.getMinutes()  / 60  // giờ checkin dạng thập phân
-          const coH = checkOut.getHours() + checkOut.getMinutes() / 60  // giờ checkout dạng thập phân
-          const lunchMs = (ciH < 11.5 && coH > 13.0) ? 90 * 60 * 1000 : 0 // trừ 90ph nếu qua giờ trưa
+          const effectiveCI = new Date(checkIn)
+          const minStart = new Date(checkIn); minStart.setHours(7, 30, 0, 0)
+          if (effectiveCI < minStart) effectiveCI.setTime(minStart.getTime())
+          const rawMs = checkOut.getTime() - effectiveCI.getTime()
+          const ciH = effectiveCI.getHours() + effectiveCI.getMinutes() / 60
+          const coH = checkOut.getHours() + checkOut.getMinutes() / 60
+          const lunchMs = (ciH < 11.5 && coH > 13.0) ? 90 * 60 * 1000 : 0
           const netH = Math.max(0, (rawMs - lunchMs) / 3_600_000)
           lamH = `${netH.toFixed(1)}h`
         }
@@ -119,13 +123,14 @@ export default function AttendancePage() {
         const lateByDB   = (rec.lateMinutes ?? 0) > 0
         const lateByTime = checkIn ? (checkIn.getHours() * 60 + checkIn.getMinutes()) > 7 * 60 + 30 : false
         const isLate     = lateByDB || lateByTime
+        const noData     = !checkIn // NV không có giờ vào → chưa chấm công
 
         return {
           name: rec.employee?.fullName ?? "—",
           vao:  checkIn  ? checkIn.toLocaleTimeString("vi-VN",  { hour:"2-digit", minute:"2-digit" }) : "—",
           ra:   checkOut ? checkOut.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit" }) : "—",
           lam:  lamH,
-          st:   isLate ? "late" : "ontime",
+          st:   noData ? "nodata" : (isLate ? "late" : "ontime"),
           notes: rec.notes ?? "",
         }
       }))
@@ -143,15 +148,18 @@ export default function AttendancePage() {
         const todayRecs = (res.data as any[]).filter(rec => {
           if (!isManager) return true
           const deptName = rec.employee?.department?.name ?? ""
-          return deptName === "Công nghệ thông tin" || deptName === "Phòng Công nghệ"
+          return deptName === userDept
         })
         setToday(todayRecs.map(rec => {
           const checkIn  = rec.checkIn  ? new Date(rec.checkIn)  : null
           const checkOut = rec.checkOut ? new Date(rec.checkOut) : null
           let lamH = "—"
           if (checkIn && checkOut) {
-            const rawMs = checkOut.getTime() - checkIn.getTime()
-            const ciH = checkIn.getHours()  + checkIn.getMinutes()  / 60
+            const effectiveCI = new Date(checkIn)
+            const minStart = new Date(checkIn); minStart.setHours(7, 30, 0, 0)
+            if (effectiveCI < minStart) effectiveCI.setTime(minStart.getTime())
+            const rawMs = checkOut.getTime() - effectiveCI.getTime()
+            const ciH = effectiveCI.getHours() + effectiveCI.getMinutes() / 60
             const coH = checkOut.getHours() + checkOut.getMinutes() / 60
             const lunchMs = (ciH < 11.5 && coH > 13.0) ? 90 * 60 * 1000 : 0
             const netH = Math.max(0, (rawMs - lunchMs) / 3_600_000)
@@ -160,19 +168,20 @@ export default function AttendancePage() {
           const lateByDB   = (rec.lateMinutes ?? 0) > 0
           const lateByTime = checkIn ? (checkIn.getHours() * 60 + checkIn.getMinutes()) > 7 * 60 + 30 : false
           const isLate     = lateByDB || lateByTime
+          const noData     = !checkIn
           return {
             name: rec.employee?.fullName ?? "—",
             vao:  checkIn  ? checkIn.toLocaleTimeString("vi-VN",  { hour:"2-digit", minute:"2-digit" }) : "—",
             ra:   checkOut ? checkOut.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit" }) : "—",
             lam:  lamH,
-            st:   isLate ? "late" : "ontime",
+            st:   noData ? "nodata" : (isLate ? "late" : "ontime"),
             notes: rec.notes ?? "",
           }
         }))
       })
     }, 5 * 60 * 1000) // 5 phút
     return () => clearInterval(interval)
-  }, [isManager])
+  }, [isManager, userDept])
 
   const rows = staff.filter(s => {
     const matchQ    = matchAny([s.name, s.id, s.dept], q)
@@ -723,9 +732,9 @@ export default function AttendancePage() {
                   <td style={td}>{r.lam}</td>
                   <td style={td}>
                     <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:600,
-                      background:r.st==="ontime"?"#D1FAE5":"#FEF3C7",
-                      color:r.st==="ontime"?"#065F46":"#92400E",
-                    }}>{r.st==="ontime"?(vi?"Đúng giờ":"On time"):(vi?"Đi muộn":"Late")}</span>
+                      background:r.st==="nodata"?"#F3F4F6":(r.st==="ontime"?"#D1FAE5":"#FEF3C7"),
+                      color:r.st==="nodata"?"#6B7280":(r.st==="ontime"?"#065F46":"#92400E"),
+                    }}>{r.st==="nodata"?(vi?"Chưa chấm công":"No check-in"):(r.st==="ontime"?(vi?"Đúng giờ":"On time"):(vi?"Đi muộn":"Late"))}</span>
                   </td>
                   <td style={td}>
                     {r.notes ? (

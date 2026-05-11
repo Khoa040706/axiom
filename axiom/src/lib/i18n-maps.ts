@@ -260,6 +260,24 @@ export const LEAVE_REASON_EXACT: Record<string, string> = {
   "Tham dự đám cưới người thân trong gia đình":     "Attending a family member's wedding",
   "Dưỡng bệnh sau điều trị, cần nghỉ hồi phục":    "Post-treatment recovery rest",
   "Đưa con nhỏ đi khám và theo dõi sức khỏe":      "Taking child to medical appointment",
+  // Lý do từ fix-leave-dates.ts
+  "Đưa gia đình đi du lịch cuối tuần":              "Family weekend trip",
+  "Bị sốt virus, cần nghỉ ngơi":                    "Viral fever, need rest",
+  "Về quê thăm ông bà":                              "Visiting grandparents",
+  "Dự đám cưới bạn thân":                            "Attending best friend's wedding",
+  "Đi khám sức khỏe tổng quát":                      "General health check-up",
+  "Bị viêm họng, cần nghỉ ngơi":                     "Sore throat, need rest",
+  "Xin nghỉ phép đi khám sức khỏe định kỳ":         "Leave for routine health check-up",
+  "Bị cảm sốt, cần nghỉ ngơi":                       "Cold and fever, need rest",
+  "Dự đám cưới người thân ở quê":                     "Attending relative's wedding in hometown",
+  "Đưa con đi thi học kỳ":                            "Taking child to semester exam",
+  "Đau răng, cần đi nha khoa":                        "Toothache, need dental visit",
+  "Du lịch gia đình cuối tuần dài":                   "Extended family weekend trip",
+  "Đi tái khám bệnh viện":                            "Hospital follow-up appointment",
+  "Về quê thăm gia đình":                              "Visiting family in hometown",
+  "Dọn nhà mới":                                       "Moving to new house",
+  "Nộp hồ sơ xin visa du lịch":                       "Submitting travel visa application",
+  "Tham gia hội thảo cá nhân":                         "Attending personal seminar",
 }
 
 // Các cụm từ con (thứ tự quan trọng: dài → ngắn)

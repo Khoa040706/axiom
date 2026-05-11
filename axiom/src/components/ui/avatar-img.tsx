@@ -5,7 +5,7 @@
  */
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const DEFAULT_AVATAR = "/images/avatarmacdinh.jpg"
 
@@ -20,6 +20,11 @@ interface AvatarImgProps {
 
 export function AvatarImg({ src, name, alt, size = 36, style, className }: AvatarImgProps) {
   const [errored, setErrored] = useState(false)
+
+  // Reset lỗi khi src thay đổi — cho phép retry load ảnh mới
+  useEffect(() => {
+    setErrored(false)
+  }, [src])
 
   // Use provided src if valid, otherwise fallback to default avatar image
   const imgSrc = (src && src.trim() !== "" && !errored) ? src : DEFAULT_AVATAR

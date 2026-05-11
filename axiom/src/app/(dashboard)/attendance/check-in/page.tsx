@@ -28,9 +28,10 @@ const STATUS_MAP = {
 
 function padZ(n: number) { return String(n).padStart(2, "0") }
 function formatDuration(seconds: number) {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
+  const abs = Math.max(0, seconds)
+  const h = Math.floor(abs / 3600)
+  const m = Math.floor((abs % 3600) / 60)
+  const s = abs % 60
   return `${padZ(h)}:${padZ(m)}:${padZ(s)}`
 }
 
@@ -158,12 +159,17 @@ export default function CheckInPage() {
         return
       }
 
-      // ── Phát hiện dữ liệu fake/seed ──
+      // ── Kiểm tra dữ liệu seed (checkIn dùng năm 1970) ──
+      const rawCI = new Date(rec.checkIn)
+      const isSeedData = rawCI.getFullYear() < 2000
+
       if (rec.checkOut) {
         const co = normalizeTime(new Date(rec.checkOut))
-        const diffMs = Math.abs(co.getTime() - ci.getTime())
-        // Seed: checkIn ≈ checkOut (< 2 phút) → coi như chưa check-in
-        if (diffMs < 120000) {
+        const rawCO = new Date(rec.checkOut)
+        const isSeedCheckout = rawCO.getFullYear() < 2000
+
+        // Seed data: cả checkIn và checkOut đều năm 1970 → bỏ qua
+        if (isSeedData && isSeedCheckout) {
           setAttendanceId(rec.id)
           return
         }
@@ -181,6 +187,7 @@ export default function CheckInPage() {
           setCheckedIn(true)
           return
         }
+        // Dữ liệu hợp lệ: cả checkIn và checkOut đều thực
         setCheckInTime(ci)
         setCheckOutTime(co)
         setAttendanceId(rec.id)
@@ -205,7 +212,7 @@ export default function CheckInPage() {
       return
     }
     // Tính ngay lập tức từ checkInTime
-    const tick = () => setElapsed(Math.floor((Date.now() - checkInTime.getTime()) / 1000))
+    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - checkInTime.getTime()) / 1000)))
     tick()
     timerRef.current = setInterval(tick, 1000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
@@ -235,6 +242,15 @@ export default function CheckInPage() {
       return
     }
     setLoading(true)
+    // Validate giờ làm việc hợp lệ (6:00 – 22:00)
+    const currentHour = new Date().getHours()
+    if (currentHour < 6 || currentHour >= 22) {
+      showToast("error", vi
+        ? `❌ Hiện tại là ${padZ(now.getHours())}:${padZ(now.getMinutes())} — ngoài giờ chấm công (06:00–22:00).`
+        : `❌ Current time ${padZ(now.getHours())}:${padZ(now.getMinutes())} is outside check-in hours (06:00–22:00).`)
+      setLoading(false)
+      return
+    }
     const res = await doCheckIn(employeeId)
     if (res.success && res.data) {
       const t = normalizeTime(new Date((res.data as any).checkIn ?? new Date()))
@@ -433,7 +449,7 @@ export default function CheckInPage() {
           { icon: <Clock size={18} color="#D0211C"/>,       label: vi ? "Ngày công tháng này" : "This month", value: `${monthStats.total} ${vi?"ngày":"days"}`,  accent: "#D0211C" },
           { icon: <CheckCircle size={18} color="#10B981"/>, label: vi ? "Đúng giờ" : "On-time",               value: `${monthStats.ontime}`,        accent: "#10B981" },
           { icon: <AlertCircle size={18} color="#F59E0B"/>, label: vi ? "Đi muộn" : "Late",                   value: `${monthStats.late} ${vi?"lần":"times"}`,      accent: "#F59E0B" },
-          { icon: <TrendingUp size={18} color="#3B82F6"/>,  label: vi ? "Hôm nay" : "Today",                  value: checkedIn ? (vi ? "Có mặt" : "Present") : (vi ? "Chưa vào" : "Not in"), accent: "#3B82F6" },
+          { icon: <TrendingUp size={18} color="#3B82F6"/>,  label: vi ? "Hôm nay" : "Today",                  value: checkedOut ? (vi ? "Hoàn tất" : "Done") : checkedIn ? (vi ? "Có mặt" : "Present") : (vi ? "Chưa vào" : "Not in"), accent: checkedOut ? "#10B981" : checkedIn ? "#3B82F6" : "#94A3B8" },
         ].map(s => (
           <div key={s.label} style={{ background: th.cardBg, borderRadius: 14, padding: "16px 18px", borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${s.accent}15`, pointerEvents: "none" }}/>
