@@ -626,7 +626,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* ── Search + Filter row ── */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center", position: "relative", zIndex: 10 }}>
 
         {/* Search input */}
         <div style={{ position: "relative", flex: "1 1 260px", minWidth: 200 }}>

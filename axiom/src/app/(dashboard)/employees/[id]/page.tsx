@@ -237,31 +237,29 @@ export default function EmployeeDetailPage() {
       )}
 
       {/* Tabs */}
-      {isMobile ? (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:16 }}>
-          {tabs.map(tab=>(
-            <button key={tab.key} onClick={()=>setActiveTab(tab.key as any)} style={{
-              display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-              padding:"10px 8px", borderRadius:10, border:"none",
-              background: activeTab===tab.key ? "#D0211C" : th.tableHead,
-              color: activeTab===tab.key ? "#fff" : th.text2,
-              fontSize:12.5, fontWeight: activeTab===tab.key ? 700 : 500,
-              cursor:"pointer", fontFamily:"inherit", transition:"all .15s",
-            }}>{tab.icon}{tab.label}</button>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display:"flex", gap:4, marginBottom:16, background:th.tableHead, borderRadius:10, padding:4, width:"fit-content" }}>
-          {tabs.map(tab=>(
-            <button key={tab.key} onClick={()=>setActiveTab(tab.key as any)} style={{
-              display:"flex", alignItems:"center", gap:6, padding:"8px 16px", borderRadius:7, border:"none",
-              background: activeTab===tab.key ? "#D0211C" : "transparent",
-              color: activeTab===tab.key ? "#fff" : th.text2,
-              fontSize:13, fontWeight: activeTab===tab.key ? 700 : 500, cursor:"pointer", fontFamily:"inherit", transition:"all .15s",
-            }}>{tab.icon}{tab.label}</button>
-          ))}
-        </div>
-      )}
+      <div style={{
+        display: "flex", gap: isMobile ? 0 : 4, marginBottom: 16,
+        background: th.tableHead, borderRadius: 12, padding: isMobile ? 4 : 4,
+        border: `1px solid ${th.cardBorder}`,
+        width: isMobile ? "100%" : "fit-content",
+        overflowX: isMobile ? "auto" as const : "visible" as const,
+        WebkitOverflowScrolling: "touch" as any,
+      }}>
+        {tabs.map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{
+            flex: isMobile ? 1 : undefined,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            padding: isMobile ? "10px 8px" : "8px 16px",
+            borderRadius: 8, border: "none",
+            background: activeTab === tab.key ? "#D0211C" : "transparent",
+            color: activeTab === tab.key ? "#fff" : th.text2,
+            fontSize: isMobile ? 11.5 : 13,
+            fontWeight: activeTab === tab.key ? 700 : 500,
+            cursor: "pointer", fontFamily: "inherit",
+            transition: "all .15s", whiteSpace: "nowrap",
+          }}>{tab.icon}{tab.label}</button>
+        ))}
+      </div>
 
       {/* ── Tab: Thông tin cá nhân ── */}
       {activeTab==="info" && (

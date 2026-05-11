@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import {
   FileText, Search, Plus, Eye, X, AlertTriangle,
-  ChevronLeft, ChevronRight, Loader2, Check,
+  ChevronLeft, ChevronRight, ChevronDown, Loader2, Check,
   ArrowUpDown, ArrowUp, ArrowDown, Calendar,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
@@ -157,6 +157,100 @@ function FilterPopup({ label, value, options, onChange, onClear, th }: {
               </button>
             )
           })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── ModalSelectDropdown: custom select for modals ─────────────
+function ModalSelectDropdown({ value, onChange, options, th, placeholder, searchable }: {
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string }[]
+  th: any
+  placeholder?: string
+  searchable?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [sq, setSq] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handle)
+    return () => document.removeEventListener("mousedown", handle)
+  }, [open])
+
+  useEffect(() => { if (!open) setSq("") }, [open])
+
+  const current = options.find(o => o.value === value)
+  const filtered = searchable && sq
+    ? options.filter(o => o.label.toLowerCase().includes(sq.toLowerCase()))
+    : options
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        width: "100%", display: "flex", alignItems: "center",
+        padding: "9px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+        fontSize: 13, fontWeight: 500,
+        border: `1px solid ${th.inputBorder}`,
+        background: th.inputBg, color: current ? th.text1 : th.text3,
+        boxSizing: "border-box" as const, justifyContent: "space-between",
+      }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {current?.label ?? placeholder ?? "—"}
+        </span>
+        <ChevronDown size={13} style={{ opacity: 0.5, flexShrink: 0 }}/>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 500,
+          background: th.cardBg, border: `1px solid ${th.cardBorder}`,
+          borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.2)",
+          overflow: "hidden",
+        }}>
+          {searchable && (
+            <div style={{ padding: "8px 10px", borderBottom: `1px solid ${th.tableBorder}` }}>
+              <input autoFocus value={sq} onChange={e => setSq(e.target.value)}
+                placeholder="Search..."
+                style={{
+                  width: "100%", padding: "7px 10px", borderRadius: 6,
+                  border: `1px solid ${th.inputBorder}`, background: th.inputBg,
+                  color: th.text1, fontSize: 12.5, outline: "none", fontFamily: "inherit",
+                  boxSizing: "border-box" as const,
+                }}/>
+            </div>
+          )}
+          <div style={{ maxHeight: 240, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
+            {filtered.map(opt => {
+              const sel = value === opt.value
+              return (
+                <button key={opt.value}
+                  onClick={() => { onChange(opt.value); setOpen(false) }}
+                  style={{
+                    width: "100%", padding: "10px 14px",
+                    background: sel ? "rgba(208,33,28,0.08)" : "none",
+                    border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 9,
+                    fontSize: 13, color: sel ? "#D0211C" : th.text1,
+                    fontWeight: sel ? 700 : 400, fontFamily: "inherit", textAlign: "left",
+                    borderBottom: `1px solid ${th.tableBorder}`,
+                  }}
+                >
+                  <span style={{ flex: 1 }}>{opt.label}</span>
+                  {sel && <Check size={13} color="#D0211C"/>}
+                </button>
+              )
+            })}
+            {filtered.length === 0 && (
+              <div style={{ padding: "14px", textAlign: "center", color: th.text3, fontSize: 12.5 }}>No results</div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -688,7 +782,7 @@ export default function ContractsPage() {
       )}
 
       {/* ── Search + Filter row ── */}
-      <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
+      <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap", alignItems:"center", position:"relative", zIndex:10 }}>
 
         {/* Search */}
         <div style={{ position:"relative", flex:"1 1 260px", minWidth:200 }}>
@@ -1056,17 +1150,17 @@ export default function ContractsPage() {
                   <label style={{ fontSize:12, fontWeight:600, color:th.text2 }}>
                     {vi?"Nhân viên *":"Employee *"}
                   </label>
-                  <select
+                  <ModalSelectDropdown
                     value={form.employeeId}
-                    onChange={e => setForm(f => ({ ...f, employeeId: e.target.value }))}
-                    style={{ padding:"9px 12px", border:`1px solid ${th.inputBorder}`, borderRadius:8,
-                      fontSize:13, background:th.inputBg, color:th.text1, outline:"none",
-                      fontFamily:"inherit", width:"100%" }}>
-                    <option value="">{vi?"-- Chọn nhân viên --":"-- Select employee --"}</option>
-                    {empList.map(e => (
-                      <option key={e.id} value={e.id}>{e.code} — {e.name}</option>
-                    ))}
-                  </select>
+                    onChange={v => setForm(f => ({ ...f, employeeId: v }))}
+                    placeholder={vi?"-- Chọn nhân viên --":"-- Select employee --"}
+                    searchable
+                    options={[
+                      { value: "", label: vi?"-- Chọn nhân viên --":"-- Select employee --" },
+                      ...empList.map(e => ({ value: String(e.id), label: `${e.code} — ${e.name}` })),
+                    ]}
+                    th={th}
+                  />
                 </div>
 
                 {/* Loại HĐ */}
@@ -1074,16 +1168,16 @@ export default function ContractsPage() {
                   <label style={{ fontSize:12, fontWeight:600, color:th.text2 }}>
                     {vi?"Loại hợp đồng":"Contract Type"}
                   </label>
-                  <select
+                  <ModalSelectDropdown
                     value={form.contractType}
-                    onChange={e => setForm(f => ({ ...f, contractType: e.target.value }))}
-                    style={{ padding:"9px 12px", border:`1px solid ${th.inputBorder}`, borderRadius:8,
-                      fontSize:13, background:th.inputBg, color:th.text1, outline:"none",
-                      fontFamily:"inherit", width:"100%" }}>
-                    <option value="Chính thức">{vi?"Chính thức":"Full-time"}</option>
-                    <option value="Thử việc">{vi?"Thử việc":"Probation"}</option>
-                    <option value="Thời vụ">{vi?"Thời vụ":"Seasonal"}</option>
-                  </select>
+                    onChange={v => setForm(f => ({ ...f, contractType: v }))}
+                    options={[
+                      { value: "Chính thức", label: vi?"Chính thức":"Full-time" },
+                      { value: "Thử việc",   label: vi?"Thử việc":"Probation" },
+                      { value: "Thời vụ",    label: vi?"Thời vụ":"Seasonal" },
+                    ]}
+                    th={th}
+                  />
                 </div>
 
                 {/* Ngày */}

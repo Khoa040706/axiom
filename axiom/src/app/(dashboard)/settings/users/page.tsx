@@ -257,6 +257,165 @@ function RoleDropdown({
   )
 }
 
+// ── ModalSelectDropdown: custom select for use inside modals ──
+function ModalSelectDropdown({ value, onChange, options, th, icon }: {
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string; color?: string }[]
+  th: any
+  icon?: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handle)
+    return () => document.removeEventListener("mousedown", handle)
+  }, [open])
+
+  const current = options.find(o => o.value === value) ?? options[0]
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 8,
+          padding: "9px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+          fontSize: 13, fontWeight: 500,
+          border: `1.5px solid ${th.inputBorder}`,
+          background: th.inputBg, color: th.text1,
+          boxSizing: "border-box" as const,
+          justifyContent: "space-between",
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+          {icon}
+          {current?.color && !icon && <span style={{ width: 8, height: 8, borderRadius: "50%", background: current.color, flexShrink: 0 }}/>}
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{current?.label ?? "—"}</span>
+        </span>
+        <ChevronDown size={13} style={{ opacity: 0.5, flexShrink: 0 }}/>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 500,
+          background: th.cardBg, border: `1px solid ${th.cardBorder}`,
+          borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.2)",
+          overflow: "hidden",
+        }}>
+          <div style={{ maxHeight: 220, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
+            {options.map(opt => {
+              const sel = value === opt.value
+              return (
+                <button key={opt.value}
+                  onClick={() => { onChange(opt.value); setOpen(false) }}
+                  style={{
+                    width: "100%", padding: "10px 14px",
+                    background: sel ? (opt.color ? `${opt.color}14` : "rgba(208,33,28,0.08)") : "none",
+                    border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 9,
+                    fontSize: 13, color: sel ? (opt.color ?? "#D0211C") : th.text1,
+                    fontWeight: sel ? 700 : 400, fontFamily: "inherit", textAlign: "left",
+                    borderBottom: `1px solid ${th.tableBorder}`,
+                  }}
+                >
+                  {opt.color && <span style={{ width: 8, height: 8, borderRadius: "50%", background: opt.color, flexShrink: 0 }}/>}
+                  <span style={{ flex: 1 }}>{opt.label}</span>
+                  {sel && <Check size={13} color={opt.color ?? "#D0211C"}/>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── RoleFilterDropdown: custom role filter with scrollable menu ──
+function RoleFilterDropdown({ value, onChange, vi, th }: {
+  value: string; onChange: (v: string) => void; vi: boolean; th: any
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handle)
+    return () => document.removeEventListener("mousedown", handle)
+  }, [open])
+
+  const allOptions = [
+    { value: "all", label: vi ? "Tất cả vai trò" : "All Roles", color: "#D0211C" },
+    ...ROLES.map(r => ({ value: r.value, label: vi ? r.vi : r.en, color: r.color })),
+  ]
+  const current = allOptions.find(o => o.value === value) ?? allOptions[0]
+
+  return (
+    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 7,
+          padding: "9px 14px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+          fontSize: 13, fontWeight: value !== "all" ? 700 : 500, whiteSpace: "nowrap",
+          border: value !== "all" ? `1.5px solid ${current.color}` : `1.5px solid ${th.inputBorder}`,
+          background: value !== "all" ? `${current.color}12` : th.cardBg,
+          color: value !== "all" ? current.color : th.text2,
+          transition: "all .15s", minWidth: 160, justifyContent: "space-between",
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          {value !== "all" && <span style={{ width: 8, height: 8, borderRadius: "50%", background: current.color, flexShrink: 0 }}/>}
+          {current.label}
+        </span>
+        <ChevronDown size={13} style={{ opacity: 0.6, flexShrink: 0 }}/>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 400,
+          background: th.cardBg, border: `1px solid ${th.cardBorder}`,
+          borderRadius: 12, boxShadow: "0 8px 28px rgba(0,0,0,0.18)",
+          minWidth: 220, overflow: "hidden",
+        }}>
+          <div style={{ maxHeight: 280, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
+            {allOptions.map(opt => {
+              const sel = value === opt.value
+              return (
+                <button key={opt.value}
+                  onClick={() => { onChange(opt.value); setOpen(false) }}
+                  style={{
+                    width: "100%", padding: "11px 14px",
+                    background: sel ? `${opt.color}14` : "none",
+                    border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 10,
+                    fontSize: 13.5, color: sel ? opt.color : th.text1,
+                    fontWeight: sel ? 700 : 400, fontFamily: "inherit", textAlign: "left",
+                    borderBottom: `1px solid ${th.tableBorder}`,
+                    transition: "background .1s",
+                  }}
+                >
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: opt.color, flexShrink: 0 }}/>
+                  <span style={{ flex: 1 }}>{opt.label}</span>
+                  {sel && <Check size={14} color={opt.color}/>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function UsersAdminPage() {
   const router = useRouter()
   const { dark, lang } = useDashboard()
@@ -484,18 +643,19 @@ export default function UsersAdminPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10, marginBottom: 16, position: "relative", zIndex: 10 }}>
         <div style={{ position: "relative", flex: 1 }}>
           <Search size={14} color={th.text2} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}/>
           <input placeholder={vi ? "Tìm kiếm tên hoặc username..." : "Search name or username..."}
             value={search} onChange={e => handleSearch(e.target.value)}
             style={{ ...inputStyle, paddingLeft: 32 }}/>
         </div>
-        <select value={roleFilter} onChange={e => handleRoleFilter(e.target.value)}
-          style={{ ...inputStyle, width: "auto", minWidth: 160 }}>
-          <option value="all">{vi ? "Tất cả vai trò" : "All Roles"}</option>
-          {ROLES.map(r => <option key={r.value} value={r.value}>{vi ? r.vi : r.en}</option>)}
-        </select>
+        <RoleFilterDropdown
+          value={roleFilter}
+          onChange={handleRoleFilter}
+          vi={vi}
+          th={th}
+        />
       </div>
 
       {/* Stats row */}
@@ -764,19 +924,25 @@ export default function UsersAdminPage() {
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: th.text2, display: "block", marginBottom: 6 }}>{vi?"Vai trò":"Role"}</label>
-                  <select style={inputStyle} value={createForm.role} onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))}>
-                    {ROLES.map(r => <option key={r.value} value={r.value}>{vi ? r.vi : r.en}</option>)}
-                  </select>
+                  <ModalSelectDropdown
+                    value={createForm.role}
+                    onChange={v => setCreateForm(f => ({ ...f, role: v }))}
+                    options={ROLES.map(r => ({ value: r.value, label: vi ? r.vi : r.en, color: r.color }))}
+                    th={th}
+                  />
                 </div>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: th.text2, display: "block", marginBottom: 6 }}>{vi?"Phòng ban":"Department"}</label>
-                  <div style={{ position: "relative" }}>
-                    <Building2 size={13} color={th.text2} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)" }}/>
-                    <select style={{ ...inputStyle, paddingLeft: 28 }} value={createForm.departmentId} onChange={e => setCreateForm(f => ({ ...f, departmentId: e.target.value }))}>
-                      <option value="">{vi ? "-- Chọn phòng --" : "-- Select dept --"}</option>
-                      {departments.map((d: any) => <option key={d.id} value={d.id}>{tDept(d.name, vi)}</option>)}
-                    </select>
-                  </div>
+                  <ModalSelectDropdown
+                    value={createForm.departmentId}
+                    onChange={v => setCreateForm(f => ({ ...f, departmentId: v }))}
+                    options={[
+                      { value: "", label: vi ? "-- Chọn phòng --" : "-- Select dept --", color: "#94A3B8" },
+                      ...departments.map((d: any) => ({ value: String(d.id), label: tDept(d.name, vi), color: "#3B82F6" })),
+                    ]}
+                    th={th}
+                    icon={<Building2 size={13} color={th.text2}/>}
+                  />
                 </div>
               </div>
             </div>
