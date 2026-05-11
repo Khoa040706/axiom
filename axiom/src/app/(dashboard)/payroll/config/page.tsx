@@ -101,7 +101,7 @@ function NumField({ label, value, onChange, unit, min, max, step, note, th }: {
             outline: "none", fontFamily: "inherit", transition: "border-color .15s",
           }}
         />
-        {unit && <span style={{ fontSize: 13, color: th.text2, minWidth: 40 }}>{unit}</span>}
+        {unit && <span style={{ fontSize: 13, color: th.text2, flexShrink: 0 }}>{unit}</span>}
       </div>
       {note && <div style={{ fontSize: 11, color: th.text3, marginTop: 4 }}>{note}</div>}
     </div>
@@ -261,7 +261,7 @@ export default function PayrollConfigPage() {
           {activeTab === "insurance" && (
             <div style={{ display: "grid", gap: 16 }}>
               <Section title={vi ? "Bảo hiểm bắt buộc — Nhân viên đóng" : "Mandatory Insurance — Employee Share"} icon={<Shield size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14 }}>
                   <NumField label={vi?"BH Xã hội (BHXH)":"Social Ins. (SI)"} value={draft.bhxh} onChange={upd("bhxh")} unit="%" min={0} max={25} step={0.5} note={vi?"Hưu trí, Thai sản, Ốm đau":"Pension, Maternity, Sickness"} th={th}/>
                   <NumField label={vi?"BH Y tế (BHYT)":"Health Ins. (HI)"} value={draft.bhyt} onChange={upd("bhyt")} unit="%" min={0} max={10} step={0.5} note={vi?"Khám chữa bệnh":"Medical insurance"} th={th}/>
                   <NumField label={vi?"BH Thất nghiệp (BHTN)":"Unemp. Ins. (UI)"} value={draft.bhtn} onChange={upd("bhtn")} unit="%" min={0} max={5} step={0.5} note={vi?"Trợ cấp thất nghiệp":"Unemployment benefit"} th={th}/>
@@ -273,7 +273,7 @@ export default function PayrollConfigPage() {
               </Section>
 
               <Section title={vi ? "Bảo hiểm bắt buộc — Doanh nghiệp đóng" : "Mandatory Insurance — Employer Share"} icon={<Users size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14 }}>
                   <NumField label={vi?"BHXH (DN)":"SI (Employer)"} value={draft.bhxhEmployer} onChange={upd("bhxhEmployer")} unit="%" min={0} max={30} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
                   <NumField label={vi?"BHYT (DN)":"HI (Employer)"} value={draft.bhytEmployer} onChange={upd("bhytEmployer")} unit="%" min={0} max={10} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
                   <NumField label={vi?"BHTN (DN)":"UI (Employer)"} value={draft.bhtnEmployer} onChange={upd("bhtnEmployer")} unit="%" min={0} max={10} step={0.5} note={vi?"Phần doanh nghiệp đóng":"Employer share"} th={th}/>
@@ -358,7 +358,7 @@ export default function PayrollConfigPage() {
               </Section>
 
               <Section title={vi ? "Hệ số tăng ca (OT)" : "Overtime Multipliers"} icon={<Zap size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14 }}>
                   <NumField label={vi?"OT ngày thường (×)":"OT Weekday (×)"} value={draft.otWeekday} onChange={upd("otWeekday")} unit="×" min={1} max={5} step={0.1} note={vi?"Thường: ×1.5 (150%)":"Typical: ×1.5"} th={th}/>
                   <NumField label={vi?"OT cuối tuần (×)":"OT Weekend (×)"} value={draft.otWeekend} onChange={upd("otWeekend")} unit="×" min={1} max={5} step={0.1} note={vi?"Thường: ×2.0 (200%)":"Typical: ×2.0"} th={th}/>
                   <NumField label={vi?"OT ngày lễ (×)":"OT Holiday (×)"} value={draft.otHoliday} onChange={upd("otHoliday")} unit="×" min={1} max={5} step={0.1} note={vi?"Thường: ×3.0 (300%)":"Typical: ×3.0"} th={th}/>

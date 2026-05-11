@@ -353,6 +353,8 @@ export default function ProfilePage() {
   // Crop modal
   const [rawImage, setRawImage]     = useState<string | null>(null)
   const [showCrop, setShowCrop]     = useState(false)
+  // Fullscreen preview modal
+  const [showFullPreview, setShowFullPreview] = useState(false)
 
   useEffect(() => {
     if (!sessionUser) return
@@ -918,14 +920,51 @@ export default function ProfilePage() {
 
               <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
                 {/* Preview */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, flexShrink: 0 }}>
-                  <AvatarImg src={avatarPreview} alt="Preview" size={140} style={{
-                    border: `3px solid ${th.cardBorder}`,
-                    boxShadow: dark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.12)",
-                  }} />
-                  <div style={{ fontSize: 12, color: th.text2, textAlign: "center" }}>
-                    {vi ? "Xem trước" : "Preview"}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  <div
+                    onClick={() => avatarPreview && setShowFullPreview(true)}
+                    style={{ cursor: avatarPreview ? "pointer" : "default", position: "relative" }}
+                    title={vi ? "Nhấn để xem ảnh lớn" : "Click to view full size"}
+                  >
+                    <AvatarImg src={avatarPreview} alt="Preview" size={140} style={{
+                      border: `3px solid ${th.cardBorder}`,
+                      boxShadow: dark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.12)",
+                      transition: "transform .15s",
+                    }} />
+                    {avatarPreview && (
+                      <div style={{
+                        position: "absolute", bottom: 4, right: 4,
+                        background: "rgba(0,0,0,0.6)", borderRadius: "50%", width: 28, height: 28,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <ZoomIn size={14} color="#fff" />
+                      </div>
+                    )}
                   </div>
+                  <div style={{ fontSize: 12, color: th.text2, textAlign: "center" }}>
+                    {avatarPreview ? (vi ? "Nhấn để xem lớn" : "Click to preview") : (vi ? "Chưa có ảnh" : "No photo")}
+                  </div>
+                  {/* Nút chỉnh sửa ảnh hiện có */}
+                  {avatarPreview && (
+                    <button
+                      onClick={() => {
+                        // Mở crop modal với ảnh hiện tại
+                        setRawImage(avatarPreview)
+                        setShowCrop(true)
+                      }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 6,
+                        padding: "7px 14px", borderRadius: 8,
+                        border: `1.5px solid ${th.cardBorder}`,
+                        background: dark ? "rgba(208,33,28,0.1)" : "rgba(208,33,28,0.05)",
+                        color: "#D0211C", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                        fontFamily: "inherit", transition: "all .15s",
+                      }}
+                    >
+                      <Crop size={13} />
+                      {vi ? "Cắt / Chỉnh sửa" : "Crop / Edit"}
+                    </button>
+                  )}
                 </div>
 
                 {/* Upload zone */}
@@ -1045,6 +1084,67 @@ export default function ProfilePage() {
           {toast.type === "success" ? <CheckCircle size={18} /> : <XCircle size={18} />}
           {toast.msg}
         </div>
+      )}
+
+      {/* ── Fullscreen Avatar Preview Modal ── */}
+      {showFullPreview && avatarPreview && (
+        <>
+          <div
+            onClick={() => setShowFullPreview(false)}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
+              backdropFilter: "blur(8px)", zIndex: 10000,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <div onClick={e => e.stopPropagation()} style={{ position: "relative", cursor: "default" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatarPreview}
+                alt="Avatar full preview"
+                style={{
+                  maxWidth: "min(90vw, 500px)", maxHeight: "80vh",
+                  borderRadius: 20, objectFit: "contain",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                  border: "3px solid rgba(255,255,255,0.15)",
+                }}
+              />
+              <button
+                onClick={() => setShowFullPreview(false)}
+                style={{
+                  position: "absolute", top: -12, right: -12,
+                  width: 36, height: 36, borderRadius: "50%",
+                  background: "#D0211C", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                }}
+              >
+                <XCircle size={20} color="#fff" />
+              </button>
+              {/* Crop/Edit button in modal */}
+              <button
+                onClick={() => {
+                  setShowFullPreview(false)
+                  setRawImage(avatarPreview)
+                  setShowCrop(true)
+                }}
+                style={{
+                  position: "absolute", bottom: -18, left: "50%", transform: "translateX(-50%)",
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "10px 20px", borderRadius: 12,
+                  background: "linear-gradient(135deg, #D0211C, #991414)",
+                  border: "none", cursor: "pointer",
+                  color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                  boxShadow: "0 4px 16px rgba(208,33,28,0.4)",
+                }}
+              >
+                <Crop size={14} />
+                {vi ? "Cắt / Chỉnh sửa" : "Crop / Edit"}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
