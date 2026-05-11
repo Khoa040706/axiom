@@ -105,6 +105,7 @@ function Inner({ children }: { children: React.ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState<string>("/images/avatarmacdinh.jpg")
   const [showProfile, setShowProfile] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
+  const [showAllNotif, setShowAllNotif] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [sidebarHover, setSidebarHover] = useState(false)
@@ -700,7 +701,7 @@ function Inner({ children }: { children: React.ReactNode }) {
                   <div style={{ padding: "10px 16px", borderTop: `1px solid ${th.tableBorder}`, textAlign: "center" }}>
                     <button
                       style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#D0211C", fontWeight: 600 }}
-                      onClick={() => setShowNotif(false)}
+                      onClick={() => { setShowNotif(false); setShowAllNotif(true) }}
                     >
                       {lang === "vi" ? "Xem tất cả thông báo" : "View all notifications"}
                     </button>
@@ -1005,6 +1006,185 @@ function Inner({ children }: { children: React.ReactNode }) {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </>
+      )}
+      {/* ── All Notifications Full-Screen Modal ── */}
+      {showAllNotif && (
+        <>
+          <div onClick={() => setShowAllNotif(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", zIndex: 9998 }} />
+          <div style={{
+            position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: isMobile ? 12 : 24, zIndex: 9999,
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: th.cardBg, border: `1px solid ${th.cardBorder}`,
+              borderRadius: 20, width: isMobile ? "100%" : "min(620px, 90vw)", maxHeight: "85vh",
+              boxShadow: dark ? "0 24px 60px rgba(0,0,0,0.6)" : "0 24px 60px rgba(0,0,0,0.18)",
+              display: "flex", flexDirection: "column", overflow: "hidden",
+              animation: "fadeDown .2s ease",
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: isMobile ? "16px" : "18px 24px",
+                background: "linear-gradient(135deg, #1E3A5F, #1a3354)",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div>
+                  <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#fff" }}>
+                    🔔 {lang === "vi" ? "Tất cả thông báo" : "All Notifications"}
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>
+                    {notifications.filter(n => !n.read).length > 0
+                      ? (lang === "vi"
+                        ? `${notifications.filter(n => !n.read).length} chưa đọc · ${notifications.length} tổng`
+                        : `${notifications.filter(n => !n.read).length} unread · ${notifications.length} total`)
+                      : (lang === "vi" ? `${notifications.length} thông báo` : `${notifications.length} notifications`)
+                    }
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <button
+                      onClick={() => setNotifications(ns => ns.map(n => ({ ...n, read: true })))}
+                      style={{
+                        background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8,
+                        padding: "7px 12px", cursor: "pointer", fontSize: 11.5, fontWeight: 600,
+                        color: "#fff", fontFamily: "inherit",
+                      }}
+                    >
+                      ✓ {lang === "vi" ? "Đọc hết" : "Read all"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowAllNotif(false)}
+                    style={{
+                      background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8,
+                      width: 34, height: 34, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                    }}
+                  >
+                    <XIcon size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "8px 0" : "8px 0" }}>
+                {notifications.length === 0 ? (
+                  <div style={{ padding: "60px 20px", textAlign: "center" }}>
+                    <div style={{ fontSize: 40, marginBottom: 12 }}>🔔</div>
+                    <div style={{ fontSize: 15, color: th.text2, fontWeight: 500 }}>
+                      {lang === "vi" ? "Không có thông báo nào" : "No notifications"}
+                    </div>
+                  </div>
+                ) : notifications.map(n => {
+                  const icons: Record<string, string> = { leave: "🗓️", payroll: "💰", attendance: "⏰", system: "⚙️" }
+                  const accents: Record<string, string> = { leave: "#3B82F6", payroll: "#10B981", attendance: "#F59E0B", system: "#8B5CF6" }
+                  const typeLabels: Record<string, { vi: string; en: string }> = {
+                    leave: { vi: "Nghỉ phép", en: "Leave" },
+                    payroll: { vi: "Lương", en: "Payroll" },
+                    attendance: { vi: "Chấm công", en: "Attendance" },
+                    system: { vi: "Hệ thống", en: "System" },
+                  }
+                  return (
+                    <div
+                      key={n.id}
+                      onClick={() => setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x))}
+                      style={{
+                        display: "flex", alignItems: "flex-start", gap: isMobile ? 12 : 16,
+                        padding: isMobile ? "14px 16px" : "16px 24px",
+                        background: n.read ? "transparent" : (dark ? "rgba(208,33,28,0.06)" : "rgba(208,33,28,0.03)"),
+                        borderBottom: `1px solid ${th.tableBorder}`,
+                        cursor: "pointer", transition: "background .15s",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = dark ? "rgba(255,255,255,0.04)" : "#F9FAFB")}
+                      onMouseLeave={e => (e.currentTarget.style.background = n.read ? "transparent" : (dark ? "rgba(208,33,28,0.06)" : "rgba(208,33,28,0.03)"))}
+                    >
+                      {/* Icon */}
+                      <div style={{
+                        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                        background: `${accents[n.type]}15`,
+                        border: `1px solid ${accents[n.type]}30`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 20,
+                      }}>{icons[n.type]}</div>
+
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
+                          <span style={{
+                            fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+                            color: accents[n.type], background: `${accents[n.type]}15`,
+                            padding: "2px 8px", borderRadius: 6,
+                          }}>
+                            {lang === "vi" ? typeLabels[n.type]?.vi : typeLabels[n.type]?.en}
+                          </span>
+                          <span style={{ fontSize: 11, color: th.text3 }}>{lang === "vi" ? n.timeVi : n.timeEn}</span>
+                          {!n.read && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#EF4444", flexShrink: 0 }} />}
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: n.read ? 500 : 700, color: th.text1, marginBottom: 3 }}>
+                          {lang === "vi" ? n.titleVi : n.titleEn}
+                        </div>
+                        <div style={{ fontSize: 12.5, color: th.text2, lineHeight: 1.5 }}>
+                          {lang === "vi" ? n.bodyVi : n.bodyEn}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0, alignItems: "center" }}>
+                        {!n.read && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x)) }}
+                            title={lang === "vi" ? "Đánh dấu đã đọc" : "Mark as read"}
+                            style={{
+                              background: dark ? "rgba(16,185,129,0.12)" : "#D1FAE5",
+                              border: "none", borderRadius: 7, width: 30, height: 30, cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: "#10B981", fontSize: 14,
+                            }}
+                          >✓</button>
+                        )}
+                        <button
+                          onClick={e => { e.stopPropagation(); setNotifications(ns => ns.filter(x => x.id !== n.id)) }}
+                          title={lang === "vi" ? "Xóa" : "Delete"}
+                          style={{
+                            background: dark ? "rgba(239,68,68,0.1)" : "#FEE2E2",
+                            border: "none", borderRadius: 7, width: 30, height: 30, cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "#EF4444", fontSize: 14,
+                          }}
+                        >×</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Footer */}
+              {notifications.length > 0 && (
+                <div style={{
+                  padding: "12px 24px", borderTop: `1px solid ${th.tableBorder}`,
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                }}>
+                  <span style={{ fontSize: 12, color: th.text3 }}>
+                    {lang === "vi"
+                      ? `${notifications.filter(n => n.read).length}/${notifications.length} đã đọc`
+                      : `${notifications.filter(n => n.read).length}/${notifications.length} read`
+                    }
+                  </span>
+                  <button
+                    onClick={() => { setNotifications([]); setShowAllNotif(false) }}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      fontSize: 12, color: "#EF4444", fontWeight: 600,
+                    }}
+                  >
+                    {lang === "vi" ? "Xóa tất cả" : "Clear all"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>

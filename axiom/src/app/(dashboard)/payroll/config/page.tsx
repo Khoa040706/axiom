@@ -172,7 +172,7 @@ export default function PayrollConfigPage() {
   ]
 
   return (
-    <div style={{ padding: isMobile ? "16px 16px 32px" : "28px 28px 40px" }}>
+    <div style={{ padding: isMobile ? "16px 12px 32px" : "28px 28px 40px", maxWidth: "100%", overflowX: "hidden", boxSizing: "border-box" }}>
 
       {/* Header */}
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-start", gap: isMobile ? 14 : 0, marginBottom: 24 }}>
@@ -225,13 +225,13 @@ export default function PayrollConfigPage() {
           { icon: <TrendingUp size={18}/>, label: vi ? "Giảm trừ bản thân" : "Self deduction", value: fmtM(draft.selfDeduction, vi), accent: "#10B981", note: vi ? "/người/tháng" : "/person/month" },
           { icon: <Clock size={18}/>,      label: vi ? "Ngày công chuẩn" : "Standard work days", value: `${draft.standardDays} ${vi?"ngày":"days"}`, accent: "#3B82F6", note: vi ? "Ngày tính lương" : "Per month base" },
         ].map(s => (
-          <div key={s.label} style={{ background: th.cardBg, borderRadius: 14, padding: "16px 18px", borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", position: "relative", overflow: "hidden" }}>
+          <div key={s.label} style={{ background: th.cardBg, borderRadius: 14, padding: isMobile ? "12px 10px" : "16px 18px", borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${s.accent}`, display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", position: "relative", overflow: "hidden", minWidth: 0 }}>
             <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${s.accent}15`, pointerEvents: "none" }}/>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: `${s.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: s.accent }}>{s.icon}</div>
-            <div>
-              <div style={{ fontSize: 11, color: th.text2 }}>{s.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: s.accent }}>{s.value}</div>
-              <div style={{ fontSize: 10.5, color: th.text3 }}>{s.note}</div>
+            <div style={{ width: isMobile ? 32 : 40, height: isMobile ? 32 : 40, borderRadius: 10, background: `${s.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: s.accent }}>{s.icon}</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: isMobile ? 10 : 11, color: th.text2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</div>
+              <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 800, color: s.accent }}>{s.value}</div>
+              <div style={{ fontSize: 10.5, color: th.text3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.note}</div>
             </div>
           </div>
         ))}
@@ -242,7 +242,7 @@ export default function PayrollConfigPage() {
         {/* Left: Tabbed config */}
         <div>
           {/* Tab bar */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 16, background: th.tableHead, borderRadius: 12, padding: 6, border: `1px solid ${th.cardBorder}` }}>
+          <div style={{ display: "flex", gap: isMobile ? 2 : 6, marginBottom: 16, background: th.tableHead, borderRadius: 12, padding: isMobile ? 4 : 6, border: `1px solid ${th.cardBorder}`, overflowX: isMobile ? "auto" as const : "visible" as const, WebkitOverflowScrolling: "touch" as any }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setActiveTab(t.id as any)} style={{
                 flex: 1, padding: "8px 12px", borderRadius: 8, border: "none", cursor: "pointer",
@@ -252,7 +252,7 @@ export default function PayrollConfigPage() {
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 transition: "all .15s",
               }}>
-                {t.icon}{t.label}
+                {t.icon}{isMobile ? null : t.label}
               </button>
             ))}
           </div>
@@ -294,7 +294,7 @@ export default function PayrollConfigPage() {
           {activeTab === "tax" && (
             <div style={{ display: "grid", gap: 16 }}>
               <Section title={vi ? "Giảm trừ gia cảnh (GTGC)" : "Personal Income Tax Deductions"} icon={<Percent size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                   <NumField
                     label={vi?"Giảm trừ bản thân (VND/tháng)":"Self deduction (VND/month)"}
                     value={draft.selfDeduction} onChange={upd("selfDeduction")}
@@ -324,7 +324,8 @@ export default function PayrollConfigPage() {
                   <Info size={14} style={{ flexShrink: 0 }}/>
                   <span>{vi ? "Biểu thuế lũy tiến 7 bậc là quy định nhà nước, KHÔNG thể chỉnh sửa." : "The 7-bracket progressive PIT is fixed by Vietnamese law and cannot be modified."}</span>
                 </div>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any, margin: "0 -4px", padding: "0 4px" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 480 : "auto" }}>
                   <thead><tr>
                     {[vi?"Bậc":"Bracket", vi?"Thu nhập tính thuế":"Taxable Income", vi?"Thuế suất":"Rate", vi?"Công thức rút gọn":"Quick Formula"].map(c => (
                       <th key={c} style={{ padding: "8px 12px", fontSize: 11.5, fontWeight: 700, color: th.tableHeadText, background: th.tableHead, borderBottom: `1px solid ${th.tableBorder}`, textAlign: "left" }}>{c}</th>
@@ -343,6 +344,7 @@ export default function PayrollConfigPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </Section>
             </div>
           )}
@@ -351,7 +353,7 @@ export default function PayrollConfigPage() {
           {activeTab === "payroll" && (
             <div style={{ display: "grid", gap: 16 }}>
               <Section title={vi ? "Ngày công & Chi trả" : "Work Days & Pay Settings"} icon={<Clock size={15}/>} th={th}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                   <NumField label={vi?"Ngày công chuẩn/tháng":"Standard days/month"} value={draft.standardDays} onChange={upd("standardDays")} unit={vi?"ngày":"days"} min={20} max={31} step={1} note={vi?"Dùng để tính lương ngày":"Used for daily rate"} th={th}/>
                   <NumField label={vi?"Ngày chi lương (ngày/tháng)":"Pay day (day of month)"} value={draft.payDay} onChange={upd("payDay")} unit={vi?"ngày":"th"} min={1} max={31} step={1} note={vi?"VD: 5 = ngày 5 hàng tháng":"E.g. 5 = 5th of each month"} th={th}/>
                 </div>
@@ -395,7 +397,7 @@ export default function PayrollConfigPage() {
                   { label: vi ? "Vùng 3 (Các tỉnh còn lại)" : "Region 3 (Provincial areas)", key: "minWageRegion3" as const, accent: "#10B981", note: "" },
                   { label: vi ? "Vùng 4 (Nông thôn, miền núi)" : "Region 4 (Rural, mountainous)", key: "minWageRegion4" as const, accent: "#3B82F6", note: "" },
                 ].map(r => (
-                  <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: th.tableHead, borderRadius: 12, borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${r.accent}` }}>
+                  <div key={r.key} style={{ display: "flex", flexDirection: isMobile ? "column" as const : "row" as const, alignItems: isMobile ? "stretch" : "center", gap: isMobile ? 10 : 14, padding: isMobile ? "12px 12px" : "14px 16px", background: th.tableHead, borderRadius: 12, borderTop: `1px solid ${th.cardBorder}`, borderRight: `1px solid ${th.cardBorder}`, borderBottom: `1px solid ${th.cardBorder}`, borderLeft: `4px solid ${r.accent}` }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 600, color: th.text1 }}>{r.label}</div>
                       {r.note && <div style={{ fontSize: 11.5, color: r.accent, marginTop: 2 }}>★ {r.note}</div>}
@@ -405,7 +407,7 @@ export default function PayrollConfigPage() {
                         onChange={e => setDraft(d => ({ ...d, [r.key]: parseFloat(e.target.value)||0 }))}
                         onFocus={e => (e.target.style.borderColor = "#D0211C")}
                         onBlur={e => (e.target.style.borderColor = th.inputBorder)}
-                        style={{ width: 140, padding: "8px 12px", border: `1.5px solid ${th.inputBorder}`, borderRadius: 9, fontSize: 14, background: th.inputBg, color: th.text1, outline: "none", fontFamily: "inherit", transition: "border-color .15s" }}/>
+                        style={{ width: isMobile ? "100%" : 140, padding: "8px 12px", border: `1.5px solid ${th.inputBorder}`, borderRadius: 9, fontSize: 14, background: th.inputBg, color: th.text1, outline: "none", fontFamily: "inherit", transition: "border-color .15s", boxSizing: "border-box" as const }}/>
                       <span style={{ fontSize: 12.5, color: r.accent, fontWeight: 700 }}>{fmtM(draft[r.key], vi)}</span>
                     </div>
                   </div>
