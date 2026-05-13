@@ -280,65 +280,139 @@ export default function BusinessTripsPage() {
         </div>
       ) : (
         <div style={{ background: th.cardBg, borderRadius: 14, border: `1px solid ${th.cardBorder}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-          <div className="table-scroll">
-            <table style={{ width: "100%", minWidth: 600, borderCollapse: "collapse" }}>
-              <thead><tr>
-                {(isManager
-                  ? [vi?"Nhân viên":"Employee", vi?"Điểm đến":"Destination", vi?"Từ":"From", vi?"Đến":"To", vi?"Kinh phí":"Budget", vi?"Mục đích":"Purpose", vi?"Trạng thái":"Status", vi?"Thao tác":"Action"]
-                  : [vi?"Nhân viên":"Employee", vi?"Điểm đến":"Destination", vi?"Từ":"From", vi?"Đến":"To", vi?"Kinh phí":"Budget", vi?"Mục đích":"Purpose", vi?"Trạng thái":"Status"]
-                ).map(c => <th key={c} style={hd}>{c}</th>)}
-              </tr></thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={8} style={{ ...td, textAlign: "center", color: th.text2, padding: 40 }}>
-                    {trips.length === 0 ? (vi ? "Chưa có chuyến công tác nào" : "No business trips yet") : (vi ? "Không tìm thấy kết quả" : "No results found")}
-                  </td></tr>
-                ) : filtered.map(t => {
-                  const fromDate = new Date(t.startDate).toLocaleDateString(vi ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit" })
-                  const toDate   = new Date(t.endDate).toLocaleDateString(vi ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit" })
-                  const days = Math.max(1, Math.round((new Date(t.endDate).getTime() - new Date(t.startDate).getTime()) / 86400000) + 1)
-                  return (
-                    <tr key={t.id}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = dark ? "rgba(255,255,255,0.03)" : "#FAFAFA"}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
-                      <td style={{ ...td, fontWeight: 600 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <EmpAvatar name={t.employee?.fullName ?? "?"} avatarPath={t.employee?.avatarPath} size={30} />
-                          <span><Hl text={t.employee?.fullName ?? "—"} q={search}/></span>
+          {isMobile ? (
+            /* ── Mobile: Card layout ── */
+            <>
+              {filtered.length === 0 ? (
+                <div style={{ padding: 40, textAlign: "center", color: th.text2, fontSize: 13 }}>
+                  {trips.length === 0 ? (vi ? "Chưa có chuyến công tác nào" : "No business trips yet") : (vi ? "Không tìm thấy kết quả" : "No results found")}
+                </div>
+              ) : (
+                <div className="mobile-card-list" style={{ padding: 12 }}>
+                  {filtered.map(t => {
+                    const fromDate = new Date(t.startDate).toLocaleDateString(vi ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit" })
+                    const toDate   = new Date(t.endDate).toLocaleDateString(vi ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit" })
+                    const days = Math.max(1, Math.round((new Date(t.endDate).getTime() - new Date(t.startDate).getTime()) / 86400000) + 1)
+                    return (
+                      <div key={t.id} style={{
+                        background: dark ? "rgba(255,255,255,0.03)" : "#FAFAFA",
+                        borderRadius: 12, padding: "14px 14px 12px",
+                        border: `1px solid ${th.cardBorder}`,
+                      }}>
+                        {/* Row 1: Employee + Status */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <EmpAvatar name={t.employee?.fullName ?? "?"} avatarPath={t.employee?.avatarPath} size={32} />
+                            <span style={{ fontWeight: 700, fontSize: 13, color: th.text1 }}><Hl text={t.employee?.fullName ?? "—"} q={search}/></span>
+                          </div>
+                          {statusBadge(t.status)}
                         </div>
-                      </td>
-                      <td style={td}><span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12} color={th.text2} /><Hl text={t.destination} q={search}/></span></td>
-                      <td style={td}>{fromDate}</td>
-                      <td style={td}>{toDate} <span style={{ color: th.text2, fontSize: 11 }}>({days}{vi?"n":"d"})</span></td>
-                      <td style={{ ...td, fontWeight: 600, color: "#059669" }}>{Number(t.allowance).toLocaleString("vi-VN")}đ</td>
-                      <td style={{ ...td, fontSize: 12, color: th.text2 }}><Hl text={tPurpose(t.purpose, vi) ?? "—"} q={search}/></td>
-                      <td style={td}>{statusBadge(t.status)}</td>
-                      {isManager && (
-                        <td style={td}>
-                          {t.status === "Chờ duyệt" ? (
-                            <div style={{ display: "flex", gap: 5 }}>
-                              <button onClick={() => handleApprove(t.id, true)}
-                                style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 9px", borderRadius: 6, border: "none", background: "#D1FAE5", color: "#065F46", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>
-                                <Check size={11} />{vi ? "Duyệt" : "Approve"}
-                              </button>
-                              <button onClick={() => handleApprove(t.id, false)}
-                                style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 9px", borderRadius: 6, border: "none", background: "#FEE2E2", color: "#991B1B", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>
-                                <X size={11} />{vi ? "Từ chối" : "Reject"}
-                              </button>
+
+                        {/* Row 2: Details grid */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 14px", fontSize: 12, marginBottom: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <MapPin size={11} color={th.text2} style={{ flexShrink: 0 }} />
+                            <span style={{ color: th.text1, fontWeight: 600 }}><Hl text={t.destination} q={search}/></span>
+                          </div>
+                          <div style={{ color: "#059669", fontWeight: 700 }}>
+                            {Number(t.allowance).toLocaleString("vi-VN")}đ
+                          </div>
+                          <div style={{ color: th.text2 }}>
+                            <Calendar size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />
+                            {fromDate} → {toDate} <span style={{ fontSize: 11, color: th.text3 }}>({days}{vi?"n":"d"})</span>
+                          </div>
+                          <div style={{ color: th.text2, fontSize: 11.5 }}>
+                            <Hl text={tPurpose(t.purpose, vi) ?? "—"} q={search}/>
+                          </div>
+                        </div>
+
+                        {/* Row 3: Actions */}
+                        {isManager && t.status === "Chờ duyệt" && (
+                          <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${th.cardBorder}`, paddingTop: 10, marginTop: 2 }}>
+                            <button onClick={() => handleApprove(t.id, true)}
+                              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "8px 0", borderRadius: 8, border: "none", background: "#D1FAE5", color: "#065F46", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+                              <Check size={14} />{vi ? "Duyệt" : "Approve"}
+                            </button>
+                            <button onClick={() => handleApprove(t.id, false)}
+                              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "8px 0", borderRadius: 8, border: "none", background: "#FEE2E2", color: "#991B1B", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+                              <X size={14} />{vi ? "Từ chối" : "Reject"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div style={{ padding: "10px 14px", background: th.tableHead, borderTop: `1px solid ${th.tableBorder}`, fontSize: 12, color: th.text2, display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "0 0 14px 14px" }}>
+                <span>{filtered.length} {vi ? "chuyến công tác" : "trips"}</span>
+                {search && <span style={{ color: "#D0211C", fontWeight: 600 }}>{vi ? `Tìm thấy ${filtered.length} kết quả cho` : `${filtered.length} result(s) for`} &ldquo;<b>{search}</b>&rdquo;</span>}
+              </div>
+            </>
+          ) : (
+            /* ── Desktop: Table layout ── */
+            <>
+              <div className="table-scroll">
+                <table style={{ width: "100%", minWidth: 600, borderCollapse: "collapse" }}>
+                  <thead><tr>
+                    {(isManager
+                      ? [vi?"Nhân viên":"Employee", vi?"Điểm đến":"Destination", vi?"Từ":"From", vi?"Đến":"To", vi?"Kinh phí":"Budget", vi?"Mục đích":"Purpose", vi?"Trạng thái":"Status", vi?"Thao tác":"Action"]
+                      : [vi?"Nhân viên":"Employee", vi?"Điểm đến":"Destination", vi?"Từ":"From", vi?"Đến":"To", vi?"Kinh phí":"Budget", vi?"Mục đích":"Purpose", vi?"Trạng thái":"Status"]
+                    ).map(c => <th key={c} style={hd}>{c}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr><td colSpan={8} style={{ ...td, textAlign: "center", color: th.text2, padding: 40 }}>
+                        {trips.length === 0 ? (vi ? "Chưa có chuyến công tác nào" : "No business trips yet") : (vi ? "Không tìm thấy kết quả" : "No results found")}
+                      </td></tr>
+                    ) : filtered.map(t => {
+                      const fromDate = new Date(t.startDate).toLocaleDateString(vi ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit" })
+                      const toDate   = new Date(t.endDate).toLocaleDateString(vi ? "vi-VN" : "en-US", { day: "2-digit", month: "2-digit" })
+                      const days = Math.max(1, Math.round((new Date(t.endDate).getTime() - new Date(t.startDate).getTime()) / 86400000) + 1)
+                      return (
+                        <tr key={t.id}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = dark ? "rgba(255,255,255,0.03)" : "#FAFAFA"}
+                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                          <td style={{ ...td, fontWeight: 600 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <EmpAvatar name={t.employee?.fullName ?? "?"} avatarPath={t.employee?.avatarPath} size={30} />
+                              <span><Hl text={t.employee?.fullName ?? "—"} q={search}/></span>
                             </div>
-                          ) : <span style={{ fontSize: 11.5, color: th.text2 }}>—</span>}
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div style={{ padding: "10px 14px", background: th.tableHead, borderTop: `1px solid ${th.tableBorder}`, fontSize: 12, color: th.text2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>{filtered.length} {vi ? "chuyến công tác" : "trips"}</span>
-            {search && <span style={{ color: "#D0211C", fontWeight: 600 }}>{vi ? `Tìm thấy ${filtered.length} kết quả cho` : `${filtered.length} result(s) for`} &ldquo;<b>{search}</b>&rdquo;</span>}
-          </div>
+                          </td>
+                          <td style={td}><span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12} color={th.text2} /><Hl text={t.destination} q={search}/></span></td>
+                          <td style={td}>{fromDate}</td>
+                          <td style={td}>{toDate} <span style={{ color: th.text2, fontSize: 11 }}>({days}{vi?"n":"d"})</span></td>
+                          <td style={{ ...td, fontWeight: 600, color: "#059669" }}>{Number(t.allowance).toLocaleString("vi-VN")}đ</td>
+                          <td style={{ ...td, fontSize: 12, color: th.text2 }}><Hl text={tPurpose(t.purpose, vi) ?? "—"} q={search}/></td>
+                          <td style={td}>{statusBadge(t.status)}</td>
+                          {isManager && (
+                            <td style={td}>
+                              {t.status === "Chờ duyệt" ? (
+                                <div style={{ display: "flex", gap: 5 }}>
+                                  <button onClick={() => handleApprove(t.id, true)}
+                                    style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 9px", borderRadius: 6, border: "none", background: "#D1FAE5", color: "#065F46", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>
+                                    <Check size={11} />{vi ? "Duyệt" : "Approve"}
+                                  </button>
+                                  <button onClick={() => handleApprove(t.id, false)}
+                                    style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 9px", borderRadius: 6, border: "none", background: "#FEE2E2", color: "#991B1B", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>
+                                    <X size={11} />{vi ? "Từ chối" : "Reject"}
+                                  </button>
+                                </div>
+                              ) : <span style={{ fontSize: 11.5, color: th.text2 }}>—</span>}
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ padding: "10px 14px", background: th.tableHead, borderTop: `1px solid ${th.tableBorder}`, fontSize: 12, color: th.text2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>{filtered.length} {vi ? "chuyến công tác" : "trips"}</span>
+                {search && <span style={{ color: "#D0211C", fontWeight: 600 }}>{vi ? `Tìm thấy ${filtered.length} kết quả cho` : `${filtered.length} result(s) for`} &ldquo;<b>{search}</b>&rdquo;</span>}
+              </div>
+            </>
+          )}
         </div>
       )}
 

@@ -4,11 +4,11 @@
 
 ### Hệ thống Quản lý Nhân sự và Tiền lương Doanh nghiệp
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql)](https://postgresql.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma)](https://prisma.io/)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma)](https://prisma.io/)
 [![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://docker.com/)
 
@@ -70,7 +70,7 @@
 ### Core Framework
 | Công nghệ | Phiên bản | Vai trò |
 |---|---|---|
-| **Next.js** | `15.x` | Full-stack React framework (App Router + Server Actions) |
+| **Next.js** | `16.x` | Full-stack React framework (App Router + Server Actions) |
 | **React** | `19.x` | UI library với Server Components & Suspense |
 | **TypeScript** | `5.7+` | Ngôn ngữ chính — Type-safe toàn bộ codebase |
 
@@ -81,16 +81,16 @@
 | **shadcn/ui** | `latest` | Component library (Dialog, Table, Form, Select, Toast...) |
 | **Radix UI** | `latest` | Headless accessible UI primitives (nền tảng của shadcn) |
 | **Lucide React** | `latest` | Icon library (~1500 icons SVG) |
-| **Recharts** | `2.x` | Dashboard charts (Bar, Line, Pie, Area) |
+| **Recharts** | `3.x` | Dashboard charts (Bar, Line, Pie, Area) |
 | **React Hook Form** | `7.x` | Quản lý form phức tạp, performant |
-| **Zod** | `3.x` | Schema validation — dùng cho cả client lẫn server |
+| **Zod** | `4.x` | Schema validation — dùng cho cả client lẫn server |
 
 ### Backend & Database
 | Công nghệ | Phiên bản | Vai trò |
 |---|---|---|
 | **Next.js Server Actions** | built-in | Server-side logic, mutations |
 | **Next.js API Routes** | built-in | RESTful endpoints khi cần |
-| **Prisma ORM** | `6.x` | Type-safe database access, migrations, seeding |
+| **Prisma ORM** | `7.x` | Type-safe database access, migrations, seeding |
 | **PostgreSQL** | `17.x` | Primary relational database |
 | **NextAuth.js (Auth.js)** | `5.x` | Authentication + session management |
 | **bcryptjs** | `latest` | Password hashing |
@@ -111,7 +111,7 @@
 | **ESLint** + **Prettier** | Code linting & formatting |
 | **Git** + **GitHub** | Version control |
 | **Vercel** | Deploy frontend (optional) |
-| **pnpm** | Package manager (nhanh hơn npm) |
+| **npm** | Package manager |
 
 ---
 
@@ -429,7 +429,7 @@ Gross = (Lương cơ bản × Hệ số) + Phụ cấp + Tiền OT
 BHXH  = Gross × 8%
 BHYT  = Gross × 1.5%
 BHTN  = Gross × 1%
-Thu nhập chịu thuế = Gross - BHXH - BHYT - BHTN - 11.000.000 - (4.400.000 × Số người phụ thuộc)
+Thu nhập chịu thuế = Gross - BHXH - BHYT - BHTN - 15.500.000 - (6.200.000 × Số người phụ thuộc)
 Thuế TNCN = Tính theo biểu lũy tiến từng phần 7 bậc
 Net = Gross - BHXH - BHYT - BHTN - Thuế TNCN - Khấu trừ khác
 ```
@@ -446,7 +446,7 @@ Net = Gross - BHXH - BHYT - BHTN - Thuế TNCN - Khấu trừ khác
 
 ## 🗄️ Database Schema
 
-### Danh sách bảng (11 tables)
+### Danh sách bảng (13 tables)
 
 | # | Bảng | Mô tả | Quan hệ chính |
 |---|---|---|---|
@@ -470,22 +470,26 @@ Net = Gross - BHXH - BHYT - BHTN - Thuế TNCN - Khấu trừ khác
 
 ## 🔐 Phân quyền RBAC
 
-Hệ thống phân quyền theo 3 vai trò (Role-Based Access Control):
+Hệ thống phân quyền theo **6 vai trò** (Role-Based Access Control):
 
-| Chức năng | Admin | HR Manager | Employee |
-|---|:---:|:---:|:---:|
-| Dashboard (toàn bộ) | ✅ | ✅ | ❌ |
-| Dashboard (cá nhân) | ✅ | ✅ | ✅ |
-| Quản lý nhân viên | ✅ CRUD | ✅ CRUD | 👁️ Xem hồ sơ mình |
-| Quản lý phòng ban / chức vụ | ✅ CRUD | ✅ CRUD | ❌ |
-| Hợp đồng lao động | ✅ CRUD | ✅ CRUD | 👁️ Xem HĐ mình |
-| Chấm công | ✅ Xem tất cả | ✅ Xem phòng mình | ✅ Check-in/out + xem |
-| Nghỉ phép — Tạo đơn | ✅ | ✅ | ✅ |
-| Nghỉ phép — Duyệt/Từ chối | ✅ | ✅ (phòng mình) | ❌ |
-| Tính lương | ✅ | ✅ Xem | ❌ |
-| Phiếu lương | ✅ Tất cả | ✅ Tất cả | 👁️ Xem phiếu mình |
-| Quản lý tài khoản | ✅ CRUD | ❌ | ❌ |
-| Cấu hình hệ thống | ✅ | ❌ | ❌ |
+| Chức năng | Admin | Director | HRManager | Accountant | Manager | Employee |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Dashboard toàn bộ | ✅ | ✅ KPI | ✅ HR | ✅ Lương | ✅ Phòng | ❌ |
+| Dashboard cá nhân | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Quản lý nhân viên | ✅ CRUD | ❌ | ✅ CRUD | ❌ | ❌ | 👁️ Hồ sơ mình |
+| Phòng ban / Chức vụ | ✅ CRUD | ❌ | ✅ CRUD | ❌ | ❌ | ❌ |
+| Hợp đồng lao động | ✅ CRUD | ❌ | ✅ CRUD | ❌ | ❌ | 👁️ HĐ mình |
+| Quá trình công tác | ✅ CRUD | ❌ | ✅ CRUD | ❌ | ❌ | ❌ |
+| Chấm công | ✅ Tất cả | ❌ | ✅ Tất cả | ❌ | ✅ Phòng mình | ✅ Check-in/out |
+| Nghỉ phép — Tạo đơn | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ |
+| Nghỉ phép — Duyệt | ✅ | ❌ | ✅ Tất cả | ❌ | ✅ Phòng mình | ❌ |
+| Tính lương | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Phiếu lương | ✅ Tất cả | ❌ | ❌ | ✅ Tất cả | ❌ | 👁️ Phiếu mình |
+| Công tác phí | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ Của mình |
+| Thống kê Director | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Xuất báo cáo | ✅ | ✅ Excel | ✅ Excel | ✅ Excel | ✅ PDF | ❌ |
+| Quản lý tài khoản | ✅ CRUD | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Cấu hình hệ thống | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -560,7 +564,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
 
 ### Yêu cầu hệ thống
 - **Node.js** >= 20.x
-- **pnpm** >= 9.x (hoặc npm/yarn)
+- **npm** >= 10.x (kèm Node.js)
 - **Docker Desktop** (để chạy PostgreSQL)
 - **Git**
 
@@ -569,7 +573,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
 ```bash
 git clone https://github.com/<your-repo>/axiom-hrm.git
 cd axiom-hrm
-pnpm install
+npm install
 ```
 
 ### Bước 2: Khởi động Database (Docker)
@@ -588,23 +592,26 @@ cp .env.example .env
 ### Bước 4: Chạy Migration & Seed
 
 ```bash
-pnpm prisma migrate dev    # Tạo tables
-pnpm prisma db seed        # Nạp dữ liệu mẫu
+npx prisma migrate dev     # Tạo tables
+npx tsx scripts/seed-demo-data.ts  # Nạp dữ liệu mẫu
 ```
 
 ### Bước 5: Chạy dev server
 
 ```bash
-pnpm dev                   # http://localhost:3000
+npm run dev                # http://localhost:3000
 ```
 
 ### Tài khoản mặc định
 
-| Vai trò | Username | Password |
-|---|---|---|
-| Admin | `admin` | `admin123` |
-| HR Manager | `hr_manager` | `hr123` |
-| Nhân viên | `nv001` | `nv123` |
+| Vai trò | Username | Password | Dashboard |
+|---|---|---|---|
+| 👑 Admin | `admin` | `admin` | `/dashboard` |
+| 🏛️ Giám đốc | `giamdoc` | `giamdoc` | `/dashboard-director` |
+| 👨‍💼 HR Manager | `nhansu` | `nhansu` | `/dashboard-hr` |
+| 💰 Kế toán | `ketoan` | `ketoan` | `/dashboard-accountant` |
+| 🏢 Trưởng phòng | `quanly` | `quanly` | `/dashboard-manager` |
+| 👤 Nhân viên | `nhanvien` | `nhanvien` | `/dashboard-employee` |
 
 ---
 
@@ -612,25 +619,25 @@ pnpm dev                   # http://localhost:3000
 
 ```bash
 # Development
-pnpm dev                    # Chạy dev server (port 3000)
-pnpm build                  # Build production
-pnpm start                  # Start production server
-pnpm lint                   # Chạy ESLint
-pnpm format                 # Format code với Prettier
+npm run dev                 # Chạy dev server (port 3000)
+npm run build               # Build production
+npm run start               # Start production server
+npm run lint                # Chạy ESLint
 
 # Database
-pnpm prisma studio          # Mở Prisma Studio (GUI quản lý DB)
-pnpm prisma migrate dev     # Tạo & chạy migration
-pnpm prisma db seed         # Nạp dữ liệu mẫu
-pnpm prisma generate        # Generate Prisma Client
+npx prisma studio           # Mở Prisma Studio (GUI quản lý DB)
+npx prisma migrate dev      # Tạo & chạy migration
+npx prisma generate         # Generate Prisma Client
+
+# Seed & Payroll
+npx tsx scripts/seed-demo-data.ts   # Nạp dữ liệu mẫu
+npx tsx scripts/generate-payroll.ts --month=3 --year=2026  # Tính lương
+npx tsx scripts/vary-payroll.ts     # Biến động lương (biểu đồ)
 
 # Docker
-docker-compose up -d        # Start PostgreSQL container
-docker-compose down         # Stop containers
-docker-compose logs -f      # Xem logs
-
-# Utilities
-pnpm type-check             # Kiểm tra TypeScript types
+docker compose up -d        # Start PostgreSQL container
+docker compose down         # Stop containers
+docker compose logs -f      # Xem logs
 ```
 
 ---
@@ -650,7 +657,27 @@ AUTH_URL="http://localhost:3000"
 # ── APP CONFIG ────────────────────────────────────
 NEXT_PUBLIC_APP_NAME="AXIOM HRM"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# ── GMAIL SMTP (cho tính năng Quên mật khẩu) ─────
+GMAIL_USER="your_email@gmail.com"
+GMAIL_APP_PASSWORD="xxxx xxxx xxxx xxxx"
 ```
+
+## 🌐 Tính năng nổi bật
+
+### Song ngữ (Bilingual)
+- Hỗ trợ **Tiếng Việt** và **Tiếng Anh**
+- Chuyển đổi bằng nút cờ 🇻🇳 / 🇬🇧 trên header
+- Toàn bộ labels, biểu đồ, PDF phiếu lương đều được dịch
+
+### Dark Mode
+- Chuyển đổi sáng/tối bằng nút ☀️ / 🌙 trên header
+- Toàn bộ giao diện (sidebar, cards, biểu đồ, tables) đều hỗ trợ
+
+### Setup Email lần đầu
+- Mỗi user (trừ Admin) khi đăng nhập lần đầu được redirect đến `/setup-email`
+- Yêu cầu nhập Gmail cá nhân để kích hoạt tính năng "Quên mật khẩu"
+- Các tài khoản demo chính (`giamdoc`, `nhansu`, `ketoan`, `quanly`, `nhanvien`) đã được thiết lập sẵn
 
 ---
 

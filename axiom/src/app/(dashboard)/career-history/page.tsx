@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import {
   TrendingUp, TrendingDown, Award, ArrowRightLeft, RefreshCw,
   Plus, X, Check, Search, DollarSign, AlertTriangle, FileText,
-  Filter, Users, Star,
+  Filter, Users, Star, ChevronDown,
 } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { DateInput } from "@/components/ui/date-input"
@@ -58,6 +58,61 @@ type CatKey = (typeof CATEGORY_KEYS)[number]
 function fmtMoney(v: number | null | undefined) {
   if (!v) return "—"
   return new Intl.NumberFormat("vi-VN").format(v) + " ₫"
+}
+
+// ── ModalSelectDropdown: custom select for modals ──
+function ModalSelectDropdown({ value, onChange, options, th, placeholder }: {
+  value: string; onChange: (v: string) => void
+  options: { value: string; label: string }[]; th: any; placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [open])
+  const current = options.find(o => o.value === value)
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "8px 10px", borderRadius: 9, cursor: "pointer", fontFamily: "inherit",
+        fontSize: 12.5, fontWeight: 500, border: `1.5px solid ${th.inputBorder}`,
+        background: th.inputBg, color: current ? th.text1 : th.text3, boxSizing: "border-box" as const,
+      }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {current?.label ?? placeholder ?? "—"}
+        </span>
+        <ChevronDown size={13} style={{ opacity: 0.5, flexShrink: 0 }}/>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 500,
+          background: th.cardBg, border: `1px solid ${th.cardBorder}`,
+          borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.2)", overflow: "hidden",
+        }}>
+          <div style={{ maxHeight: 220, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
+            {options.map(opt => {
+              const sel = value === opt.value
+              return (
+                <button key={opt.value} onClick={() => { onChange(opt.value); setOpen(false) }} style={{
+                  width: "100%", padding: "10px 14px", background: sel ? "rgba(208,33,28,0.08)" : "none",
+                  border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
+                  fontSize: 12.5, color: sel ? "#D0211C" : th.text1, fontWeight: sel ? 700 : 400,
+                  fontFamily: "inherit", textAlign: "left", borderBottom: `1px solid ${th.tableBorder}`,
+                }}>
+                  <span style={{ flex: 1 }}>{opt.label}</span>
+                  {sel && <Check size={13} color="#D0211C"/>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function CareerHistoryPage() {
@@ -453,9 +508,10 @@ export default function CareerHistoryPage() {
           </label>
           <label style={labelStyle}>
             <span style={labelText}>{vi ? "Loại sự kiện *" : "Event Type *"}</span>
-            <select value={fType} onChange={e => setFType(e.target.value)} style={input}>
-              {CAREER_EVENT_TYPES.map(t => <option key={t} value={t}>{vi ? t : (CAREER_EVENT_TYPE_EN[t] ?? t)}</option>)}
-            </select>
+            <ModalSelectDropdown
+              value={fType} onChange={setFType} th={th}
+              options={CAREER_EVENT_TYPES.map(t => ({ value: t, label: vi ? t : (CAREER_EVENT_TYPE_EN[t] ?? t) }))}
+            />
           </label>
           <label style={labelStyle}>
             <span style={labelText}>{vi ? "Ngày *" : "Date *"}</span>
@@ -468,34 +524,34 @@ export default function CareerHistoryPage() {
           {showPositionFields && (<>
             <label style={labelStyle}>
               <span style={labelText}>{vi ? "Chức vụ cũ" : "Old Position"}</span>
-              <select value={fOldPos} onChange={e => setFOldPos(e.target.value)} style={input}>
-                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                {positions.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
-              </select>
+              <ModalSelectDropdown value={fOldPos} onChange={setFOldPos} th={th}
+                placeholder={vi ? "— Chọn —" : "— Select —"}
+                options={[{ value: "", label: vi ? "— Chọn —" : "— Select —" }, ...positions.map((p: any) => ({ value: p.name, label: p.name }))]}
+              />
             </label>
             <label style={labelStyle}>
               <span style={labelText}>{vi ? "Chức vụ mới *" : "New Position *"}</span>
-              <select value={fNewPos} onChange={e => setFNewPos(e.target.value)} style={input}>
-                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                {positions.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
-              </select>
+              <ModalSelectDropdown value={fNewPos} onChange={setFNewPos} th={th}
+                placeholder={vi ? "— Chọn —" : "— Select —"}
+                options={[{ value: "", label: vi ? "— Chọn —" : "— Select —" }, ...positions.map((p: any) => ({ value: p.name, label: p.name }))]}
+              />
             </label>
           </>)}
 
           {showDeptFields && (<>
             <label style={labelStyle}>
               <span style={labelText}>{vi ? "Phòng ban cũ" : "Old Department"}</span>
-              <select value={fOldDept} onChange={e => setFOldDept(e.target.value)} style={input}>
-                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
-              </select>
+              <ModalSelectDropdown value={fOldDept} onChange={setFOldDept} th={th}
+                placeholder={vi ? "— Chọn —" : "— Select —"}
+                options={[{ value: "", label: vi ? "— Chọn —" : "— Select —" }, ...departments.map((d: any) => ({ value: d.name, label: d.name }))]}
+              />
             </label>
             <label style={labelStyle}>
               <span style={labelText}>{vi ? "Phòng ban mới *" : "New Department *"}</span>
-              <select value={fNewDept} onChange={e => setFNewDept(e.target.value)} style={input}>
-                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
-              </select>
+              <ModalSelectDropdown value={fNewDept} onChange={setFNewDept} th={th}
+                placeholder={vi ? "— Chọn —" : "— Select —"}
+                options={[{ value: "", label: vi ? "— Chọn —" : "— Select —" }, ...departments.map((d: any) => ({ value: d.name, label: d.name }))]}
+              />
             </label>
           </>)}
 
@@ -513,10 +569,10 @@ export default function CareerHistoryPage() {
           {showRewardFields && (<>
             <label style={labelStyle}>
               <span style={labelText}>{vi ? "Loại khen thưởng *" : "Reward Type *"}</span>
-              <select value={fRewardType} onChange={e => setFRewardType(e.target.value)} style={input}>
-                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                {REWARD_TYPES.map(t => <option key={t} value={t}>{vi ? t : (REWARD_TYPE_EN[t] ?? t)}</option>)}
-              </select>
+              <ModalSelectDropdown value={fRewardType} onChange={setFRewardType} th={th}
+                placeholder={vi ? "— Chọn —" : "— Select —"}
+                options={[{ value: "", label: vi ? "— Chọn —" : "— Select —" }, ...REWARD_TYPES.map(t => ({ value: t, label: vi ? t : (REWARD_TYPE_EN[t] ?? t) }))]}
+              />
             </label>
             <label style={labelStyle}>
               <span style={labelText}>{vi ? "Số tiền thưởng (₫)" : "Reward Amount (₫)"}</span>
@@ -527,10 +583,10 @@ export default function CareerHistoryPage() {
           {showPenaltyFields && (
             <label style={labelStyle}>
               <span style={labelText}>{vi ? "Hình thức kỷ luật *" : "Penalty Type *"}</span>
-              <select value={fPenaltyType} onChange={e => setFPenaltyType(e.target.value)} style={input}>
-                <option value="">{vi ? "— Chọn —" : "— Select —"}</option>
-                {PENALTY_TYPES.map(t => <option key={t} value={t}>{vi ? t : (PENALTY_TYPE_EN[t] ?? t)}</option>)}
-              </select>
+              <ModalSelectDropdown value={fPenaltyType} onChange={setFPenaltyType} th={th}
+                placeholder={vi ? "— Chọn —" : "— Select —"}
+                options={[{ value: "", label: vi ? "— Chọn —" : "— Select —" }, ...PENALTY_TYPES.map(t => ({ value: t, label: vi ? t : (PENALTY_TYPE_EN[t] ?? t) }))]}
+              />
             </label>
           )}
 

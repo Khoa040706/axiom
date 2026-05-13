@@ -130,8 +130,8 @@ input[type="date"] {
   .page-pad { padding: 20px 18px 40px; }
 }
 @media (max-width: 640px) {
-  /* Extra bottom padding for bottom nav */
-  .page-pad { padding: 16px 12px calc(var(--bottom-nav-h) + 24px); }
+  /* Extra bottom padding for bottom nav + iOS home indicator */
+  .page-pad { padding: 16px 12px calc(var(--bottom-nav-h) + 24px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── TABLE SCROLL WRAPPER ──────────────────────────────────────── */
@@ -151,7 +151,8 @@ input[type="date"] {
     bottom: 0;
     left: 0;
     right: 0;
-    height: var(--bottom-nav-h);
+    height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     z-index: 200;
     border-top: 1px solid rgba(0,0,0,0.1);
     box-shadow: 0 -4px 20px rgba(0,0,0,0.12);

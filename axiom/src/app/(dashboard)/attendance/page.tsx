@@ -1,13 +1,68 @@
 /* eslint-disable @typescript-eslint/no-explicit-any , react-hooks/set-state-in-effect */
 "use client"
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Filter, Download, Calendar, Search, X, Loader2, Eye, Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { Filter, Download, Calendar, Search, X, Loader2, Eye, Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react"
 import { useDashboard, getTheme } from "@/lib/dashboard-context"
 import { getAttendanceByMonth, getTodayAttendance } from "@/lib/actions/attendance.actions"
 import { matchAny } from "@/lib/utils/search"
 import { useBreakpoint } from "@/hooks/use-breakpoint"
 import { useSession } from "next-auth/react"
 import { DEPT_VI_TO_EN } from "@/lib/i18n-maps"
+
+// ── ModalSelectDropdown ──
+function ModalSelectDropdown({ value, onChange, options, th, fw }: {
+  value: string; onChange: (v: string) => void
+  options: { value: string; label: string }[]; th: any; fw?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [open])
+  const current = options.find(o => o.value === value)
+  return (
+    <div ref={ref} style={{ position: "relative", width: fw ? "100%" : undefined }}>
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "8px 10px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+        fontSize: 13, fontWeight: 500, border: `1px solid ${th.inputBorder}`,
+        background: th.inputBg, color: current ? th.text1 : th.text3, boxSizing: "border-box" as const,
+      }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {current?.label ?? "—"}
+        </span>
+        <ChevronDown size={13} style={{ opacity: 0.5, flexShrink: 0 }}/>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 500,
+          background: th.cardBg, border: `1px solid ${th.cardBorder}`,
+          borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.2)", overflow: "hidden",
+        }}>
+          <div style={{ maxHeight: 240, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
+            {options.map(opt => {
+              const sel = value === opt.value
+              return (
+                <button key={opt.value} onClick={() => { onChange(opt.value); setOpen(false) }} style={{
+                  width: "100%", padding: "10px 14px", background: sel ? "rgba(208,33,28,0.08)" : "none",
+                  border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
+                  fontSize: 13, color: sel ? "#D0211C" : th.text1, fontWeight: sel ? 700 : 400,
+                  fontFamily: "inherit", textAlign: "left", borderBottom: `1px solid ${th.tableBorder}`,
+                }}>
+                  <span style={{ flex: 1 }}>{opt.label}</span>
+                  {sel && <Check size={13} color="#D0211C"/>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Tự động sinh danh sách tháng từ T1 → tháng hiện tại
 const CURRENT_YEAR = new Date().getFullYear()
@@ -557,16 +612,20 @@ export default function AttendancePage() {
             <div style={{ position:"relative" }}>
               <input value={q} onChange={e=>setQ(e.target.value)} placeholder={vi?"Tìm kiếm...":"Search..."} style={{ ...selStyle, width:"100%", boxSizing:"border-box" }}/>
             </div>
-            <select value={muonF} onChange={e=>setMuonF(e.target.value as any)} style={{ ...selStyle, width:"100%" }}>
-              <option value="all">{vi?"Tất cả":"All"}</option>
-              <option value="yes">{vi?"Có đi muộn":"Has late"}</option>
-              <option value="no">{vi?"Không đi muộn":"On time"}</option>
-            </select>
-            <select value={otF} onChange={e=>setOtF(e.target.value as any)} style={{ ...selStyle, width:"100%" }}>
-              <option value="all">{vi?"Tất cả":"All"}</option>
-              <option value="yes">{vi?"Có OT":"Has OT"}</option>
-              <option value="no">{vi?"Không OT":"No OT"}</option>
-            </select>
+            <ModalSelectDropdown value={muonF} onChange={v => setMuonF(v as any)} th={th} fw
+              options={[
+                { value: "all", label: vi?"Tất cả":"All" },
+                { value: "yes", label: vi?"Có đi muộn":"Has late" },
+                { value: "no",  label: vi?"Không đi muộn":"On time" },
+              ]}
+            />
+            <ModalSelectDropdown value={otF} onChange={v => setOtF(v as any)} th={th} fw
+              options={[
+                { value: "all", label: vi?"Tất cả":"All" },
+                { value: "yes", label: vi?"Có OT":"Has OT" },
+                { value: "no",  label: vi?"Không OT":"No OT" },
+              ]}
+            />
           </div>
         </div>
       )}
@@ -574,9 +633,12 @@ export default function AttendancePage() {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <Calendar size={15} color={th.text2}/>
-          <select value={monthIdx} onChange={e=>{setMonthIdx(Number(e.target.value))}} style={{ ...selStyle, fontWeight:600 }}>
-            {MONTHS.map((m,i)=><option key={m} value={i}>{m}</option>)}
-          </select>
+          <ModalSelectDropdown
+            value={String(monthIdx)}
+            onChange={v => setMonthIdx(Number(v))}
+            th={th}
+            options={MONTHS.map((m, i) => ({ value: String(i), label: m }))}
+          />
         </div>
       </div>
 
@@ -732,7 +794,7 @@ export default function AttendancePage() {
         const todayTotal = Math.max(1, Math.ceil(today.length / TODAY_PAGE_SIZE))
         const todayRows  = today.slice(todayPage * TODAY_PAGE_SIZE, (todayPage + 1) * TODAY_PAGE_SIZE)
         return (
-        <div style={{ background:th.cardBg, borderRadius:12, border:`1px solid ${th.cardBorder}`, overflow:"hidden" }}>
+        <div style={{ background:th.cardBg, borderRadius:12, border:`1px solid ${th.cardBorder}` }}>
           <div style={{ padding:"14px 18px", borderBottom:`1px solid ${th.tableBorder}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <span style={{ fontWeight:700, color:th.text1, fontSize:14 }}>
               {vi?"Chấm công hôm nay":"Today's Attendance"} ({new Date().toLocaleDateString("vi-VN")})
@@ -741,7 +803,8 @@ export default function AttendancePage() {
               {today.filter(r=>r.st==="ontime").length}/{today.length} {vi?"đúng giờ":"on time"}
             </span>
           </div>
-          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <div className="table-scroll">
+          <table style={{ width:"100%", borderCollapse:"collapse", minWidth: 640 }}>
             <thead><tr>
               {[vi?"Nhân viên":"Employee",vi?"Giờ vào":"Check-in",vi?"Giờ ra":"Check-out",vi?"Giờ làm":"Hours",vi?"Trạng thái":"Status",vi?"Ghi chú":"Notes"].map(c=>(
                 <th key={c} style={hd}>{c}</th>
@@ -789,6 +852,7 @@ export default function AttendancePage() {
               ))}
             </tbody>
           </table>
+          </div>
 
           {/* Pagination */}
           {today.length > TODAY_PAGE_SIZE && (
@@ -867,7 +931,7 @@ export default function AttendancePage() {
                   <table style={{ width:"100%", borderCollapse:"collapse" }}>
                     <thead>
                       <tr>
-                        {[vi?"Ngày":"Date", vi?"Vào":"Check-in", vi?"Ra":"Check-out", vi?"Giờ làm":"Hours", vi?"Trạng thái":"Status", "OT", vi?"Muộn":"Late"].map(h => (
+                        {[vi?"Ngày":"Date", vi?"Vào":"In", vi?"Ra":"Out", vi?"Giờ làm":"Hours", vi?"Trạng thái":"Status", "OT"].map(h => (
                           <th key={h} style={{ ...hd, fontSize:11.5, padding:"9px 12px" }}>{h}</th>
                         ))}
                       </tr>
@@ -900,20 +964,27 @@ export default function AttendancePage() {
                             </td>
                             <td style={{ ...td, padding:"9px 12px", fontSize:12 }}>{coStr}</td>
                             <td style={{ ...td, padding:"9px 12px", fontSize:12, color:th.text2 }}>{hours !== "—" ? `${hours}h` : "—"}</td>
-                            <td style={{ ...td, padding:"9px 12px" }}>
-                              <span style={{
-                                padding:"2px 9px", borderRadius:20, fontSize:11, fontWeight:700,
-                                background: isLate ? "#FEF3C7" : "#D1FAE5",
-                                color:      isLate ? "#92400E" : "#065F46",
-                              }}>
-                                {isLate ? (vi?"Đi muộn":"Late") : (vi?"Đúng giờ":"On time")}
-                              </span>
+                            <td style={{ ...td, padding:"9px 10px" }}>
+                              {isLate ? (
+                                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                                  <span style={{
+                                    width: 7, height: 7, borderRadius: "50%", background: "#F59E0B", flexShrink: 0,
+                                  }}/>
+                                  <span style={{ fontSize:11.5, fontWeight:600, color:"#D97706" }}>
+                                    {vi?"Muộn":"Late"} {rec.lateMinutes}{vi?"p":"m"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                                  <CheckCircle size={13} color="#10B981" style={{ flexShrink:0 }}/>
+                                  <span style={{ fontSize:11.5, fontWeight:600, color:"#059669" }}>
+                                    {vi?"Đúng giờ":"On time"}
+                                  </span>
+                                </div>
+                              )}
                             </td>
                             <td style={{ ...td, padding:"9px 12px", fontSize:12 }}>
                               {isOT ? <span style={{ color:"#3B82F6", fontWeight:700 }}>{rec.otHours}h</span> : <span style={{ color:th.text3 }}>—</span>}
-                            </td>
-                            <td style={{ ...td, padding:"9px 12px", fontSize:12 }}>
-                              {isLate ? <span style={{ color:"#F59E0B", fontWeight:700 }}>{rec.lateMinutes}{vi?"p":"m"}</span> : <span style={{ color:th.text3 }}>—</span>}
                             </td>
                           </tr>
                         )

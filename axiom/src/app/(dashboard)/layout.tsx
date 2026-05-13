@@ -519,10 +519,10 @@ function Inner({ children }: { children: React.ReactNode }) {
         position: "fixed", top: 0,
         left: 0,
         right: 0,
-        height: HEADER_H,
+        height: isMobile ? `calc(${HEADER_H}px + env(safe-area-inset-top, 0px))` : HEADER_H,
         background: th.cardBg, borderBottom: `1px solid ${th.cardBorder}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: isMobile ? "0 12px" : "0 24px",
+        padding: isMobile ? "env(safe-area-inset-top, 0px) 12px 0 12px" : "0 24px",
         zIndex: 90,
         transition: "background .3s, border-color .3s, left .28s",
       }}>
@@ -848,7 +848,7 @@ function Inner({ children }: { children: React.ReactNode }) {
       <main style={{
         marginLeft: isMobile ? 0 : mainMargin,
         flex: 1,
-        paddingTop: HEADER_H,
+        paddingTop: isMobile ? `calc(${HEADER_H}px + env(safe-area-inset-top, 0px))` : HEADER_H,
         // On mobile, add bottom padding for bottom nav
         paddingBottom: isMobile ? 60 : 0,
         background: th.pageBg, minHeight: "100vh",
